@@ -28,22 +28,11 @@ void testMatrixMultiplication() {
     // Perform matrix multiplication
     Matrix* result = multiply(m1, m2);
 
-    // Compare the result with the expected matrix
-    int success = 1;
-    for (int i = 0; i < expected->rows; i++) {
-        for (int j = 0; j < expected->columns; j++) {
-            if (result->data[i][j] != expected->data[i][j]) {
-                success = 0;
-                break;
-            }
-        }
-    }
-
     // Print success or failure message
-    if (success) {
-        printf("Matrix multiplication test succeeded!\n");
+    if (isEqual(result, expected)) {
+        printf("Matrix multiplication test: PASSED\n");
     } else {
-        printf("Matrix multiplication test failed!\n");
+        printf("Matrix multiplication test: FAILED\n");
     }
 
     // Clean up memory
@@ -51,4 +40,119 @@ void testMatrixMultiplication() {
     freeMatrix(m2);
     freeMatrix(expected);
     freeMatrix(result);
+}
+
+void testMatrixAddition() {
+    // Create two matrices with the same dimensions
+    Matrix* m1 = createMatrix(2, 2);
+    m1->data[0][0] = 1.0;
+    m1->data[0][1] = 2.0;
+    m1->data[1][0] = 3.0;
+    m1->data[1][1] = 4.0;
+
+    Matrix* m2 = createMatrix(2, 2);
+    m2->data[0][0] = 5.0;
+    m2->data[0][1] = 6.0;
+    m2->data[1][0] = 7.0;
+    m2->data[1][1] = 8.0;
+
+    // Perform matrix addition
+    Matrix* result = add(m1, m2);
+
+    // Define the expected result
+    Matrix* expected = createMatrix(2, 2);
+    expected->data[0][0] = 6.0;
+    expected->data[0][1] = 8.0;
+    expected->data[1][0] = 10.0;
+    expected->data[1][1] = 12.0;
+
+    // Compare the result with the expected matrix
+    if (isEqual(result, expected)) {
+        printf("Matrix addition test: PASSED\n");
+    } else {
+        printf("Matrix addition test: FAILED\n");
+    }
+
+    // Free the memory allocated for matrices
+    freeMatrix(m1);
+    freeMatrix(m2);
+    freeMatrix(result);
+    freeMatrix(expected);
+}
+
+void testMatrixSubtraction() {
+    // Create two matrices with the same dimensions
+    Matrix* m1 = createMatrix(2, 2);
+    m1->data[0][0] = 1.0;
+    m1->data[0][1] = 2.0;
+    m1->data[1][0] = 3.0;
+    m1->data[1][1] = 4.0;
+
+    Matrix* m2 = createMatrix(2, 2);
+    m2->data[0][0] = 5.0;
+    m2->data[0][1] = 6.0;
+    m2->data[1][0] = 7.0;
+    m2->data[1][1] = 8.0;
+
+    // Perform matrix addition
+    Matrix* result = subtract(m1, m2);
+
+    // Define the expected result
+    Matrix* expected = createMatrix(2, 2);
+    expected->data[0][0] = m1->data[0][0] - m2->data[0][0];
+    expected->data[0][1] = m1->data[0][1] - m2->data[0][1];
+    expected->data[1][0] = m1->data[1][0] - m2->data[1][0];
+    expected->data[1][1] = m1->data[1][1] - m2->data[1][1];
+
+    // Compare the result with the expected matrix
+    if (isEqual(result, expected)) {
+        printf("Matrix subtraction test: PASSED\n");
+    } else {
+        printf("Matrix subtraction test: FAILED\n");
+    }
+
+    // Free the memory allocated for matrices
+    freeMatrix(m1);
+    freeMatrix(m2);
+    freeMatrix(result);
+    freeMatrix(expected);
+}
+
+void testMatrixElementWiseMultiplication() {
+    // Create two matrices with the same dimensions
+    Matrix* m1 = createMatrix(2, 2);
+    m1->data[0][0] = 1.0;
+    m1->data[0][1] = 2.0;
+    m1->data[1][0] = 3.0;
+    m1->data[1][1] = 4.0;
+
+    Matrix* m2 = createMatrix(2, 2);
+    m2->data[0][0] = 5.0;
+    m2->data[0][1] = 6.0;
+    m2->data[1][0] = 7.0;
+    m2->data[1][1] = 8.0;
+
+    // Perform matrix addition
+    Matrix* result = elementWiseMultiply(m1, m2);
+
+    // Define the expected result
+    Matrix* expected = createMatrix(2, 2);
+    expected->data[0][0] = m1->data[0][0] * m2->data[0][0];
+    expected->data[0][1] = m1->data[0][1] * m2->data[0][1];
+    expected->data[1][0] = m1->data[1][0] * m2->data[1][0];
+    expected->data[1][1] = m1->data[1][1] * m2->data[1][1];
+
+    // Compare the result with the expected matrix
+
+    if (isEqual(result, expected)) {
+        printf("Matrix element wise multiplication test: PASSED\n");
+    } else {
+        printf("Matrix element wise multiplication test: FAILED\n");
+    }
+
+    // Free the memory allocated for matrices
+    freeMatrix(m1);
+    freeMatrix(m2);
+    freeMatrix(result);
+    freeMatrix(expected);
 }

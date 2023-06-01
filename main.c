@@ -33,6 +33,9 @@ void runTests() {
     testAddToTheEnd();
     testMatrixCreation();
     testMatrixMultiplication();
+    testMatrixAddition();
+    testMatrixSubtraction();
+    testMatrixElementWiseMultiplication();
 }
 
 void runProgram() {
