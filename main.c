@@ -3,6 +3,7 @@
 #include "helper/matrix_linked_list.h"
 #include "tests/helper_tests/linkedlist_test.h"
 #include "tests/matrix_tests/matrix_test.h"
+#include "tests/math_tests/matrix_operations.h"
 #include <string.h>
 
 void runTests();
@@ -31,21 +32,19 @@ int main(int argc, char* argv[])
 void runTests() {
     testAddToTheEnd();
     testMatrixCreation();
+    testMatrixMultiplication();
 }
 
 void runProgram() {
-    MatrixLinkedListNode* toClean = malloc(sizeof (MatrixLinkedListNode));
+    MatrixLinkedListNode* matrixList = malloc(sizeof (MatrixLinkedListNode));
     Matrix* matrix = createMatrix(2,2);
-    Matrix* m2 = createMatrix(3,3);
 
-    toClean->next = NULL;
-    toClean->data = matrix;
+    matrixList->next = NULL;
+    matrixList->data = matrix;
 
-    printf("Hello World! \n");
-
-    MatrixLinkedListNode* current = toClean;
+    MatrixLinkedListNode* current = matrixList;
     while (current != NULL) {
-        printMatrix(current->data);
+        // printMatrix(current->data);
         freeMatrix(current->data);
 
         MatrixLinkedListNode* nextNode = current->next;

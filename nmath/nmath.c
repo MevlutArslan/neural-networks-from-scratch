@@ -6,16 +6,17 @@ Matrix* multiply(Matrix* m1, Matrix* m2) {
         printf("CANNOT MULTIPLE M1 and M2. M1's column count \n does not match M2's row count! \n");
         return NULL;
     }
+    Matrix* m3 = createMatrix(m1->rows, m2->columns);
 
-    Matrix* m3 = malloc(sizeof(Matrix));
-    
-    // allocate space for rows
-    m3->data = malloc(m1->rows * sizeof(double*));
-    for(int i = 0; i < m1->rows; i++) {
-        m3->data[i] = malloc(m2->columns * sizeof(double*)); 
+    // multiple row by each column
+    //  [1, 2]   *  [1, 2, 3] => [1 * 1 + 2 * 4][1 * 2 + 2 * 5][1 * 3 + 2 * 6]
+    //  [3, 4]      [4, 5, 6]    [3 * 1 + 4 * 4][3 * 2 + 4 * 5][3 * 2 + 4 * 6]
+    for(int i = 0; i < m3->rows; i++){
+        for(int j = 0; j < m3->columns; j++) {
+            for(int k = 0; k < m1->columns; k++) {
+                m3->data[i][j] += m1->data[i][k] * m2->data[k][j];
+            }
+        }
     }
-    // allocate space for cols;
-
-
     return m3;
 }
