@@ -156,3 +156,38 @@ void testMatrixElementWiseMultiplication() {
     freeMatrix(result);
     freeMatrix(expected);
 }
+
+void testMatrixTranspose() {
+    // Create a matrix
+    Matrix* m = createMatrix(3, 2);
+    m->data[0][0] = 1.0;
+    m->data[0][1] = 2.0;
+    m->data[1][0] = 3.0;
+    m->data[1][1] = 4.0;
+    m->data[2][0] = 5.0;
+    m->data[2][1] = 6.0;
+
+    // Perform matrix transpose
+    Matrix* result = transpose(m);
+
+    // Define the expected result
+    Matrix* expected = createMatrix(2, 3);
+    expected->data[0][0] = 1.0;
+    expected->data[0][1] = 3.0;
+    expected->data[0][2] = 5.0;
+    expected->data[1][0] = 2.0;
+    expected->data[1][1] = 4.0;
+    expected->data[1][2] = 6.0;
+
+    // Compare the result with the expected matrix
+    if (isEqual(result, expected)) {
+        printf("Matrix transpose test: PASSED\n");
+    } else {
+        printf("Matrix transpose test: FAILED\n");
+    }
+
+    // Free the memory allocated for matrices
+    freeMatrix(m);
+    freeMatrix(result);
+    freeMatrix(expected);
+}

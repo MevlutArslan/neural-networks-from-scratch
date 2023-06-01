@@ -4,5 +4,8 @@
 #include "../../nmath/nmath.h"
 
 void testMatrixMultiplication();
-
+void testMatrixAddition();
+void testMatrixSubtraction();
+void testMatrixElementWiseMultiplication();
+void testMatrixTranspose();
 #endif
