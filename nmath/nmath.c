@@ -18,5 +18,58 @@ Matrix* multiply(Matrix* m1, Matrix* m2) {
             }
         }
     }
+
+    return m3;
+}
+
+Matrix* add(Matrix* m1, Matrix* m2) {
+    if(m1->rows != m2->rows || m1->columns != m2->columns) {
+        printf("The sizes of the matrices do not match!");
+        return NULL;
+    }
+
+    // element wise
+    Matrix* m3 = createMatrix(m1->rows, m1->columns);
+    for(int i = 0; i < m3->rows; i++){
+        for(int j = 0; j < m3->columns; j++) {
+            m3->data[i][j] = m1->data[i][j] + m2->data[i][j];
+        }
+    }
+
+    return m3;
+}
+
+Matrix* subtract(Matrix* m1, Matrix* m2) {
+    if(m1->rows != m2->rows || m1->columns != m2->columns) {
+        printf("The sizes of the matrices do not match!");
+        return NULL;
+    }
+
+    // element wise
+    Matrix* m3 = createMatrix(m1->rows, m1->columns);
+    for(int i = 0; i < m3->rows; i++){
+        for(int j = 0; j < m3->columns; j++) {
+            m3->data[i][j] = m1->data[i][j] - m2->data[i][j];
+        }
+    }
+
+    return m3;
+}
+
+
+Matrix* elementWiseMultiply(Matrix* m1, Matrix* m2){
+    if(m1->rows != m2->rows || m1->columns != m2->columns) {
+        printf("The sizes of the matrices do not match!");
+        return NULL;
+    }
+
+    // element wise
+    Matrix* m3 = createMatrix(m1->rows, m1->columns);
+    for(int i = 0; i < m3->rows; i++){
+        for(int j = 0; j < m3->columns; j++) {
+            m3->data[i][j] = m1->data[i][j] * m2->data[i][j];
+        }
+    }
+
     return m3;
 }
