@@ -8,4 +8,7 @@ void testMatrixAddition();
 void testMatrixSubtraction();
 void testMatrixElementWiseMultiplication();
 void testMatrixTranspose();
+void testDeterminant();
+void testInverse();
+
 #endif

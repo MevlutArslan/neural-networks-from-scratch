@@ -26,7 +26,7 @@ void testMatrixMultiplication() {
     expected->data[1][1] = 154.0;
 
     // Perform matrix multiplication
-    Matrix* result = multiply(m1, m2);
+    Matrix* result = multiplyMatrices(m1, m2);
 
     // Print success or failure message
     if (isEqual(result, expected)) {
@@ -57,7 +57,7 @@ void testMatrixAddition() {
     m2->data[1][1] = 8.0;
 
     // Perform matrix addition
-    Matrix* result = add(m1, m2);
+    Matrix* result = addMatrices(m1, m2);
 
     // Define the expected result
     Matrix* expected = createMatrix(2, 2);
@@ -95,7 +95,7 @@ void testMatrixSubtraction() {
     m2->data[1][1] = 8.0;
 
     // Perform matrix addition
-    Matrix* result = subtract(m1, m2);
+    Matrix* result = subtractMatrices(m1, m2);
 
     // Define the expected result
     Matrix* expected = createMatrix(2, 2);
@@ -187,6 +187,69 @@ void testMatrixTranspose() {
     }
 
     // Free the memory allocated for matrices
+    freeMatrix(m);
+    freeMatrix(result);
+    freeMatrix(expected);
+}
+
+void testDeterminant() {
+    // Create a 3x3 matrix
+    Matrix* m = createMatrix(3, 3);
+    m->data[0][0] = 1;
+    m->data[0][1] = 2;
+    m->data[0][2] = 3;
+    m->data[1][0] = 4;
+    m->data[1][1] = 5;
+    m->data[1][2] = 6;
+    m->data[2][0] = 7;
+    m->data[2][1] = 8;
+    m->data[2][2] = 9;
+
+    // Calculate the determinant
+    float det = determinant(m);
+
+    if(det == 0) {
+        printf("Matrix determinant test: PASSED\n");
+    } else {
+        printf("Matrix determinant test: FAILED\n");
+    }
+    // Free the matrix
+    freeMatrix(m);
+}
+
+
+void testInverse() {
+        // Create a sample matrix
+    double data[2][2] = {
+        {2, 3},
+        {1, 4}
+    };
+
+    // Create a Matrix struct and initialize it with the sample data
+    Matrix* m = createMatrix(2, 2);
+    for (int i = 0; i < m->rows; i++) {
+        for (int j = 0; j < m->columns; j++) {
+            m->data[i][j] = data[i][j];
+        }
+    }
+
+    // Calculate the inverse of the matrix
+    Matrix* result = inverse(m);
+
+    Matrix* expected = createMatrix(m->rows, m->columns);
+    expected->data[0][0] = 0.8;
+    expected->data[0][1] = -0.6;
+    expected->data[1][0] = -0.2;
+    expected->data[1][1] = 0.4;
+
+    if (isEqual(result, expected)) {
+        printf("Matrix inverse test: PASSED\n");
+    } 
+    else {
+        printf("Matrix inverse test: FAILED\n");
+    }
+
+    // Free the memory allocated for the matrices
     freeMatrix(m);
     freeMatrix(result);
     freeMatrix(expected);
