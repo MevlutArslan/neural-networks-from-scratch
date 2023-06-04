@@ -1,7 +1,7 @@
 #include "nmath.h"
 
 
-Matrix* multiply(const Matrix* m1, const Matrix* m2) {
+Matrix* multiplyMatrices(const Matrix* m1, const Matrix* m2) {
     // m1.rows has to be equal m2.cols
     if( m1->columns != m2->rows) {
         printf("Cannot Multiply M1 and M2. M1's column count \n does not match M2's row count! \n");
@@ -23,7 +23,19 @@ Matrix* multiply(const Matrix* m1, const Matrix* m2) {
     return m3;
 }
 
-Matrix* add(const Matrix* m1, const Matrix* m2) {
+Matrix* multiply_scalar(const Matrix* m, const double scalar){
+    Matrix* result = createMatrix(m->rows, m->columns);
+
+    for(int i = 0; i < result->rows; i++) {
+        for(int j = 0; j < result->columns; j++) {
+            result->data[i][j] = m->data[i][j] * scalar;
+        }
+    }
+
+    return result;
+}
+
+Matrix* addMatrices(const Matrix* m1, const Matrix* m2) {
     if(m1->rows != m2->rows || m1->columns != m2->columns) {
         printf("The sizes of the matrices do not match!");
         return NULL;
@@ -39,7 +51,7 @@ Matrix* add(const Matrix* m1, const Matrix* m2) {
     return m3;
 }
 
-Matrix* subtract(const Matrix* m1, const Matrix* m2) {
+Matrix* subtractMatrices(const Matrix* m1, const Matrix* m2) {
     if(m1->rows != m2->rows || m1->columns != m2->columns) {
         printf("The sizes of the matrices do not match!");
         return NULL;
@@ -88,9 +100,24 @@ Matrix* inverse(const Matrix* m) {
     // M * inverse(M) = I
     // inverse(M) = 1 / det(M) * (adjugate(M))
     // adjucate(M) = C^T
-    // C = 
-    return NULL;
+    // Cij = -1^i+j * MMij
+
+    double det = determinant(m);
+
+    if(det == 0) {
+        printf("Cannot invert a matrix with determinant 0!");
+        return NULL;
+    }
+
+    Matrix* adjucateMatrix = adjucate(m);
+
+    Matrix* inverse = multiply_scalar(adjucateMatrix, 1.0 / det);
+
+    freeMatrix(adjucateMatrix);
+
+    return inverse;
 }
+
 
 float determinant(const Matrix* m) {
     if(isSquare(m) == 0) {
@@ -111,24 +138,32 @@ float determinant(const Matrix* m) {
     
     int i = 0;
     int det = 0;
-    for(int j = 0; j < m->columns; j++) {
-        // create mini matrix
-        Matrix* miniMatrix = createMatrix(m->rows - 1, m->columns - 1);
-        
-        for(int mI = 1; mI < m->rows; mI++) {
-            int mJNew = 0;
-            for(int mJ = 0; mJ < m->columns; mJ++) {
-                if(mJ == j) {
-                    continue;
-                }
-                miniMatrix->data[mI - 1][mJNew] = m->data[mI][mJ];
-                mJNew++;
-            }
-        }
+    for (int j = 0; j < m->columns; j++) {
+    // Generate mini matrix
+        Matrix* miniMatrix = generateMiniMatrix(m, i, j);
 
-        det += pow(-1, i+j) * m->data[i][j] * determinant(miniMatrix);
+        det += pow(-1, i + j) * m->data[i][j] * determinant(miniMatrix);
+
         freeMatrix(miniMatrix);
     }
 
     return det;
+}
+
+Matrix* coeffienceMatrix(const Matrix* m){ 
+    // Cij = -1^i+j * MMij
+    Matrix* c = createMatrix(m->rows, m->columns);
+
+    for(int i = 0; i < c->rows; i++) {
+        for(int j = 0; j < c->columns; j++){
+            c->data[i][j] = pow(-1, i+j) * determinant(generateMiniMatrix(m, i, j));
+        }
+    }
+
+    return c;
+}
+
+Matrix* adjucate(const Matrix* m) {
+    // adjucate = C^T
+    return transpose(coeffienceMatrix(m));
 }
