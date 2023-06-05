@@ -1,6 +1,6 @@
 #include "matrix_operations.h"
 
-void testMatrixMultiplication() {
+void test_matrix_dot_product() {
     // Create two matrices
     Matrix* m1 = createMatrix(2, 3);
     m1->data[0][0] = 1.0;
@@ -26,7 +26,7 @@ void testMatrixMultiplication() {
     expected->data[1][1] = 154.0;
 
     // Perform matrix multiplication
-    Matrix* result = multiplyMatrices(m1, m2);
+    Matrix* result = matrix_dot_product(m1, m2);
 
     // Print success or failure message
     if (isEqual(result, expected)) {
@@ -42,7 +42,7 @@ void testMatrixMultiplication() {
     freeMatrix(result);
 }
 
-void testMatrixAddition() {
+void test_matrix_addition() {
     // Create two matrices with the same dimensions
     Matrix* m1 = createMatrix(2, 2);
     m1->data[0][0] = 1.0;
@@ -57,7 +57,7 @@ void testMatrixAddition() {
     m2->data[1][1] = 8.0;
 
     // Perform matrix addition
-    Matrix* result = addMatrices(m1, m2);
+    Matrix* result = matrix_addition(m1, m2);
 
     // Define the expected result
     Matrix* expected = createMatrix(2, 2);
@@ -80,7 +80,7 @@ void testMatrixAddition() {
     freeMatrix(expected);
 }
 
-void testMatrixSubtraction() {
+void test_matrix_subtraction() {
     // Create two matrices with the same dimensions
     Matrix* m1 = createMatrix(2, 2);
     m1->data[0][0] = 1.0;
@@ -95,7 +95,7 @@ void testMatrixSubtraction() {
     m2->data[1][1] = 8.0;
 
     // Perform matrix addition
-    Matrix* result = subtractMatrices(m1, m2);
+    Matrix* result = matrix_subtraction(m1, m2);
 
     // Define the expected result
     Matrix* expected = createMatrix(2, 2);
@@ -118,7 +118,7 @@ void testMatrixSubtraction() {
     freeMatrix(expected);
 }
 
-void testMatrixElementWiseMultiplication() {
+void test_matrix_multiplication() {
     // Create two matrices with the same dimensions
     Matrix* m1 = createMatrix(2, 2);
     m1->data[0][0] = 1.0;
@@ -133,7 +133,7 @@ void testMatrixElementWiseMultiplication() {
     m2->data[1][1] = 8.0;
 
     // Perform matrix addition
-    Matrix* result = elementWiseMultiply(m1, m2);
+    Matrix* result = matrix_multiplication(m1, m2);
 
     // Define the expected result
     Matrix* expected = createMatrix(2, 2);
@@ -157,7 +157,7 @@ void testMatrixElementWiseMultiplication() {
     freeMatrix(expected);
 }
 
-void testMatrixTranspose() {
+void test_matrix_transpose() {
     // Create a matrix
     Matrix* m = createMatrix(3, 2);
     m->data[0][0] = 1.0;
@@ -168,7 +168,7 @@ void testMatrixTranspose() {
     m->data[2][1] = 6.0;
 
     // Perform matrix transpose
-    Matrix* result = transpose(m);
+    Matrix* result = matrix_transpose(m);
 
     // Define the expected result
     Matrix* expected = createMatrix(2, 3);
@@ -192,7 +192,7 @@ void testMatrixTranspose() {
     freeMatrix(expected);
 }
 
-void testDeterminant() {
+void test_matrix_determinant() {
     // Create a 3x3 matrix
     Matrix* m = createMatrix(3, 3);
     m->data[0][0] = 1;
@@ -206,7 +206,7 @@ void testDeterminant() {
     m->data[2][2] = 9;
 
     // Calculate the determinant
-    float det = determinant(m);
+    float det = matrix_determinant(m);
 
     if(det == 0) {
         printf("Matrix determinant test: PASSED\n");
@@ -217,8 +217,7 @@ void testDeterminant() {
     freeMatrix(m);
 }
 
-
-void testInverse() {
+void test_matrix_inverse() {
         // Create a sample matrix
     double data[2][2] = {
         {2, 3},
@@ -234,7 +233,7 @@ void testInverse() {
     }
 
     // Calculate the inverse of the matrix
-    Matrix* result = inverse(m);
+    Matrix* result = matrix_inverse(m);
 
     Matrix* expected = createMatrix(m->rows, m->columns);
     expected->data[0][0] = 0.8;
@@ -252,5 +251,47 @@ void testInverse() {
     // Free the memory allocated for the matrices
     freeMatrix(m);
     freeMatrix(result);
+    freeMatrix(expected);
+}
+
+void test_matrix_cofactor() {
+    // Create a sample matrix
+    Matrix* m = createMatrix(3, 3);
+    m->data[0][0] = 1;
+    m->data[0][1] = 2;
+    m->data[0][2] = 3;
+    m->data[1][0] = 4;
+    m->data[1][1] = 5;
+    m->data[1][2] = 6;
+    m->data[2][0] = 7;
+    m->data[2][1] = 8;
+    m->data[2][2] = 2;
+
+    // Compute the cofactor matrix
+    Matrix* cofactor = matrix_cofactor(m);
+
+    // Define the expected cofactor matrix
+    Matrix* expected = createMatrix(3, 3);
+    expected->data[0][0] = -38;
+    expected->data[0][1] = 34;
+    expected->data[0][2] = -3;
+    expected->data[1][0] = 20;
+    expected->data[1][1] = -19;
+    expected->data[1][2] = 6;
+    expected->data[2][0] = -3;
+    expected->data[2][1] = 6;
+    expected->data[2][2] = -3;
+
+    // Print the result
+    if (isEqual(cofactor, expected)) {
+        printf("Matrix cofactor test: PASSED\n");
+    } else {
+        printMatrix(cofactor);
+        printf("Matrix cofactor test: FAILED\n");
+    }
+
+    // Cleanup - deallocate matrices
+    freeMatrix(m);
+    freeMatrix(cofactor);
     freeMatrix(expected);
 }

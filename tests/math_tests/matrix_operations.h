@@ -1,14 +1,15 @@
 #ifndef MATRIX_OPERATIONS_H
 #define MATRIX_OPERATIONS_H
 
-#include "../../nmath/nmath.h"
+#include "../../src/nmath/nmath.h"
 
-void testMatrixMultiplication();
-void testMatrixAddition();
-void testMatrixSubtraction();
-void testMatrixElementWiseMultiplication();
-void testMatrixTranspose();
-void testDeterminant();
-void testInverse();
+void test_matrix_dot_product();
+void test_matrix_addition();
+void test_matrix_subtraction();
+void test_matrix_multiplication();
+void test_matrix_transpose();
+void test_matrix_determinant();
+void test_matrix_inverse();
+void test_matrix_cofactor();
 
 #endif
