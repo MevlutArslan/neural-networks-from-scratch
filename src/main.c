@@ -3,11 +3,14 @@
 #include "helper/matrix_linked_list.h"
 #include <string.h>
 #include "../tests/test.h"
+#include "neural_network/neuron.h"
 
 void runProgram();
 
 int main(int argc, char* argv[])
 {
+    srand(time(NULL));
+
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "test") == 0) {
@@ -26,6 +29,7 @@ int main(int argc, char* argv[])
 }
 
 void runProgram() {
+
     MatrixLinkedListNode* matrixList = malloc(sizeof (MatrixLinkedListNode));
     Matrix* matrix = createMatrix(3,3);
     matrix->data[0][0] = 1;

@@ -171,7 +171,7 @@ float matrix_determinant(const Matrix* m) {
 
 Vector* vector_addition(const Vector* v1, const Vector* v2) {
     if(v1->size != v2->size) {
-        prinf("Size's of the vectors need to match to add two vectors!");
+        printf("Size's of the vectors need to match to add two vectors!");
         return NULL;
     }
 
@@ -186,7 +186,7 @@ Vector* vector_addition(const Vector* v1, const Vector* v2) {
 
 Vector* vector_subtraction(const Vector* v1, const Vector* v2){
     if(v1->size != v2->size) {
-        prinf("Size's of the vectors need to match to add two vectors!");
+        printf("Size's of the vectors need to match to add two vectors!");
         return NULL;
     }
 
@@ -201,7 +201,7 @@ Vector* vector_subtraction(const Vector* v1, const Vector* v2){
 
 Vector* vector_multiplication(const Vector* v1, const Vector* v2){
     if(v1->size != v2->size) {
-        prinf("Size's of the vectors need to match to add two vectors!");
+        printf("Size's of the vectors need to match to add two vectors!");
         return NULL;
     }
 
@@ -226,7 +226,7 @@ Vector* vector_scalar_multiplication(const Vector* v1, double scalar) {
 
 double vector_dot_product(const Vector* v1, const Vector* v2) {
     if(v1->size != v2->size) {
-        prinf("Size's of the vectors need to match to add two vectors!");
+        printf("Size's of the vectors need to match to add two vectors!");
         return -1;
     }
 

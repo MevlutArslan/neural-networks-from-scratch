@@ -1,6 +1,8 @@
 #ifndef NVECTOR_H
 #define NVECTOR_H
 
+#include <stdlib.h>
+
 typedef struct {
     double* elements;
     int size;
