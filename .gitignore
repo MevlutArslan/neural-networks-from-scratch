@@ -1,18 +1,8 @@
-build/linkedlist_test.o
-build/main.o
-build/matrix_linked_list.o
-build/matrix_operations.o
-build/matrix_test.o
-build/nmath.o
-build/nmatrix.o
-build/program
-build/test.o
-.vscode/c_cpp_properties.json
-.vscode/settings.json
-.vscode/tasks.json
-src/helper/matrix_linked_list.h.gch
-src/nmath/nmath.h.gch
-src/nmath/nmatrix.h.gch
-tests/helper_tests/linkedlist_test.h.gch
-tests/math_tests/matrix_operations.h.gch
-tests/matrix_tests/matrix_test.h.gch
+# Ignore build artifacts
+build/
+.vscode/
+
+# Ignore compiled files
+*.o
+*.out
+*.gch
