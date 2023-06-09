@@ -1,5 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra
+LDFLAGS = -lm
 
 BUILD_DIR = build
 SRC_DIR = src
@@ -18,7 +19,7 @@ TARGET = $(BUILD_DIR)/program
 all: $(TARGET)
 
 $(TARGET): $(OBJ_FILES)
-	$(CC) $^ -o $@
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
