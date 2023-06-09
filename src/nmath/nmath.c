@@ -1,6 +1,5 @@
 #include "nmath.h"
 
-
 Matrix* matrix_dot_product(const Matrix* m1, const Matrix* m2) {
     // m1.rows has to be equal m2.cols
     if( m1->columns != m2->rows) {
