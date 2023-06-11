@@ -1,4 +1,7 @@
+#include <stdlib.h>
 #include <stdio.h>
+#include "neural_network/layer.h"
+#include "neural_network/nnetwork.h"
 #include "nmath/nmath.h"
 #include "helper/matrix_linked_list.h"
 #include <string.h>
@@ -29,29 +32,36 @@ int main(int argc, char* argv[])
 }
 
 void runProgram() {
+    // Create the input vector
+    Vector* inputs = createVector(4);
+    inputs->elements[0] = 1;
+    inputs->elements[1] = 2;
+    inputs->elements[2] = 3;
+    inputs->elements[3] = 4;
 
-    MatrixLinkedListNode* matrixList = malloc(sizeof (MatrixLinkedListNode));
-    Matrix* matrix = createMatrix(3,3);
-    matrix->data[0][0] = 1;
-    matrix->data[0][1] = 2;
-    matrix->data[0][2] = 3;
-    matrix->data[1][0] = 4;
-    matrix->data[1][1] = 5;
-    matrix->data[1][2] = 6;
-    matrix->data[2][0] = 7;
-    matrix->data[2][1] = 8;
-    matrix->data[2][2] = 9;
+    NetworkConfig config;
+    config.numLayers = 3;
+    config.neuronsPerLayer = malloc(sizeof(int*) * config.numLayers);
+    config.neuronsPerLayer[0] = 3;
+    config.neuronsPerLayer[1] = 4;
+    config.neuronsPerLayer[2] = 2;
 
-    matrixList->next = NULL;
-    matrixList->data = matrix;
+    // Create the neural network
+    NNetwork* network = createNetwork(&config, inputs);
 
-    MatrixLinkedListNode* current = matrixList;
-    while (current != NULL) {
-        // printMatrix(current->data);
-        freeMatrix(current->data);
+    // // Perform forward pass for the network
+    forwardPass(network);
 
-        MatrixLinkedListNode* nextNode = current->next;
-        free(current);
-        current = nextNode;
+    // // Retrieve the output vector from the output layer
+    Vector* output = network->end->outputs;
+
+    // Print the output values
+    printf("Output: ");
+    for (int i = 0; i < output->size; i++) {
+        printf("%f ", output->elements[i]);
     }
-}
+    printf("\n");
+
+    // Clean up memory
+    deleteNNetwork(network);
+}   

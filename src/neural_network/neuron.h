@@ -4,14 +4,15 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "../nmath/nvector.h"
 
 typedef struct {
-    double weight;
+    Vector* weights;
     double bias;
 } Neuron;
 
 
-Neuron* createNeuron();
-void deleteNeuron();
+Neuron* createNeuron(int numberOfInputs);
+void deleteNeuron(Neuron* neuron);
 
 #endif
