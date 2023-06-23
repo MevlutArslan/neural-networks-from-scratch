@@ -1,17 +1,15 @@
 #include "nmatrix.h"
 
 Matrix* createMatrix(const int rows, const int cols) {
-    // create our matrix by allocating it space on the heap.
     Matrix* matrix = malloc(sizeof(Matrix));
     
     matrix->rows = rows;
     matrix->columns = cols;
 
-    // allocate space for the rows
-    matrix->data = malloc(rows * sizeof(double*));
+    matrix->data = malloc(rows * sizeof(Vector*));
 
     for(int i = 0; i < matrix->rows; i++) {
-        matrix->data[i] = malloc(cols * sizeof(double*));
+        matrix->data[i] = createVector(cols);
     }
 
     return matrix;
@@ -20,16 +18,15 @@ Matrix* createMatrix(const int rows, const int cols) {
 void printMatrix(const Matrix* matrix) {
     for (int i = 0; i < matrix->rows; i++) {
         for (int j = 0; j < matrix->columns; j++) {
-            printf("%f ", matrix->data[i][j]);
+            printf("%f ", matrix->data[i]->elements[j]);
         }
         printf("\n");
     }
 }
 
 void freeMatrix(Matrix* matrix){
-
     for(int i = 0; i < matrix->rows; i++){
-        free(matrix->data[i]);
+        deleteVector(matrix->data[i]);
     }
 
     free(matrix->data);
@@ -45,7 +42,7 @@ int isEqual(const Matrix* m1, const Matrix* m2) {
 
     for (int i = 0; i < m1->rows; i++) {
         for (int j = 0; j < m1->columns; j++) {
-            double diff = fabs(m1->data[i][j] - m2->data[i][j]);
+            double diff = fabs(m1->data[i]->elements[j] - m2->data[i]->elements[j]);
             if (diff > epsilon) {
                 return 0; // Element mismatch
             }
@@ -68,21 +65,19 @@ int isSquare(const Matrix* m){
 Matrix* generateMiniMatrix(const Matrix* m, int excludeRow, int excludeColumn) {
     Matrix* miniMatrix = createMatrix(m->rows - 1, m->columns - 1);
     
-    // the row counter for the miniMatrix
     int miniMatrixRow = 0;
     for (int matrixRow = 0; matrixRow < m->rows; matrixRow++) {
         if (matrixRow == excludeRow) {
             continue;
         }
         
-        // the column counter for the miniMatrix
         int miniMatrixColumn = 0;
         for (int matrixColumn = 0; matrixColumn < m->columns; matrixColumn++) {
             if (matrixColumn == excludeColumn) {
                 continue;
             }
             
-            miniMatrix->data[miniMatrixRow][miniMatrixColumn] = m->data[matrixRow][matrixColumn];
+            miniMatrix->data[miniMatrixRow]->elements[miniMatrixColumn] = m->data[matrixRow]->elements[matrixColumn];
             miniMatrixColumn++;
         }
         

@@ -4,16 +4,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "nvector.h"
 
 typedef struct {
     int rows;
     int columns;
-    /**
-     * Indicates if the matrix is an identity matrix to
-     * make operating on the matrix more efficient.
-    */
     int isIdentity;
-    double** data;
+    Vector** data;
 } Matrix;
 
 Matrix* createMatrix(const int rows, const int cols);

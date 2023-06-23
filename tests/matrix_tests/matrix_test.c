@@ -13,10 +13,10 @@ void testMatrixCreation() {
     Matrix* matrix = createMatrix(2, 2);
     
     // Manually set values for testing
-    matrix->data[0][0] = 1.0;
-    matrix->data[0][1] = 2.0;
-    matrix->data[1][0] = 3.0;
-    matrix->data[1][1] = 4.0;
+    matrix->data[0]->elements[0] = 1.0;
+    matrix->data[0]->elements[1] = 2.0;
+    matrix->data[1]->elements[0] = 3.0;
+    matrix->data[1]->elements[1] = 4.0;
     
     // verify the matrix created by create matrix matches the rawMatrix
     int rows = 2;
@@ -24,8 +24,8 @@ void testMatrixCreation() {
     int i, j;
     for (i = 0; i < rows; i++) {
         for (j = 0; j < cols; j++) {
-            if (matrix->data[i][j] != rawMatrix[i][j]) {
-                printf("Failed while testing createMatrix() function: \n Mismatch at index [%d][%d]: Expected %.2f, Actual %.2f\n", i, j, rawMatrix[i][j], matrix->data[i][j]);
+            if (matrix->data[i]->elements[j] != rawMatrix[i][j]) {
+                printf("Failed while testing createMatrix() function: \n Mismatch at index [%d][%d]: Expected %.2f, Actual %.2f\n", i, j, rawMatrix[i][j], matrix->data[i]->elements[j]);
             }
         }
     }
