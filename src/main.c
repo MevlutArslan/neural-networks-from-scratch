@@ -31,7 +31,17 @@ int main(int argc, char* argv[])
     }
 }
 
+    /* 
+    * vector of size 4 goes into a 3 layer neural network with 3, 4 and 2 neurons.
+    * we assign an activation function to each layer (relu in this case)
+    * we create a network with this config
+    * we run a forward pass
+    */
 void runProgram() {
+
+    ActivationFunction reluFunc;
+    reluFunc.activation = relu;
+
     // Create the input vector
     Vector* inputs = createVector(4);
     inputs->elements[0] = 1;
@@ -46,13 +56,23 @@ void runProgram() {
     config.neuronsPerLayer[1] = 4;
     config.neuronsPerLayer[2] = 2;
 
-    // Create the neural network
+    config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
+
+    for (int i = 0; i < config.numLayers - 1; i++) {
+        config.activationFunctions[i].activation = malloc(sizeof(ActivationFunction));
+        config.activationFunctions[i].activation = reluFunc.activation;
+    }
+
+    // activation function for output layer
+    config.outputActivationFunction = malloc(sizeof(OutputActivationFunction));
+    config.outputActivationFunction->activation = softmax;
+
     NNetwork* network = createNetwork(&config, inputs);
 
-    // // Perform forward pass for the network
+    // Perform forward pass for the network
     forwardPass(network);
 
-    // // Retrieve the output vector from the output layer
+    // Retrieve the output vector from the output layer
     Vector* output = network->end->outputs;
 
     // Print the output values

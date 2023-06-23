@@ -3,6 +3,7 @@
 
 #include "../nmath/nvector.h"
 #include "neuron.h"
+#include "activation_functions/activation_function.h"
 
 typedef struct Layer{
     // A layer is a group of neurons
@@ -12,6 +13,8 @@ typedef struct Layer{
     Vector* inputs;
     Neuron** neurons;
     Vector* outputs;
+    ActivationFunction* activationFunction;
+    OutputActivationFunction* outputActivationFunction;
     struct Layer* next;
 } Layer;
 

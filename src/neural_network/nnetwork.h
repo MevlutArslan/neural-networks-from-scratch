@@ -12,7 +12,8 @@ typedef struct {
 typedef struct {
     int numLayers;               // Number of layers in the network
     int* neuronsPerLayer;        // Array of number of neurons per layer
-    // ActivationFunction* activationFunctions;  // Array of activation functions for each layer
+    ActivationFunction* activationFunctions;  // Array of activation functions for each layer
+    OutputActivationFunction* outputActivationFunction;
     double learningRate;         // Learning rate for training the network
 } NetworkConfig;
 
