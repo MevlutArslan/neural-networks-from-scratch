@@ -17,9 +17,9 @@ typedef struct {
     double learningRate;         // Learning rate for training the network
 } NetworkConfig;
 
-NNetwork* createNetwork(const NetworkConfig* config, Vector* inputs);
+NNetwork* createNetwork(const NetworkConfig* config, Vector* input);
 void deleteNNetwork(NNetwork* network);
 
-void forwardPass(NNetwork* network);
+void forwardPass(NNetwork* network, Matrix* inputMatrix);
 
 #endif

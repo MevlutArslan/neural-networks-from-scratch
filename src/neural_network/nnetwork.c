@@ -21,12 +21,12 @@
     we loop config.number of layers times and create each layer.
     we mark the first layer to be network's start layer and the last layer to be the end layer
 */
-NNetwork* createNetwork(const NetworkConfig* config, Vector* inputs) {
+NNetwork* createNetwork(const NetworkConfig* config, Vector* input) {
     NNetwork* network = malloc(sizeof(NNetwork));
 
     Layer* prevLayer = NULL;
     for (int i = 0; i < config->numLayers; i++) {
-        Layer* layer = createLayer(config->neuronsPerLayer[i], prevLayer != NULL ? prevLayer->outputs : inputs);
+        Layer* layer = createLayer(config->neuronsPerLayer[i], prevLayer != NULL ? prevLayer->outputs : input);
         layer->activationFunction = &config->activationFunctions[i];    
 
         if (prevLayer != NULL) {
@@ -66,25 +66,34 @@ void deleteNNetwork(NNetwork* network){
         a. Apply the regular activation function (ReLU or sigmoid) to each element of the output vector.
     5. Move to the next layer.
 */
-void forwardPass(NNetwork* network) {
+void forwardPass(NNetwork* network, Matrix* input) {
     Layer* layer = network->start;
 
-    while(layer != NULL) {
+    for(int i = 0; i < input->rows; i++) {
+        while(layer != NULL) {
 
-        for(int i = 0; i < layer->numNeurons; i++) {
-            Neuron* neuron = layer->neurons[i];
-            
-            layer->outputs->elements[i] = vector_dot_product(layer->inputs, neuron->weights) + neuron->bias;
-        }
-
-        if(layer->outputActivationFunction != NULL) {
-            layer->outputActivationFunction->activation(layer->outputs);
-        }else {
-            for (int i = 0; i < layer->numNeurons; i++) {
-                layer->outputs->elements[i] = layer->activationFunction->activation(layer->outputs->elements[i]);
+            for(int j = 0; j < layer->numNeurons; j++) {
+                Neuron* neuron = layer->neurons[j];
+                
+                layer->outputs->elements[j] = vector_dot_product(layer->inputs, neuron->weights) + neuron->bias;
             }
+
+            if(layer->outputActivationFunction != NULL) {
+                layer->outputActivationFunction->activation(layer->outputs);
+            }else {
+                for (int j = 0; j < layer->numNeurons; j++) {
+                    layer->outputs->elements[j] = layer->activationFunction->activation(layer->outputs->elements[j]);
+                }
+            }
+            
+            layer = layer->next;
         }
 
-        layer = layer->next;
+        printf("Output for Row %d: ", i);
+        for (int i = 0; i < network->end->numNeurons; i++) {
+            printf("%f", network->end->outputs->elements[i]);
+        }
+        printf("\n");
     }
+    
 }

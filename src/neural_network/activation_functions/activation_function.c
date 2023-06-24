@@ -9,6 +9,12 @@ double relu(double input) {
     return 0;
 }
 
+void applyReLU(Vector* vector) {
+    for (int i = 0; i < vector->size; i++) {
+        vector->elements[i] = relu(vector->elements[i]);
+    }
+}
+
 double sigmoid(double input) {
     return 1 / (1 + exp(-1 * input));
 }

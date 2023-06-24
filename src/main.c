@@ -7,6 +7,7 @@
 #include <string.h>
 #include "../tests/test.h"
 #include "neural_network/neuron.h"
+#include "helper/data_processing/data_processing.h"
 
 void runProgram();
 
@@ -39,22 +40,20 @@ int main(int argc, char* argv[])
     */
 void runProgram() {
 
+    Data* data = loadCSV("/Users/mevlutarslan/Downloads/datasets/Real estate.csv", 0.9f);
+
     ActivationFunction reluFunc;
     reluFunc.activation = relu;
 
     // Create the input vector
-    Vector* inputs = createVector(4);
-    inputs->elements[0] = 1;
-    inputs->elements[1] = 2;
-    inputs->elements[2] = 3;
-    inputs->elements[3] = 4;
+    Matrix* input = data->trainingData;
 
     NetworkConfig config;
     config.numLayers = 3;
     config.neuronsPerLayer = malloc(sizeof(int*) * config.numLayers);
     config.neuronsPerLayer[0] = 3;
     config.neuronsPerLayer[1] = 4;
-    config.neuronsPerLayer[2] = 2;
+    config.neuronsPerLayer[2] = 1;
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
 
@@ -65,23 +64,13 @@ void runProgram() {
 
     // activation function for output layer
     config.outputActivationFunction = malloc(sizeof(OutputActivationFunction));
-    config.outputActivationFunction->activation = softmax;
+    config.outputActivationFunction->activation = applyReLU;
 
-    NNetwork* network = createNetwork(&config, inputs);
+    NNetwork* network = createNetwork(&config, input->data[0]);
 
     // Perform forward pass for the network
-    forwardPass(network);
-
-    // Retrieve the output vector from the output layer
-    Vector* output = network->end->outputs;
-
-    // Print the output values
-    printf("Output: ");
-    for (int i = 0; i < output->size; i++) {
-        printf("%f ", output->elements[i]);
-    }
-    printf("\n");
-
+    forwardPass(network, input);
+    
     // Clean up memory
     deleteNNetwork(network);
 }   
