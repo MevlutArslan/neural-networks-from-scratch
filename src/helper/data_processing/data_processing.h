@@ -9,12 +9,16 @@ typedef struct {
     char** columnNames;
     int numberOfRows;
     int numberOfColumns;
-    
-    Matrix* matrix;
+
+    Matrix* evaluationData;
+    Matrix* trainingData;
+    Vector* yHats;
 } Data;
 
-// I haven't decided in what format to load
-Data* loadCSV(char* fileLocation);
+Data* loadCSV(char* fileLocation, double separationFactor);
+
+void removeResultsFromEvaluationSet(Matrix* evalMatrix, int columnIndex);
+Vector* extractYHats(Matrix* trainingMatrix, int columnIndex);
 
 int getRowCount(char* fileLocation);
 int getColumnCount(char* fileLocation);

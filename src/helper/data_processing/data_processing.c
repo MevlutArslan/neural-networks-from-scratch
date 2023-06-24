@@ -7,7 +7,7 @@
 #define MAX_TOKENS 256
 #define DELIMITER ","
 
-Data* loadCSV(char* fileLocation) {
+Data* loadCSV(char* fileLocation, double separationFactor) {
     FILE* file = fopen(fileLocation, "r");
     if (file == NULL) {
         printf("Failed to open file: %s\n", fileLocation);
@@ -23,8 +23,9 @@ Data* loadCSV(char* fileLocation) {
 
     data->numberOfColumns = getColumnCount(fileLocation) - 1;
     data->numberOfRows = getRowCount(fileLocation) - 1;
-    data->matrix = createMatrix(data->numberOfRows, data->numberOfColumns);
-    if (data->matrix == NULL) {
+    
+    Matrix* matrix = createMatrix(data->numberOfRows, data->numberOfColumns);
+    if (matrix == NULL) {
         printf("Failed to create matrix\n");
         fclose(file);
         free(data);
@@ -33,7 +34,6 @@ Data* loadCSV(char* fileLocation) {
 
     char currentLine[MAX_LINE_LENGTH];
     int rowIndex = 0;
-    int tokenIndex = 0;
 
     // while there are lines to read
     while (fgets(currentLine, sizeof(currentLine), file) != NULL) {
@@ -61,7 +61,7 @@ Data* loadCSV(char* fileLocation) {
             double value = atof(token);
 
             // want to skip first col or first row cause they are useless
-            data->matrix->data[rowIndex - 1]->elements[colIndex - 1] = value;
+            matrix->data[rowIndex - 1]->elements[colIndex - 1] = value;
 
             colIndex++;
         }
@@ -70,7 +70,47 @@ Data* loadCSV(char* fileLocation) {
     }
 
     fclose(file);
+
+    data->trainingData = createMatrix(data->numberOfRows * separationFactor, data->numberOfColumns);
+
+    for(int i = 0; i < data->trainingData->rows; i++) {
+        for(int j = 0; j < data->numberOfColumns; j++) {
+            data->trainingData->data[i]->elements[j] = matrix->data[i]->elements[j];
+        }
+    }
+
+    data->yHats = extractYHats(data->trainingData, data->numberOfColumns - 1);
+    
+    data->evaluationData = createMatrix(data->numberOfRows - data->trainingData->rows, data->numberOfColumns);
+
+    for(int i = 0; i < data->trainingData->rows; i++) {
+        for(int j = 0; j < data->numberOfColumns; j++) {
+            if(data->trainingData->rows + i < matrix->rows) {
+                data->evaluationData->data[i]->elements[j] = matrix->data[data->trainingData->rows + i]->elements[j];
+            }
+        }
+    }
+
+    freeMatrix(matrix);
+
     return data;
+}
+
+void removeResultsFromEvaluationSet(Matrix* evalMatrix, int columnIndex) {
+    for(int i = 0; i < evalMatrix->rows; i++) {
+        evalMatrix->data[i]->elements[columnIndex] = 0.0f;
+    }
+}
+
+Vector* extractYHats(Matrix* trainingMatrix, int columnIndex) {
+    Vector* yHats = createVector(trainingMatrix->rows);
+
+    for(int i = 0; i < yHats->size; i++) {
+        yHats->elements[i] = trainingMatrix->data[i]->elements[columnIndex];
+        trainingMatrix->data[i]->elements[columnIndex] = 0.0f;
+    }
+
+    return yHats;
 }
 
 int getColumnCount(char* fileLocation) {
