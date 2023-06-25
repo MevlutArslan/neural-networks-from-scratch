@@ -3,10 +3,13 @@
 
 #include "layer.h"
 #include "../nmath/nmath.h"
+#include "../helper/data_processing/data_processing.h"
 
 typedef struct {
+    Data* data;
     Layer* start;
     Layer* end;
+    double (*loss_function)(Vector*, Vector*);
 } NNetwork;
 
 typedef struct {
@@ -15,11 +18,12 @@ typedef struct {
     ActivationFunction* activationFunctions;  // Array of activation functions for each layer
     OutputActivationFunction* outputActivationFunction;
     double learningRate;         // Learning rate for training the network
+    double (*loss_function)(Vector*, Vector*);
 } NetworkConfig;
 
 NNetwork* createNetwork(const NetworkConfig* config, Vector* input);
 void deleteNNetwork(NNetwork* network);
 
-void forwardPass(NNetwork* network, Matrix* inputMatrix);
+void forwardPass(NNetwork* network);
 
 #endif

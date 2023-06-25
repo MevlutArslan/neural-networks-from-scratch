@@ -46,6 +46,8 @@ NNetwork* createNetwork(const NetworkConfig* config, Vector* input) {
         prevLayer = layer;
     }
 
+    network->loss_function = config->loss_function;
+
     return network;
 }
 
@@ -66,10 +68,12 @@ void deleteNNetwork(NNetwork* network){
         a. Apply the regular activation function (ReLU or sigmoid) to each element of the output vector.
     5. Move to the next layer.
 */
-void forwardPass(NNetwork* network, Matrix* input) {
+void forwardPass(NNetwork* network) {
     Layer* layer = network->start;
 
-    for(int i = 0; i < input->rows; i++) {
+    Vector* outputs = createVector(network->data->trainingData->rows);
+
+    for(int i = 0; i < network->data->trainingData->rows; i++) {
         while(layer != NULL) {
 
             for(int j = 0; j < layer->numNeurons; j++) {
@@ -89,11 +93,11 @@ void forwardPass(NNetwork* network, Matrix* input) {
             layer = layer->next;
         }
 
-        printf("Output for Row %d: ", i);
         for (int i = 0; i < network->end->numNeurons; i++) {
-            printf("%f", network->end->outputs->elements[i]);
+            outputs->elements[i] = network->end->outputs->elements[i];
         }
-        printf("\n");
     }
-    
+    network->data->outputs = outputs;
+
+    printf("NETWORK LOSS: %f \n", network->loss_function(network->data->outputs, network->data->yHats));
 }

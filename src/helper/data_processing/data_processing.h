@@ -13,6 +13,7 @@ typedef struct {
     Matrix* evaluationData;
     Matrix* trainingData;
     Vector* yHats;
+    Vector* outputs;
 } Data;
 
 Data* loadCSV(char* fileLocation, double separationFactor);
