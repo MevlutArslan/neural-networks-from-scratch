@@ -15,6 +15,7 @@ typedef struct Layer{
     Vector* outputs;
     ActivationFunction* activationFunction;
     OutputActivationFunction* outputActivationFunction;
+    struct Layer* prev; // for backward propogation
     struct Layer* next;
 } Layer;
 
