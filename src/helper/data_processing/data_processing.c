@@ -79,7 +79,7 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
         }
     }
 
-    data->yHats = extractYHats(data->trainingData, data->numberOfColumns - 1);
+    data->yValues = extractYValues(data->trainingData, data->numberOfColumns - 1);
     
     data->evaluationData = createMatrix(data->numberOfRows - data->trainingData->rows, data->numberOfColumns);
 
@@ -102,15 +102,15 @@ void removeResultsFromEvaluationSet(Matrix* evalMatrix, int columnIndex) {
     }
 }
 
-Vector* extractYHats(Matrix* trainingMatrix, int columnIndex) {
-    Vector* yHats = createVector(trainingMatrix->rows);
+Vector* extractYValues(Matrix* trainingMatrix, int columnIndex) {
+    Vector* yValues = createVector(trainingMatrix->rows);
 
-    for(int i = 0; i < yHats->size; i++) {
-        yHats->elements[i] = trainingMatrix->data[i]->elements[columnIndex];
+    for(int i = 0; i < yValues->size; i++) {
+        yValues->elements[i] = trainingMatrix->data[i]->elements[columnIndex];
         trainingMatrix->data[i]->elements[columnIndex] = 0.0f;
     }
 
-    return yHats;
+    return yValues;
 }
 
 int getColumnCount(char* fileLocation) {

@@ -12,14 +12,14 @@ typedef struct {
 
     Matrix* evaluationData;
     Matrix* trainingData;
-    Vector* yHats;
+    Vector* yValues;
     Vector* outputs;
 } Data;
 
 Data* loadCSV(char* fileLocation, double separationFactor);
 
 void removeResultsFromEvaluationSet(Matrix* evalMatrix, int columnIndex);
-Vector* extractYHats(Matrix* trainingMatrix, int columnIndex);
+Vector* extractYValues(Matrix* trainingMatrix, int columnIndex);
 
 int getRowCount(char* fileLocation);
 int getColumnCount(char* fileLocation);
