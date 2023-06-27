@@ -8,6 +8,7 @@
 #include "../tests/test.h"
 #include "neural_network/neuron.h"
 #include "helper/data_processing/data_processing.h"
+#include "neural_network/loss_functions/loss_functions.h"
 
 void runProgram();
 
@@ -33,13 +34,12 @@ int main(int argc, char* argv[])
 }
 
     /* 
-    * vector of size 4 goes into a 3 layer neural network with 3, 4 and 2 neurons.
+    * input goes into a 3 layer neural network with 3, 4 and 2 neurons.
     * we assign an activation function to each layer (relu in this case)
     * we create a network with this config
     * we run a forward pass
     */
 void runProgram() {
-
     Data* data = loadCSV("/Users/mevlutarslan/Downloads/datasets/Real estate.csv", 0.9f);
 
     ActivationFunction reluFunc;
@@ -66,10 +66,20 @@ void runProgram() {
     config.outputActivationFunction = malloc(sizeof(OutputActivationFunction));
     config.outputActivationFunction->activation = applyReLU;
 
-    NNetwork* network = createNetwork(&config, input->data[0]);
+    config.loss_function = meanSquaredError;
 
+    NNetwork* network = createNetwork(&config, input->data[0]);
+    network->data = data;
+
+    double learningRate = 0.001;
     // Perform forward pass for the network
-    forwardPass(network, input);
+    int steps = 0;
+    while(steps < 10000) {
+        forwardPass(network);
+        backpropagation(network);
+        updateWeightsAndBiases(network, learningRate);
+        steps++;
+    }
     
     // Clean up memory
     deleteNNetwork(network);

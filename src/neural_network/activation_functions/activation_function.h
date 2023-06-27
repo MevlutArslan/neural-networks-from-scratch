@@ -16,6 +16,7 @@ typedef struct {
 
 
 double relu(double input);
+double relu_derivative(double input);
 void applyReLU(Vector* vector);
 double sigmoid(double input);
 void softmax(Vector* input);

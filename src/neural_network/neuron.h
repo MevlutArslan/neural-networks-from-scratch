@@ -9,10 +9,13 @@
 typedef struct {
     Vector* weights;
     double bias;
+    Vector* gradient;
 } Neuron;
 
 
 Neuron* createNeuron(int numberOfInputs);
+void applyGradientDescent(Neuron* neuron, double learningRate);
+
 void deleteNeuron(Neuron* neuron);
 
 #endif

@@ -6,9 +6,6 @@
 #include "activation_functions/activation_function.h"
 
 typedef struct Layer{
-    // A layer is a group of neurons
-    // each neural takes equal amount of inputs
-    // So I suppose we need inputs but to create inputs we will need the shape of the vector
     int numNeurons;
     Vector* inputs;
     Neuron** neurons;

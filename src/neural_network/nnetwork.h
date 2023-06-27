@@ -25,5 +25,11 @@ NNetwork* createNetwork(const NetworkConfig* config, Vector* input);
 void deleteNNetwork(NNetwork* network);
 
 void forwardPass(NNetwork* network);
+void backpropagation(NNetwork* network);
+void updateWeightsAndBiases(NNetwork* network, double learningRate);
+
+
+void calculateOutputLayerGradient(Layer* outputLayer, Vector* target);
+void calculateHiddenLayerGradient(Layer* layer);
 
 #endif
