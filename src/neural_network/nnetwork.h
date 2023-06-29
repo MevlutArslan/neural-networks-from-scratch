@@ -4,12 +4,14 @@
 #include "layer.h"
 #include "../nmath/nmath.h"
 #include "../helper/data_processing/data_processing.h"
+#include "loss_functions/loss_functions.h"
 
 typedef struct {
     Data* data;
     Layer* start;
     Layer* end;
     double (*loss_function)(Vector*, Vector*);
+    Vector* loss;
 } NNetwork;
 
 typedef struct {
@@ -19,6 +21,7 @@ typedef struct {
     OutputActivationFunction* outputActivationFunction;
     double learningRate;         // Learning rate for training the network
     double (*loss_function)(Vector*, Vector*);
+    Data* data;
 } NetworkConfig;
 
 NNetwork* createNetwork(const NetworkConfig* config, Vector* input);
@@ -26,10 +29,10 @@ void deleteNNetwork(NNetwork* network);
 
 void forwardPass(NNetwork* network);
 void backpropagation(NNetwork* network);
-void updateWeightsAndBiases(NNetwork* network, double learningRate);
+// void updateWeightsAndBiases(NNetwork* network, double learningRate);
 
 
-void calculateOutputLayerGradient(Layer* outputLayer, Vector* target);
-void calculateHiddenLayerGradient(Layer* layer);
+// void calculateOutputLayerGradient(Layer* outputLayer, Vector* target);
+// void calculateHiddenLayerGradient(Layer* layer);
 
 #endif
