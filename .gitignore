@@ -6,3 +6,4 @@ build/
 *.o
 *.out
 *.gch
+file_structure.txt
