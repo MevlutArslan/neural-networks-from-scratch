@@ -79,7 +79,7 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
         }
     }
 
-    data->yValues = extractYValues(data->trainingData, data->numberOfColumns - 1);
+    data->yValues = extractYValues(matrix, data->numberOfColumns - 1);
     
     data->evaluationData = createMatrix(data->numberOfRows - data->trainingData->rows, data->numberOfColumns);
 
@@ -92,6 +92,7 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
     }
 
     freeMatrix(matrix);
+    removeResultsFromEvaluationSet(data->evaluationData, data->numberOfColumns - 1);
 
     return data;
 }
@@ -102,12 +103,12 @@ void removeResultsFromEvaluationSet(Matrix* evalMatrix, int columnIndex) {
     }
 }
 
-Vector* extractYValues(Matrix* trainingMatrix, int columnIndex) {
-    Vector* yValues = createVector(trainingMatrix->rows);
+Vector* extractYValues(Matrix* matrix, int columnIndex) {
+    Vector* yValues = createVector(matrix->rows);
 
     for(int i = 0; i < yValues->size; i++) {
-        yValues->elements[i] = trainingMatrix->data[i]->elements[columnIndex];
-        trainingMatrix->data[i]->elements[columnIndex] = 0.0f;
+        yValues->elements[i] = matrix->data[i]->elements[columnIndex];
+        matrix->data[i]->elements[columnIndex] = 0.0f;
     }
 
     return yValues;

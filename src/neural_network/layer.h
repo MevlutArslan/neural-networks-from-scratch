@@ -1,8 +1,7 @@
 #ifndef LAYER_H
 #define LAYER_H
 
-#include "../nmath/nvector.h"
-#include "activation_functions/activation_function.h"
+#include "activation_function.h"
 #include "../nmath/nmath.h"
 
 typedef struct Layer{
@@ -13,17 +12,14 @@ typedef struct Layer{
     Vector* output;
 
     ActivationFunction* activationFunction;
-    OutputActivationFunction* outputActivationFunction;
     struct Layer* prev; // for backward propogation
     struct Layer* next;
 } Layer;
 
 typedef struct {
     int neuronCount;
-    Vector* input;
-
+    int inputSize;
     ActivationFunction* activationFunction;
-    OutputActivationFunction* outputActivationFunction;
 } LayerConfig;
 
 Layer* createLayer(LayerConfig* config);

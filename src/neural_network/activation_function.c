@@ -1,17 +1,10 @@
 #include "activation_function.h"
 #include <stdio.h>
-
-double relu(double input) {
-    if(input > 0) {
-        return input;
-    }
-
-    return 0;
-}
-
-void applyReLU(Vector* vector) {
+#include <math.h>
+// in place modification
+void relu(Vector* vector) {
     for (int i = 0; i < vector->size; i++) {
-        vector->elements[i] = relu(vector->elements[i]);
+        vector->elements[i] = fmax(0, vector->elements[i]);
     }
 }
 

@@ -3,13 +3,20 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
 typedef struct {
     double* elements;
     int size;
 } Vector;
 
 Vector* createVector(int size);
-void deleteVector(Vector* vector);
+void freeVector(Vector* vector);
 
-void printVector(Vector* vector);
+void initializeVectorWithRandomValuesInRange(Vector* vector, double min, double max);
+void fillVector(Vector* vector, double value);
+
+void printVector(const Vector* vector);
+Vector* copyVector(const Vector* vector);
+
 #endif

@@ -1,7 +1,7 @@
 #include "nmath.h"
 
 Matrix* matrix_dot_product(const Matrix* m1, const Matrix* m2) {
-    // m1.rows has to be equal m2.cols
+    // m1.cols has to be equal m2.rows
     if( m1->columns != m2->rows) {
         printf("Cannot Multiply M1 and M2. M1's column count \n does not match M2's row count! \n");
         return NULL;
@@ -175,7 +175,7 @@ Vector* vector_addition(const Vector* v1, const Vector* v2) {
     }
 
     Vector* v = createVector(v1->size);
-
+    v->size = v1->size;
     for(int i = 0; i < v->size; i++) {
         v->elements[i] = v1->elements[i] + v2->elements[i];
     }
@@ -225,7 +225,7 @@ Vector* vector_scalar_multiplication(const Vector* v1, double scalar) {
 
 double vector_dot_product(const Vector* v1, const Vector* v2) {
     if(v1->size != v2->size) {
-        printf("Size's of the vectors need to match to add two vectors!");
+        printf("Size's of the vectors need to match to calculate dot product! \n");
         return -1;
     }
 
@@ -236,4 +236,30 @@ double vector_dot_product(const Vector* v1, const Vector* v2) {
     }
 
     return dot_product;
+}
+
+Matrix* reshapeVectorToMatrix(const Vector* vector) {
+    Matrix* matrix = createMatrix(vector->size, 1);
+    
+    for (int i = 0; i < vector->size; i++) {
+        matrix->data[i]->elements[0] = vector->elements[i];
+    }
+    
+    return matrix;
+}
+
+
+Vector* matrixToVector(Matrix* matrix) {
+    Vector* vector = createVector(matrix->rows * matrix->columns);
+   
+    int vectorIndex = 0;
+
+    for (int row = 0; row < matrix->rows; row++) {
+        for (int col = 0; col < matrix->columns; col++) {
+            vector->elements[vectorIndex] = matrix->data[row]->elements[col];
+            vectorIndex++;
+        }
+    }
+
+    return vector;
 }

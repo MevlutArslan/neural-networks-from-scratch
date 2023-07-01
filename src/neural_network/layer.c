@@ -4,13 +4,16 @@ Layer* createLayer(LayerConfig* config) {
     Layer* layer = malloc(sizeof(Layer));
 
     layer->neuronCount = config->neuronCount;
-    layer->input = reshapeVectorToMatrix(config->input);
-    layer->weights = createMatrix(config->input->size, config->neuronCount);
-    initializeMatrixWithRandomValuesInRange(layer->weights, -1, 1);
+
+    layer->weights = createMatrix(config->inputSize, config->neuronCount);
+    initializeMatrixWithRandomValuesInRange(layer->weights, 0, 1);
+
     layer->biases = createVector(config->neuronCount);
-    fillVector(layer->biases, 1.0);
+    initializeVectorWithRandomValuesInRange(layer->biases, 0, 1.0);
 
     layer->output = createVector(config->neuronCount);
+
+    layer->activationFunction = config->activationFunction;
     
     return layer;
 }
@@ -37,7 +40,6 @@ void deleteLayer(Layer* layer) {
     freeVector(layer->output);
 
     free(layer->activationFunction);
-    free(layer->outputActivationFunction);
     
     free(layer);
 }

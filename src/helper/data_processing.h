@@ -2,18 +2,18 @@
 #define DATA_PROCESSING_H
 
 #include <csv.h>
-#include "../../nmath/nmath.h"
+#include "../nmath/nmath.h"
 
 typedef struct {
-    // maybe rename this. i just want to keep track of the names of columns (feature names or something like that)
     char** columnNames;
     int numberOfRows;
     int numberOfColumns;
 
     Matrix* evaluationData;
     Matrix* trainingData;
+    
     Vector* yValues;
-    Vector* outputs;
+    Matrix* trainingOutputs;
 } Data;
 
 Data* loadCSV(char* fileLocation, double separationFactor);

@@ -1,14 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "nmath/nmath.h"
 #include "neural_network/layer.h"
 #include "neural_network/nnetwork.h"
-#include "nmath/nmath.h"
-#include "helper/matrix_linked_list.h"
 #include <string.h>
 #include "../tests/test.h"
-#include "neural_network/neuron.h"
-#include "helper/data_processing/data_processing.h"
-#include "neural_network/loss_functions/loss_functions.h"
+#include "helper/data_processing.h"
+#include <time.h>
 
 void runProgram();
 
@@ -41,46 +39,46 @@ int main(int argc, char* argv[])
     */
 void runProgram() {
     Data* data = loadCSV("/Users/mevlutarslan/Downloads/datasets/Real estate.csv", 0.9f);
-
     ActivationFunction reluFunc;
     reluFunc.activation = relu;
+    // reluFunc.derivative = relu_derivative;
 
     // Create the input vector
     Matrix* input = data->trainingData;
 
     NetworkConfig config;
     config.numLayers = 3;
-    config.neuronsPerLayer = malloc(sizeof(int*) * config.numLayers);
+    config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);
     config.neuronsPerLayer[0] = 3;
     config.neuronsPerLayer[1] = 4;
     config.neuronsPerLayer[2] = 1;
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
 
-    for (int i = 0; i < config.numLayers - 1; i++) {
-        config.activationFunctions[i].activation = malloc(sizeof(ActivationFunction));
+    for (int i = 0; i < config.numLayers; i++) {
         config.activationFunctions[i].activation = reluFunc.activation;
     }
 
-    // activation function for output layer
-    config.outputActivationFunction = malloc(sizeof(OutputActivationFunction));
-    config.outputActivationFunction->activation = applyReLU;
+    // config.outputActivationFunction->derivative = relu
 
-    config.loss_function = meanSquaredError;
+    // config.loss_function = calculateAverageLoss;
 
-    NNetwork* network = createNetwork(&config, input->data[0]);
-    network->data = data;
+    config.data = data;
 
-    double learningRate = 0.001;
+    NNetwork* network = createNetwork(&config);
+    
+    double learningRate = 0.00001;
     // Perform forward pass for the network
     int steps = 0;
-    while(steps < 10000) {
+    while(steps < 10) {
         forwardPass(network);
-        backpropagation(network);
-        updateWeightsAndBiases(network, learningRate);
+        // backpropagation(network);
+        // updateWeightsAndBiases(network, learningRate);
+
+        // printf("LOSS: %f\n", network->totalLoss);
         steps++;
     }
-    
+   
     // Clean up memory
     deleteNNetwork(network);
 }   

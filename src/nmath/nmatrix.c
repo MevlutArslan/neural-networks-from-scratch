@@ -1,5 +1,6 @@
 #include "nmatrix.h"
 
+
 Matrix* createMatrix(const int rows, const int cols) {
     Matrix* matrix = malloc(sizeof(Matrix));
     
@@ -15,23 +16,44 @@ Matrix* createMatrix(const int rows, const int cols) {
     return matrix;
 }
 
-void printMatrix(const Matrix* matrix) {
-    for (int i = 0; i < matrix->rows; i++) {
-        for (int j = 0; j < matrix->columns; j++) {
-            printf("%f ", matrix->data[i]->elements[j]);
+void initializeMatrixWithRandomValuesInRange(Matrix* matrix, double min, double max) {
+    for(int row = 0; row < matrix->rows; row++) {
+        for(int col = 0; col < matrix->columns; col++) {
+            matrix->data[row]->elements[col] = ((double)rand() / (double)RAND_MAX) * (max - min) + min;
         }
-        printf("\n");
-    }
+    }    
+}
+
+void fillMatrix(Matrix* matrix, double value) {
+    double* dataPtr = matrix->data[0]->elements;  // Pointer to the first element in the matrix
+
+    size_t dataSize = matrix->rows * matrix->columns * sizeof(double);  // Calculate the size of the data in bytes
+
+    memset(dataPtr, value, dataSize);
 }
 
 void freeMatrix(Matrix* matrix){
     for(int i = 0; i < matrix->rows; i++){
-        deleteVector(matrix->data[i]);
+        freeVector(matrix->data[i]);
     }
 
     free(matrix->data);
     free(matrix);
 }
+
+void printMatrix(const Matrix* matrix) {
+    printf("[");
+    for (int i = 0; i < matrix->rows; i++) {
+        printf("[ ");
+        for (int j = 0; j < matrix->columns; j++) {
+            printf("%f ", matrix->data[i]->elements[j]);
+        }
+        printf("]\n");
+    }
+    printf("]\n");
+
+}
+
 
 int isEqual(const Matrix* m1, const Matrix* m2) {
     double epsilon = 1e-6; // Adjust the epsilon value as needed
@@ -51,7 +73,6 @@ int isEqual(const Matrix* m1, const Matrix* m2) {
 
     return 1; // Matrices are equal
 }
-
 
 
 int isSquare(const Matrix* m){

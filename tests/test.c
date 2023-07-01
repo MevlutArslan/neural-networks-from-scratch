@@ -1,11 +1,9 @@
 #include "math_tests/matrix_operations.h"
-#include "helper_tests/linkedlist_test.h"
 #include "matrix_tests/matrix_test.h"
 #include "neural_network_tests/activation_function_test.h"
 #include "test.h"
 
 void run_tests() {
-    testAddToTheEnd();
     testMatrixCreation();
     test_matrix_dot_product();
     test_matrix_addition();
@@ -18,5 +16,4 @@ void run_tests() {
     test_activation_function_relu();
     test_activation_function_sigmoid();
     test_activation_function_softmax();
-
 }
