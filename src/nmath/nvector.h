@@ -19,4 +19,6 @@ void fillVector(Vector* vector, double value);
 void printVector(const Vector* vector);
 Vector* copyVector(const Vector* vector);
 
+Vector* spliceVector(const Vector* vector, int beginIndex, int endIndex);
+
 #endif

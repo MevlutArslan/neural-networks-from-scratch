@@ -45,3 +45,14 @@ Vector* copyVector(const Vector* vector) {
     
     return copy;
 }
+
+Vector* spliceVector(const Vector* vector, int beginIndex, int endIndex) {
+    int newSize = endIndex - beginIndex ;
+    Vector* newVector = createVector(newSize);
+
+    for (int i = beginIndex, j = 0; i <= endIndex; i++, j++) {
+        newVector->elements[j] = vector->elements[i];
+    }
+
+    return newVector;
+}

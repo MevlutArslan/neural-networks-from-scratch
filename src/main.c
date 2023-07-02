@@ -59,23 +59,19 @@ void runProgram() {
         config.activationFunctions[i].activation = reluFunc.activation;
     }
 
-    // config.outputActivationFunction->derivative = relu
-
-    // config.loss_function = calculateAverageLoss;
+    config.loss_function = meanSquaredError;
 
     config.data = data;
 
     NNetwork* network = createNetwork(&config);
     
     double learningRate = 0.00001;
-    // Perform forward pass for the network
     int steps = 0;
     while(steps < 10) {
         forwardPass(network);
-        // backpropagation(network);
-        // updateWeightsAndBiases(network, learningRate);
-
-        // printf("LOSS: %f\n", network->totalLoss);
+        
+        printf("---------------------\n");
+        printf("LOSS : %f \n", network->loss);
         steps++;
     }
    

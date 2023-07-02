@@ -14,9 +14,8 @@ typedef struct {
     int layerCount;
     Layer** layers;
 
-    double (*loss_function)(Vector*, Vector*);
-    Vector* loss;
-    double totalLoss;
+    double (*loss_function)(Matrix*, Vector*);
+    double loss;
 } NNetwork;
 
 typedef struct {
@@ -24,7 +23,7 @@ typedef struct {
     int* neuronsPerLayer;        // Array of number of neurons per layer
     ActivationFunction* activationFunctions;  // Array of activation functions for each layer
     double learningRate;         // Learning rate for training the network
-    double (*loss_function)(Vector*, Vector*);
+    double (*loss_function)(Matrix*, Vector*);
     Data* data;
 } NetworkConfig;
 
@@ -32,7 +31,7 @@ NNetwork* createNetwork(const NetworkConfig* config);
 void deleteNNetwork(NNetwork* network);
 
 void forwardPass(NNetwork* network);
-// void backpropagation(NNetwork* network);
+void backpropagation(NNetwork* network);
 // void updateWeightsAndBiases(NNetwork* network, double learningRate);
 
 

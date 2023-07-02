@@ -46,7 +46,11 @@ void printMatrix(const Matrix* matrix) {
     for (int i = 0; i < matrix->rows; i++) {
         printf("[ ");
         for (int j = 0; j < matrix->columns; j++) {
-            printf("%f ", matrix->data[i]->elements[j]);
+            if(j == matrix->columns - 1) {
+                printf("%f", matrix->data[i]->elements[j]);
+                continue;
+            }
+            printf("%f, ", matrix->data[i]->elements[j]);
         }
         printf("]\n");
     }

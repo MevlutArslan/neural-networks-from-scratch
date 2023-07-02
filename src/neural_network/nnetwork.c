@@ -45,7 +45,6 @@ NNetwork* createNetwork(const NetworkConfig* config) {
 
 
     network->loss_function = config->loss_function;
-    network->loss = createVector(network->data->trainingData->rows);
 
     return network;
 }
@@ -66,14 +65,21 @@ void forwardPass(NNetwork* network) {
 
             currentLayer->activationFunction->activation(currentLayer->output);
 
-            if(layerIndex != network->layerCount - 1) 
+            if(layerIndex != network->layerCount - 1) {
                 network->layers[layerIndex + 1]->input = reshapeVectorToMatrix(currentLayer->output);
+            }
 
             freeMatrix(weightedSum);
             freeVector(outputVector);
         }
         network->data->trainingOutputs->data[i] = copyVector(network->layers[network->layerCount - 1]->output);
     }
+    
+    network->loss = network->loss_function(network->data->trainingOutputs, network->data->yValues);
+}
+
+void backpropagation(NNetwork* network) {
+    
 }
 
 void deleteNNetwork(NNetwork* network){

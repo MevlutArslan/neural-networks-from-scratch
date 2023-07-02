@@ -1,25 +1,20 @@
 #include "loss_functions.h"
-#include <stdio.h>
-
-double meanSquaredError(double output, double target) {
-    return ((output - target)*(output - target)) / 2;
-}
 
 double derivativeMeanSquaredError(double output, double target) {
     return -2 * (output - target);
 }
 
-double calculateAverageLoss(Vector* actual, Vector* predicted) {
-    int size = predicted->size;
+double meanSquaredError(Matrix* outputs, Vector* targets) {
+    double mse = 0.0;
 
-    Vector* result = createVector(size);
-    
-    double sum = 0.0f;
-    for(int i = 0; i < size; i++) {
-        result->elements[i] = meanSquaredError(actual->elements[i], predicted->elements[i]);
-        sum = sum + result->elements[i];
+    for (int i = 0; i < outputs->rows; i++) {
+        Vector* output = outputs->data[i];  
+        double target = targets->elements[i];
+
+        double difference = output->elements[0] - target; // assuming output vector is of size 1
+        mse += difference * difference;
     }
 
-    freeVector(result);
-    return sum / (double)size;
+    mse /= outputs->rows;
+    return mse;
 }

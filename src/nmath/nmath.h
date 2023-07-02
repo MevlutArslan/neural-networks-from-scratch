@@ -26,6 +26,7 @@ Vector* vector_scalar_multiplication(const Vector* v1, double scalar);
 double vector_dot_product(const Vector* v1, const Vector* v2);
 Vector* vector_multiplication(const Vector* v1, const Vector* v2);
 
+double sumOfAllElements(const Vector* vector);
 
 // Conversion
 Matrix* reshapeVectorToMatrix(const Vector* vector);

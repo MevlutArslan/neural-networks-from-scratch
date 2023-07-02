@@ -185,7 +185,7 @@ Vector* vector_addition(const Vector* v1, const Vector* v2) {
 
 Vector* vector_subtraction(const Vector* v1, const Vector* v2){
     if(v1->size != v2->size) {
-        printf("Size's of the vectors need to match to add two vectors!");
+        printf("Size's of the vectors need to match to subtract two vectors!");
         return NULL;
     }
 
@@ -262,4 +262,14 @@ Vector* matrixToVector(Matrix* matrix) {
     }
 
     return vector;
+}
+
+double sumOfAllElements(const Vector* vector) {
+    double sum = 0;
+
+    for(int i = 0; i < vector->size; i++) {
+        sum += vector->elements[i];
+    }
+    
+    return sum;
 }
