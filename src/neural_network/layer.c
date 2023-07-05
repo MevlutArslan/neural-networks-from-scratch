@@ -5,32 +5,26 @@ Layer* createLayer(LayerConfig* config) {
 
     layer->neuronCount = config->neuronCount;
 
-    layer->weights = createMatrix(config->inputSize, config->neuronCount);
-    initializeMatrixWithRandomValuesInRange(layer->weights, 0, 1);
+    // If 2 subsequent layers have X and Y neurons, then the number of weights is X*Y
+    layer->weights = createMatrix(config->neuronCount, config->inputSize);
+    initializeMatrixWithRandomValuesInRange(layer->weights, -1, 1);
 
     layer->biases = createVector(config->neuronCount);
-    initializeVectorWithRandomValuesInRange(layer->biases, 0, 1.0);
+    initializeVectorWithRandomValuesInRange(layer->biases, -0.5, 0.5);
 
+    layer->weightedSums = createVector(config->neuronCount);
     layer->output = createVector(config->neuronCount);
 
     layer->activationFunction = config->activationFunction;
-    
+
+    layer->gradients = createMatrix(layer->weights->rows, layer->weights->columns);
+    layer->dLoss_dWeightedSums = createVector(layer->neuronCount);
     return layer;
 }
 
 void deleteLayer(Layer* layer) {
     if (layer == NULL) {
         return;
-    }
-
-    // Disconnect this layer from any next layer
-    if(layer->next != NULL) { 
-        layer->next->prev = layer->prev;
-    }
-
-    // Disconnect this layer from any previous layer
-    if(layer->prev != NULL) {
-        layer->prev->next = layer->next;
     }
 
     // Now it's safe to delete this layer

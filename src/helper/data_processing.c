@@ -2,11 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #define MAX_LINE_LENGTH 1024
 #define MAX_TOKENS 256
 #define DELIMITER ","
 
+
+// TODO: Generalize this to accept indices of the rows and columns we want to skip
 Data* loadCSV(char* fileLocation, double separationFactor) {
     FILE* file = fopen(fileLocation, "r");
     if (file == NULL) {
@@ -60,7 +63,7 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
 
             double value = atof(token);
 
-            // want to skip first col or first row cause they are useless
+            // want to skip first col and first row cause they are useless
             matrix->data[rowIndex - 1]->elements[colIndex - 1] = value;
 
             colIndex++;
@@ -79,8 +82,13 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
         }
     }
 
+    for(int col = 0; col < data->numberOfColumns; col++) {
+        normalizeColumn(data->trainingData, col);
+    }
+
     data->yValues = extractYValues(matrix, data->numberOfColumns - 1);
-    
+    normalizeVector(data->yValues);
+    printVector(data->yValues);
     data->evaluationData = createMatrix(data->numberOfRows - data->trainingData->rows, data->numberOfColumns);
 
     for(int i = 0; i < data->trainingData->rows; i++) {
@@ -89,6 +97,10 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
                 data->evaluationData->data[i]->elements[j] = matrix->data[data->trainingData->rows + i]->elements[j];
             }
         }
+    }
+
+    for(int col = 0; col < data->numberOfColumns; col++) {
+        normalizeColumn(data->evaluationData, col);
     }
 
     freeMatrix(matrix);
@@ -157,4 +169,35 @@ int getRowCount(char* fileLocation) {
 
     fclose(file);
     return rowCount;
+}
+
+
+void normalizeColumn(Matrix* matrix, int columnIndex) {
+    double maxValueOfColumn = DBL_MIN;
+    double minValueOfColumn = DBL_MAX;
+
+    for(int row = 0; row < matrix->rows; row++) {
+        maxValueOfColumn = fmax(maxValueOfColumn, matrix->data[row]->elements[columnIndex]);
+        minValueOfColumn = fmin(minValueOfColumn, matrix->data[row]->elements[columnIndex]);
+    }
+
+    for(int row = 0; row < matrix->rows; row++) {
+        double value = matrix->data[row]->elements[columnIndex];
+        matrix->data[row]->elements[columnIndex] = (value - minValueOfColumn) / (maxValueOfColumn - minValueOfColumn);
+    }
+}
+
+
+void normalizeVector(Vector* vector) {
+    double maxValueOfVector = DBL_MIN;
+    double minValueOfVector = DBL_MAX;
+    
+    for(int i = 0; i < vector->size; i++) {
+        maxValueOfVector = fmax(maxValueOfVector, vector->elements[i]);
+        minValueOfVector = fmin(minValueOfVector, vector->elements[i]);
+    }
+
+    for(int i = 0; i < vector->size; i++) {
+        vector->elements[i] = (vector->elements[i] - minValueOfVector) / maxValueOfVector;
+    }
 }

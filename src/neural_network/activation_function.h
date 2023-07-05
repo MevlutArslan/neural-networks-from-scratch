@@ -10,6 +10,7 @@ typedef struct {
 } ActivationFunction;
 
 void relu(Vector* vector);
+void leakyRelu(Vector* vector);
 double sigmoid(double input);
 void softmax(Vector* input);
 

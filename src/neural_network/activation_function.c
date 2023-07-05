@@ -8,6 +8,12 @@ void relu(Vector* vector) {
     }
 }
 
+void leakyRelu(Vector* vector) {
+    for (int i = 0; i < vector->size; i++) {
+        vector->elements[i] = fmax(0.01 * vector->elements[i], vector->elements[i]);
+    }
+}
+
 double sigmoid(double input) {
     return 1 / (1 + exp(-1 * input));
 }

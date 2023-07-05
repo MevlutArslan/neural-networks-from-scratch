@@ -24,4 +24,8 @@ Vector* extractYValues(Matrix* trainingMatrix, int columnIndex);
 int getRowCount(char* fileLocation);
 int getColumnCount(char* fileLocation);
 
+void normalizeColumn(Matrix* matrix, int columnIndex);
+void normalizeVector(Vector* vector);
+
+
 #endif

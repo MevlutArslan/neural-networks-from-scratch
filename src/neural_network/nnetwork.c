@@ -36,52 +36,192 @@ NNetwork* createNetwork(const NetworkConfig* config) {
         layerConfig.activationFunction = &config->activationFunctions[i];
         
         Layer* layer = createLayer(&layerConfig);
-
-        layer->next = i < config->numLayers - 1 ? network->layers[i + 1] : NULL;
-        layer->prev = i > 0 ? network->layers[i - 1] : NULL;
-
         network->layers[i] = layer;
     }
 
 
-    network->loss_function = config->loss_function;
+    network->lossFunction = config->lossFunction;
 
     return network;
 }
 
 void forwardPass(NNetwork* network) {
     network->data->trainingOutputs = createMatrix(network->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
+    
     for (int i = 0; i < network->data->trainingData->rows; i++) {
-        network->layers[0]->input = reshapeVectorToMatrix(network->data->trainingData->data[i]);
+        network->layers[0]->input = network->data->trainingData->data[i];
+
         for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
             Layer* currentLayer = network->layers[layerIndex];
-            Matrix* weightedSum = matrix_dot_product(matrix_transpose(currentLayer->input), currentLayer->weights);
-            
-            Vector* outputVector = matrixToVector(weightedSum);
-            
-            Vector* outputWithBias = vector_addition(outputVector, currentLayer->biases);
+            Vector* weightedSum = dot_product(currentLayer->weights, currentLayer->input);
 
-            currentLayer->output = outputWithBias;
+            currentLayer->weightedSums = copyVector(weightedSum);
+
+            currentLayer->output = vector_addition(weightedSum, currentLayer->biases);;
 
             currentLayer->activationFunction->activation(currentLayer->output);
-
+            
             if(layerIndex != network->layerCount - 1) {
-                network->layers[layerIndex + 1]->input = reshapeVectorToMatrix(currentLayer->output);
+                network->layers[layerIndex + 1]->input = currentLayer->output;
             }
-
-            freeMatrix(weightedSum);
-            freeVector(outputVector);
         }
         network->data->trainingOutputs->data[i] = copyVector(network->layers[network->layerCount - 1]->output);
     }
-    
-    network->loss = network->loss_function(network->data->trainingOutputs, network->data->yValues);
+
+    network->loss = meanSquaredError(network->data->trainingOutputs, network->data->yValues);
+    printf("LOSS: %f \n", network->loss);
 }
 
 void backpropagation(NNetwork* network) {
-    
+
+    Layer* outputLayer = network->layers[network->layerCount - 1];
+
+    // for each output
+    for(int outputIndex = 0; outputIndex < network->data->trainingData->rows; outputIndex++) {
+        
+        // TODO: Implement this.
+        double totalCost = 0.0f;
+
+        // the output layer's step
+        int layerIndex = network->layerCount - 1;
+        Layer* currentLayer = network->layers[layerIndex];
+        for(int outputNeuronIndex = 0; outputNeuronIndex < outputLayer->neuronCount; outputNeuronIndex++) {
+            Vector* predictions = network->data->trainingOutputs->data[outputIndex];
+            double prediction = predictions->elements[outputNeuronIndex];
+
+            double target = network->data->yValues->elements[outputIndex];
+            double error =  target - prediction;
+            error *= error;
+            error *= 0.5;
+            /* TODO: ABSTRACT THIS TO SUIT MULTIPLE LOSS FUNCTIONS  
+               derivative of MSE is -1 * error, as:
+               derivative of 1/2 * (value)^2 = 1/2 * 2(value) => 2/2 * (value) = 1 * value
+            
+               Using the chain rule for differentiation (f(g(x)) = df(g(x)) * g'(x)), we then multiply this by the derivative of the inner function,
+               g(x) = (desired - predicted), with respect to 'predicted', which gives g'(x) = -1
+               Therefore, the derivative of the MSE with respect to 'predicted' is: f'(g(predicted)) * g'(predicted) = (desired - predicted) * -1 = predicted - desired
+            */
+            double dLoss_dOutput = prediction - target;
+
+            double dOutput_dWeightedSum = currentLayer->weightedSums->elements[outputNeuronIndex] > 0 ? 1 : 0.01;
+            double dLoss_dWeightedSum = dLoss_dOutput * dOutput_dWeightedSum;
+
+            for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
+                double dWeightedSum_dWeight = 0.0f;
+                if(layerIndex == 0) {
+                    dWeightedSum_dWeight= network->layers[layerIndex]->input->elements[weightIndex];
+                }else {
+                    dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
+                }
+
+                double dLoss_dWeight = dLoss_dWeightedSum * dWeightedSum_dWeight;
+                
+                currentLayer->gradients->data[outputNeuronIndex]->elements[weightIndex] += dLoss_dWeight;                
+            }
+            
+            currentLayer->dLoss_dWeightedSums->elements[outputNeuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
+        }
+
+        // printf("dLoss_dWeightedSums:");
+        // printVector(currentLayer->dLoss_dWeightedSums);
+
+        for(layerIndex = network->layerCount - 2; layerIndex >= 0; layerIndex --) {
+            currentLayer = network->layers[layerIndex];
+            for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
+                double dLoss_dOutput = 0.0f;
+                
+                Layer* nextLayer = network->layers[layerIndex + 1];
+                for(int neuronIndexNext = 0; neuronIndexNext < nextLayer->neuronCount; neuronIndexNext++) {
+                    dLoss_dOutput += nextLayer->dLoss_dWeightedSums->elements[neuronIndexNext] * nextLayer->weights->data[neuronIndexNext]->elements[neuronIndex];
+                }
+                double dOutput_dWeightedSum = currentLayer->weightedSums->elements[neuronIndex] > 0 ? 1 : 0.01;
+
+                double dLoss_dWeightedSum = dLoss_dOutput * dOutput_dWeightedSum;
+
+                for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
+                    double dWeightedSum_dWeight = 0.0f;
+                    if(layerIndex == 0) {
+                        dWeightedSum_dWeight= network->layers[layerIndex]->input->elements[weightIndex];
+                    }else {
+                        dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
+                    }
+                    
+                    double dLoss_dWeight = dLoss_dWeightedSum * dWeightedSum_dWeight;
+                    
+                    currentLayer->gradients->data[neuronIndex]->elements[weightIndex] += dLoss_dWeight;
+                }
+
+                currentLayer->dLoss_dWeightedSums->elements[neuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
+            }
+            // printf("dLoss_dWeightedSums:");
+            // printVector(currentLayer->dLoss_dWeightedSums);
+        }
+    }
+}
+
+void updateWeightsAndBiases(NNetwork* network, double learningRate) {
+    for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
+        Layer* currentLayer = network->layers[layerIndex];
+
+        for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
+            for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
+                double weight = currentLayer->weights->data[neuronIndex]->elements[weightIndex];
+                double gradient = currentLayer->gradients->data[neuronIndex]->elements[weightIndex];
+                
+                currentLayer->weights->data[neuronIndex]->elements[weightIndex] -= learningRate * gradient;
+            }
+        }
+    }
 }
 
 void deleteNNetwork(NNetwork* network){
-    deleteLayer(network->layers[0]);
+    for(int i = network->layerCount - 1; i >= 0; i--) {
+        deleteLayer(network->layers[i]);
+    }
+}
+
+void dumpNetworkState(NNetwork* network) {
+    printf("------------------------------ Network State ------------------------------\n");
+    printf("Loss: %f\n", network->loss);
+
+    // Dump information for each layer
+    for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
+        Layer* currentLayer = network->layers[layerIndex];
+
+        printf("------------------------ Layer %d ------------------------\n", layerIndex);
+        printf("Neuron count: %d\n", currentLayer->neuronCount);
+
+        // Print input matrix
+        printf("Input matrix:\n");
+        printMatrix(currentLayer->input);
+
+        // Print weights matrix
+        printf("Weights matrix:\n");
+        printMatrix(currentLayer->weights);
+
+        // Print biases vector
+        printf("Biases vector:\n");
+        printVector(currentLayer->biases);
+
+        // Print weighted sums vector
+        printf("Weighted sums vector:\n");
+        printVector(currentLayer->weightedSums);
+
+        // Print output vector
+        printf("Output vector:\n");
+        printVector(currentLayer->output);
+
+        // // Print error vector
+        // printf("Error vector:\n");
+        // printVector(currentLayer->error);
+
+        // Print gradients matrix
+        printf("Gradients matrix:\n");
+        printMatrix(currentLayer->gradients);
+
+        // Print other layer information here
+        printf("------------------------------------------------------------\n");
+    }
+
+    printf("------------------------------------------------------------------------\n");
 }

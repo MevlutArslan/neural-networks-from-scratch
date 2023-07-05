@@ -6,14 +6,18 @@
 
 typedef struct Layer{
     int neuronCount;
-    Matrix* input;
+    Vector* input;
     Matrix* weights;
     Vector* biases;
+
+    Vector* weightedSums;
     Vector* output;
 
+    Vector* error;
+    Matrix* gradients;
+
     ActivationFunction* activationFunction;
-    struct Layer* prev; // for backward propogation
-    struct Layer* next;
+    Vector* dLoss_dWeightedSums;
 } Layer;
 
 typedef struct {

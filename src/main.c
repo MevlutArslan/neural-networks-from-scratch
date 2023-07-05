@@ -39,9 +39,13 @@ int main(int argc, char* argv[])
     */
 void runProgram() {
     Data* data = loadCSV("/Users/mevlutarslan/Downloads/datasets/Real estate.csv", 0.9f);
+
     ActivationFunction reluFunc;
-    reluFunc.activation = relu;
+    reluFunc.activation = leakyRelu;
     // reluFunc.derivative = relu_derivative;
+
+    LossFunction meanSquaredErrorFunc;
+    meanSquaredErrorFunc.loss_function = meanSquaredError;
 
     // Create the input vector
     Matrix* input = data->trainingData;
@@ -59,22 +63,25 @@ void runProgram() {
         config.activationFunctions[i].activation = reluFunc.activation;
     }
 
-    config.loss_function = meanSquaredError;
+    config.lossFunction = &meanSquaredError;
 
     config.data = data;
 
     NNetwork* network = createNetwork(&config);
     
+    network->lossFunction = &meanSquaredErrorFunc;
+
     double learningRate = 0.00001;
     int steps = 0;
-    while(steps < 10) {
-        forwardPass(network);
+
+    while(steps < 1000) {
+        forwardPass(network);        
+        backpropagation(network);
+        updateWeightsAndBiases(network, learningRate);
         
-        printf("---------------------\n");
-        printf("LOSS : %f \n", network->loss);
         steps++;
     }
    
     // Clean up memory
-    deleteNNetwork(network);
+    // deleteNNetwork(network);
 }   

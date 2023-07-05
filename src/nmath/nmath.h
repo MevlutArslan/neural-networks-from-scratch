@@ -22,14 +22,17 @@ float matrix_determinant(const Matrix* m);
 // VECTOR MATH OPERATIONS
 Vector* vector_addition(const Vector* v1, const Vector* v2);
 Vector* vector_subtraction(const Vector* v1, const Vector* v2);
-Vector* vector_scalar_multiplication(const Vector* v1, double scalar);
 double vector_dot_product(const Vector* v1, const Vector* v2);
 Vector* vector_multiplication(const Vector* v1, const Vector* v2);
 
+Vector* vector_scalar_multiplication(const Vector* v1, double scalar);
+Vector* vector_scalar_subtraction(const Vector* v1, double scalar);
+
 double sumOfAllElements(const Vector* vector);
+Vector* dot_product(Matrix* matrix, Vector* vector);
 
 // Conversion
 Matrix* reshapeVectorToMatrix(const Vector* vector);
-Vector* matrixToVector(Matrix* matrix);
+Vector* reshapeMatrixToVector(Matrix* matrix);
 
 #endif

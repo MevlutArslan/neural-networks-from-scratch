@@ -249,7 +249,7 @@ Matrix* reshapeVectorToMatrix(const Vector* vector) {
 }
 
 
-Vector* matrixToVector(Matrix* matrix) {
+Vector* reshapeMatrixToVector(Matrix* matrix) {
     Vector* vector = createVector(matrix->rows * matrix->columns);
    
     int vectorIndex = 0;
@@ -272,4 +272,33 @@ double sumOfAllElements(const Vector* vector) {
     }
     
     return sum;
+}
+
+Vector* vector_scalar_subtraction(const Vector* v1, double scalar) {
+    Vector* v = createVector(v1->size);
+
+    for(int i = 0; i < v->size; i++) {
+        v->elements[i] = v1->elements[i] - scalar;
+    }
+
+    return v;
+}
+
+Vector* dot_product(Matrix* matrix, Vector* vector) {
+    if(matrix->columns != vector->size) {
+        printf("Matrix's column size needs to be equal to the length of the vector to be able to calculate dot product! \n");
+        return NULL;
+    }
+
+    Vector* result = createVector(matrix->rows);
+    //each column by each row
+    for(int matrixRow = 0; matrixRow < matrix->rows; matrixRow++) {
+        double sum = 0.0;
+        for(int matrixColumn = 0; matrixColumn < matrix->columns; matrixColumn++) {
+            sum += matrix->data[matrixRow]->elements[matrixColumn] * vector->elements[matrixColumn];
+        }
+        result->elements[matrixRow] = sum;
+    }
+
+    return result;
 }

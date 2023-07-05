@@ -14,7 +14,7 @@ typedef struct {
     int layerCount;
     Layer** layers;
 
-    double (*loss_function)(Matrix*, Vector*);
+    LossFunction* lossFunction;
     double loss;
 } NNetwork;
 
@@ -23,7 +23,7 @@ typedef struct {
     int* neuronsPerLayer;        // Array of number of neurons per layer
     ActivationFunction* activationFunctions;  // Array of activation functions for each layer
     double learningRate;         // Learning rate for training the network
-    double (*loss_function)(Matrix*, Vector*);
+    LossFunction* lossFunction;
     Data* data;
 } NetworkConfig;
 
@@ -32,8 +32,10 @@ void deleteNNetwork(NNetwork* network);
 
 void forwardPass(NNetwork* network);
 void backpropagation(NNetwork* network);
-// void updateWeightsAndBiases(NNetwork* network, double learningRate);
+void updateWeightsAndBiases(NNetwork* network, double learningRate);
+void calculateNumericalGradients(NNetwork* network, double epsilon);
 
+void dumpNetworkState(NNetwork* network);
 
 // void calculateOutputLayerGradient(Layer* outputLayer, Vector* target);
 // void calculateHiddenLayerGradient(Layer* layer);

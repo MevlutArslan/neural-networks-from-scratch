@@ -1,8 +1,9 @@
 #include "loss_functions.h"
 
-double derivativeMeanSquaredError(double output, double target) {
-    return -2 * (output - target);
-}
+// double meanSquaredErrorDerivative(double error) {
+//     return -2 * error;
+// }
+
 
 double meanSquaredError(Matrix* outputs, Vector* targets) {
     double mse = 0.0;
@@ -11,10 +12,11 @@ double meanSquaredError(Matrix* outputs, Vector* targets) {
         Vector* output = outputs->data[i];  
         double target = targets->elements[i];
 
-        double difference = output->elements[0] - target; // assuming output vector is of size 1
-        mse += difference * difference;
+        double difference = target - output->elements[0]; // assuming output vector is of size 1
+        mse += (difference * difference) / 2;
     }
 
-    mse /= outputs->rows;
+    mse /= (double)outputs->rows;
+
     return mse;
 }
