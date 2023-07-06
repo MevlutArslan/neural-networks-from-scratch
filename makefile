@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -g -DWITH_X11
 LDFLAGS = -lm
 
 BUILD_DIR = build
@@ -43,7 +43,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/nmath/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/gnuplot_i/%.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -DWITH_X11 -I/opt/X11/include -L/opt/X11/lib -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(TEST_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@

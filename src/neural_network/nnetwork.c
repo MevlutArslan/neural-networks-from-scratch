@@ -96,6 +96,7 @@ void backpropagation(NNetwork* network) {
                g(x) = (desired - predicted), with respect to 'predicted', which gives g'(x) = -1
                Therefore, the derivative of the MSE with respect to 'predicted' is: f'(g(predicted)) * g'(predicted) = (desired - predicted) * -1 = predicted - desired
             */
+           
             double dLoss_dOutput = network->lossFunction->derivative(target, prediction);
 
             double dOutput_dWeightedSum = currentLayer->activationFunction->derivative(currentLayer->weightedSums->elements[outputNeuronIndex]);
@@ -122,6 +123,7 @@ void backpropagation(NNetwork* network) {
                 currentLayer->gradients->data[outputNeuronIndex]->elements[weightIndex] += dLoss_dWeight;                
             }
             
+            currentLayer->biasGradients->elements[outputNeuronIndex] = dLoss_dOutput;
             currentLayer->dLoss_dWeightedSums->elements[outputNeuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
         }
 
@@ -154,6 +156,7 @@ void backpropagation(NNetwork* network) {
                             dLoss_dWeight = network->gradientClippingUpperBound;
                         }
                     }
+                    currentLayer->biasGradients->elements[neuronIndex] = dLoss_dOutput;
                     currentLayer->gradients->data[neuronIndex]->elements[weightIndex] += dLoss_dWeight;
                 }
 
@@ -173,6 +176,7 @@ void updateWeightsAndBiases(NNetwork* network, double learningRate) {
                 
                 currentLayer->weights->data[neuronIndex]->elements[weightIndex] -= learningRate * gradient;
             }
+            currentLayer->biases->elements[neuronIndex] -= learningRate * currentLayer->biasGradients->elements[neuronIndex];
         }
     }
 }

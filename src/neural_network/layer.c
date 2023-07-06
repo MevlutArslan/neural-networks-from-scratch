@@ -12,6 +12,8 @@ Layer* createLayer(LayerConfig* config) {
     layer->biases = createVector(config->neuronCount);
     initializeVectorWithRandomValuesInRange(layer->biases, -0.5, 0.5);
 
+    layer->biasGradients = createVector(config->neuronCount);
+
     layer->weightedSums = createVector(config->neuronCount);
     layer->output = createVector(config->neuronCount);
 

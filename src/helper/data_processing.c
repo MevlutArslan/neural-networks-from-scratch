@@ -88,7 +88,7 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
 
     data->yValues = extractYValues(matrix, data->numberOfColumns - 1);
     normalizeVector(data->yValues);
-    printVector(data->yValues);
+    
     data->evaluationData = createMatrix(data->numberOfRows - data->trainingData->rows, data->numberOfColumns);
 
     for(int i = 0; i < data->trainingData->rows; i++) {

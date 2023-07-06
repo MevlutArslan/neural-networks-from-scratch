@@ -15,6 +15,7 @@ typedef struct Layer{
 
     Vector* error;
     Matrix* gradients;
+    Vector* biasGradients;
 
     ActivationFunction* activationFunction;
     Vector* dLoss_dWeightedSums;
