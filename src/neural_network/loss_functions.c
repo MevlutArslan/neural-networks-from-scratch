@@ -20,3 +20,8 @@ double meanSquaredError(Matrix* outputs, Vector* targets) {
 
     return mse;
 }
+
+
+double meanSquaredErrorDerivative(double target, double predicted) {
+    return -1 * (target - predicted);
+}

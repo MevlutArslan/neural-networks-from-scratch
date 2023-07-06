@@ -6,11 +6,11 @@
 
 typedef struct {
     double (*loss_function)(Matrix*, Vector*);
-    double (*derivative)(double);
+    double (*derivative)(double, double);
 } LossFunction;
 
 double meanSquaredError(Matrix* outputs, Vector* targets);
-// double meanSquaredErrorDerivative(Matrix* outputs, Vector* target);
+double meanSquaredErrorDerivative(double target, double predicted);
 
 
 #endif

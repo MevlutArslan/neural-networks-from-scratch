@@ -97,7 +97,7 @@ void backpropagation(NNetwork* network) {
                g(x) = (desired - predicted), with respect to 'predicted', which gives g'(x) = -1
                Therefore, the derivative of the MSE with respect to 'predicted' is: f'(g(predicted)) * g'(predicted) = (desired - predicted) * -1 = predicted - desired
             */
-            double dLoss_dOutput = prediction - target;
+            double dLoss_dOutput = network->lossFunction->derivative(target, prediction);
 
             double dOutput_dWeightedSum = currentLayer->activationFunction->derivative(currentLayer->weightedSums->elements[outputNeuronIndex]);
             double dLoss_dWeightedSum = dLoss_dOutput * dOutput_dWeightedSum;

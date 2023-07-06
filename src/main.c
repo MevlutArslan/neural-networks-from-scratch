@@ -46,6 +46,7 @@ void runProgram() {
 
     LossFunction meanSquaredErrorFunc;
     meanSquaredErrorFunc.loss_function = meanSquaredError;
+    meanSquaredErrorFunc.derivative = meanSquaredErrorDerivative;
 
     NetworkConfig config;
     config.numLayers = 3;
@@ -75,7 +76,7 @@ void runProgram() {
     double learningRate = 0.00001;
     int steps = 0;
 
-    while(steps < 1000) {
+    while(steps < 10000) {
         forwardPass(network);        
         backpropagation(network);
         updateWeightsAndBiases(network, learningRate);
