@@ -73,14 +73,18 @@ void runProgram() {
     
     network->lossFunction = &meanSquaredErrorFunc;
 
-    double learningRate = 0.00001;
+    double learningRate = 0.001;
     int steps = 0;
 
-    while(steps < 10000) {
+    while(steps < 200) {
         forwardPass(network);        
         backpropagation(network);
         updateWeightsAndBiases(network, learningRate);
         
+        // every 100 steps
+        if(steps % 20 == 0) {
+            printf("Step: %d, Loss: %f \n", steps, network->loss);
+        }
         steps++;
     }
    

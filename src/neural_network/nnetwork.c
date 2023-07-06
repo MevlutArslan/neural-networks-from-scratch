@@ -68,7 +68,6 @@ void forwardPass(NNetwork* network) {
     }
 
     network->loss = meanSquaredError(network->data->trainingOutputs, network->data->yValues);
-    printf("LOSS: %f \n", network->loss);
 }
 
 void backpropagation(NNetwork* network) {
