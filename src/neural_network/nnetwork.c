@@ -116,6 +116,14 @@ void backpropagation(NNetwork* network) {
 
                 double dLoss_dWeight = dLoss_dWeightedSum * dWeightedSum_dWeight;
                 
+                if(network->shouldUseGradientClipping == 1) {
+                    if(dLoss_dWeight < network->gradientClippingLowerBound) {
+                        dLoss_dWeight = network->gradientClippingLowerBound;
+                    }else if(dLoss_dWeight > network->gradientClippingUpperBound) {
+                        dLoss_dWeight = network->gradientClippingUpperBound;
+                    }
+                }
+
                 currentLayer->gradients->data[outputNeuronIndex]->elements[weightIndex] += dLoss_dWeight;                
             }
             
@@ -147,7 +155,13 @@ void backpropagation(NNetwork* network) {
                     }
                     
                     double dLoss_dWeight = dLoss_dWeightedSum * dWeightedSum_dWeight;
-                    
+                    if(network->shouldUseGradientClipping == 1) {
+                        if(dLoss_dWeight < network->gradientClippingLowerBound) {
+                            dLoss_dWeight = network->gradientClippingLowerBound;
+                        }else if(dLoss_dWeight > network->gradientClippingUpperBound) {
+                            dLoss_dWeight = network->gradientClippingUpperBound;
+                        }
+                    }
                     currentLayer->gradients->data[neuronIndex]->elements[weightIndex] += dLoss_dWeight;
                 }
 
@@ -165,7 +179,6 @@ void updateWeightsAndBiases(NNetwork* network, double learningRate) {
 
         for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
-                double weight = currentLayer->weights->data[neuronIndex]->elements[weightIndex];
                 double gradient = currentLayer->gradients->data[neuronIndex]->elements[weightIndex];
                 
                 currentLayer->weights->data[neuronIndex]->elements[weightIndex] -= learningRate * gradient;

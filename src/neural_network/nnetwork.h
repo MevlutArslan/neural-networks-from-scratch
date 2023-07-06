@@ -16,6 +16,13 @@ typedef struct {
 
     LossFunction* lossFunction;
     double loss;
+
+    // Gradient Clipping
+    int shouldUseGradientClipping;
+    int gradientClippingLowerBound;
+    int gradientClippingUpperBound;
+
+
 } NNetwork;
 
 typedef struct {
@@ -25,6 +32,10 @@ typedef struct {
     double learningRate;         // Learning rate for training the network
     LossFunction* lossFunction;
     Data* data;
+
+    int shouldUseGradientClipping;
+    double gradientClippingLowerBound;
+    double gradientClippingUpperBound;
 } NetworkConfig;
 
 NNetwork* createNetwork(const NetworkConfig* config);

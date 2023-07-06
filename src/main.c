@@ -47,15 +47,16 @@ void runProgram() {
     LossFunction meanSquaredErrorFunc;
     meanSquaredErrorFunc.loss_function = meanSquaredError;
 
-    // Create the input vector
-    Matrix* input = data->trainingData;
-
     NetworkConfig config;
     config.numLayers = 3;
     config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);
     config.neuronsPerLayer[0] = 3;
     config.neuronsPerLayer[1] = 4;
     config.neuronsPerLayer[2] = 1;
+
+    config.shouldUseGradientClipping = 1;
+    config.gradientClippingLowerBound = -1;
+    config.gradientClippingUpperBound = 1;
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
 
