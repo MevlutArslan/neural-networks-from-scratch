@@ -9,10 +9,13 @@ typedef struct {
     double (*derivative)(double);       // Pointer to the derivative of the activation function
 } ActivationFunction;
 
-void relu(Vector* vector);
-void leakyRelu(Vector* vector);
-double sigmoid(double input);
-void softmax(Vector* input);
+void relu(Vector* inputs);
+double relu_derivative(double netInput);
 
+void leakyRelu(Vector* inputs);
+double leakyRelu_derivative(double netInput);
+
+void sigmoid(Vector* inputs);
+double sigmoid_derivative(double netInput);
 
 #endif

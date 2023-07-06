@@ -5,6 +5,5 @@
 
 void test_activation_function_relu();
 void test_activation_function_sigmoid();
-void test_activation_function_softmax();
 
 #endif

@@ -16,7 +16,7 @@ Layer* createLayer(LayerConfig* config) {
     layer->output = createVector(config->neuronCount);
 
     layer->activationFunction = config->activationFunction;
-
+    
     layer->gradients = createMatrix(layer->weights->rows, layer->weights->columns);
     layer->dLoss_dWeightedSums = createVector(layer->neuronCount);
     return layer;

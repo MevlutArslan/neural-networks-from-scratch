@@ -39,7 +39,6 @@ NNetwork* createNetwork(const NetworkConfig* config) {
         network->layers[i] = layer;
     }
 
-
     network->lossFunction = config->lossFunction;
 
     return network;
@@ -79,9 +78,6 @@ void backpropagation(NNetwork* network) {
     // for each output
     for(int outputIndex = 0; outputIndex < network->data->trainingData->rows; outputIndex++) {
         
-        // TODO: Implement this.
-        double totalCost = 0.0f;
-
         // the output layer's step
         int layerIndex = network->layerCount - 1;
         Layer* currentLayer = network->layers[layerIndex];
@@ -103,7 +99,7 @@ void backpropagation(NNetwork* network) {
             */
             double dLoss_dOutput = prediction - target;
 
-            double dOutput_dWeightedSum = currentLayer->weightedSums->elements[outputNeuronIndex] > 0 ? 1 : 0.01;
+            double dOutput_dWeightedSum = currentLayer->activationFunction->derivative(currentLayer->weightedSums->elements[outputNeuronIndex]);
             double dLoss_dWeightedSum = dLoss_dOutput * dOutput_dWeightedSum;
 
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
@@ -130,9 +126,6 @@ void backpropagation(NNetwork* network) {
             currentLayer->dLoss_dWeightedSums->elements[outputNeuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
         }
 
-        // printf("dLoss_dWeightedSums:");
-        // printVector(currentLayer->dLoss_dWeightedSums);
-
         for(layerIndex = network->layerCount - 2; layerIndex >= 0; layerIndex --) {
             currentLayer = network->layers[layerIndex];
             for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
@@ -142,7 +135,7 @@ void backpropagation(NNetwork* network) {
                 for(int neuronIndexNext = 0; neuronIndexNext < nextLayer->neuronCount; neuronIndexNext++) {
                     dLoss_dOutput += nextLayer->dLoss_dWeightedSums->elements[neuronIndexNext] * nextLayer->weights->data[neuronIndexNext]->elements[neuronIndex];
                 }
-                double dOutput_dWeightedSum = currentLayer->weightedSums->elements[neuronIndex] > 0 ? 1 : 0.01;
+                double dOutput_dWeightedSum = currentLayer->activationFunction->derivative(currentLayer->weightedSums->elements[neuronIndex]);
 
                 double dLoss_dWeightedSum = dLoss_dOutput * dOutput_dWeightedSum;
 
@@ -167,8 +160,6 @@ void backpropagation(NNetwork* network) {
 
                 currentLayer->dLoss_dWeightedSums->elements[neuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
             }
-            // printf("dLoss_dWeightedSums:");
-            // printVector(currentLayer->dLoss_dWeightedSums);
         }
     }
 }

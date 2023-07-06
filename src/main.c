@@ -42,7 +42,7 @@ void runProgram() {
 
     ActivationFunction reluFunc;
     reluFunc.activation = leakyRelu;
-    // reluFunc.derivative = relu_derivative;
+    reluFunc.derivative = leakyRelu_derivative;
 
     LossFunction meanSquaredErrorFunc;
     meanSquaredErrorFunc.loss_function = meanSquaredError;
@@ -61,7 +61,7 @@ void runProgram() {
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
 
     for (int i = 0; i < config.numLayers; i++) {
-        config.activationFunctions[i].activation = reluFunc.activation;
+        config.activationFunctions[i] = reluFunc;
     }
 
     config.lossFunction = &meanSquaredError;
