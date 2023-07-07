@@ -14,7 +14,7 @@ void runProgram();
 int main(int argc, char* argv[])
 {
     //for testing only, otherwise set to time(NULL)
-    srand(502);
+    srand(306);
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
@@ -54,7 +54,7 @@ NNetwork* createCustomNetwork() {
     OptimizationConfig optimizationConfig;
     // Learning Rate Decay
     optimizationConfig.shouldUseLearningRateDecay = 1;
-    optimizationConfig.learningRateDecayAmount = 0.001;
+    optimizationConfig.learningRateDecayAmount = 0.0001;
     
     // Gradient Clipping
     optimizationConfig.shouldUseGradientClipping = 1;
@@ -63,7 +63,7 @@ NNetwork* createCustomNetwork() {
     
     // Momentum
     optimizationConfig.shouldUseMomentum = 1;
-    optimizationConfig.momentum = 0.20;
+    optimizationConfig.momentum = 0.3;
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
     
