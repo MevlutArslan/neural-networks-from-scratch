@@ -200,4 +200,5 @@ void normalizeVector(Vector* vector) {
     for(int i = 0; i < vector->size; i++) {
         vector->elements[i] = (vector->elements[i] - minValueOfVector) / maxValueOfVector;
     }
+
 }

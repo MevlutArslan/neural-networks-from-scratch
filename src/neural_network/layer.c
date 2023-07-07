@@ -21,6 +21,12 @@ Layer* createLayer(LayerConfig* config) {
     
     layer->gradients = createMatrix(layer->weights->rows, layer->weights->columns);
     layer->dLoss_dWeightedSums = createVector(layer->neuronCount);
+        
+    if(config->willUseMomentum == 1){
+        layer->weightMomentums = createMatrix(layer->weights->rows, layer->weights->columns);
+        layer->biasMomentums = createVector(layer->biases->size);
+    }
+
     return layer;
 }
 

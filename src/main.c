@@ -13,7 +13,8 @@ void runProgram();
 
 int main(int argc, char* argv[])
 {
-    srand(time(NULL));
+    //for testing only, otherwise set to time(NULL)
+    srand(502);
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
@@ -44,17 +45,30 @@ NNetwork* createCustomNetwork() {
     meanSquaredErrorFunc.derivative = meanSquaredErrorDerivative;
 
     NetworkConfig config;
-    config.numLayers = 3;
+    config.numLayers = 2;
     config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);
     config.neuronsPerLayer[0] = 3;
-    config.neuronsPerLayer[1] = 4;
-    config.neuronsPerLayer[2] = 1;
+    config.neuronsPerLayer[1] = 1;
+    // config.neuronsPerLayer[2] = 1;
 
-    config.shouldUseGradientClipping = 0;
-    config.gradientClippingLowerBound = -1;
-    config.gradientClippingUpperBound = 1;
+    OptimizationConfig optimizationConfig;
+    // Learning Rate Decay
+    optimizationConfig.shouldUseLearningRateDecay = 1;
+    optimizationConfig.learningRateDecayAmount = 0.001;
+    
+    // Gradient Clipping
+    optimizationConfig.shouldUseGradientClipping = 1;
+    optimizationConfig.gradientClippingLowerBound = -0.5;
+    optimizationConfig.gradientClippingUpperBound = 0.5;
+    
+    // Momentum
+    optimizationConfig.shouldUseMomentum = 1;
+    optimizationConfig.momentum = 0.20;
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
+    
+    config.optimizationConfig = malloc(sizeof(OptimizationConfig));
+    memcpy(config.optimizationConfig, &optimizationConfig, sizeof(OptimizationConfig));
 
     for (int i = 0; i < config.numLayers; i++) {
         config.activationFunctions[i].activation = reluFunc.activation;
@@ -66,9 +80,7 @@ NNetwork* createCustomNetwork() {
     config.lossFunction->loss_function = meanSquaredErrorFunc.loss_function;
     config.lossFunction->derivative = meanSquaredErrorFunc.derivative;
 
-
     NNetwork* network = createNetwork(&config);
-    
 
     return network;
 }
@@ -80,43 +92,65 @@ NNetwork* createCustomNetwork() {
     */
 void runProgram() {
     NNetwork* network = createCustomNetwork();
-    gnuplot_ctrl* training_plot;
-    
-    training_plot = gnuplot_init();
+    gnuplot_ctrl* loss_step_plot;
+    gnuplot_ctrl* learningRate_step_plot;
 
-    gnuplot_setstyle(training_plot, "points");
-    gnuplot_set_xlabel(training_plot, "Steps");
-    gnuplot_set_ylabel(training_plot, "Loss");
-    double learningRate = 0.0001;
+    loss_step_plot = gnuplot_init();
+    learningRate_step_plot = gnuplot_init();
+
+
+    gnuplot_setstyle(loss_step_plot, "linespoints");
+    
+    gnuplot_set_xlabel(loss_step_plot, "Steps");
+    gnuplot_set_ylabel(loss_step_plot, "Loss");
+
+    gnuplot_setstyle(learningRate_step_plot, "linespoints");
+    gnuplot_set_xlabel(learningRate_step_plot, "Steps");
+    gnuplot_set_ylabel(learningRate_step_plot, "Loss");
+
+    double learningRate = 0.01;
+    double currentLearningRate = learningRate;
     int steps = 0;
-    int maxSteps = 100;
+    int maxSteps = 40;
     double* losses = malloc(sizeof(double) * maxSteps);
     double* storedSteps = malloc(sizeof(double) * maxSteps);
-    
-
+    double* learningRates = malloc(sizeof(double) * maxSteps);
+    double minLoss = __DBL_MAX__;
     while(steps < maxSteps) {
+        learningRates[steps] = currentLearningRate;
         forwardPass(network);        
         backpropagation(network);
-        updateWeightsAndBiases(network, learningRate);
+
+        if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
+            double decayRate = network->optimizationConfig->learningRateDecayAmount;
+            currentLearningRate = learningRate * (1 / (1.0 + (decayRate * (double)steps)));
+        }
+
+        optimize(network, currentLearningRate);
         
         // every x steps
-        if(steps % 10 == 0) {
-            printf("Step: %d, Loss: %f \n", steps, network->loss);
-        }
+        // if(steps % 10 == 0) {
+        printf("Step: %d, Loss: %f \n", steps, network->loss);
+        // }
+
+        minLoss = fmin(minLoss, network->loss);
 
         losses[steps] = network->loss;
         storedSteps[steps] = steps;
-
         steps++;
     }
+    printf("MIN LOSS: %f \n", minLoss);
 
     // Plot loss/step
-    gnuplot_plot_xy(training_plot, storedSteps, losses, maxSteps, "Loss/Step");
+    gnuplot_plot_xy(loss_step_plot, storedSteps, losses, maxSteps, "Loss/Step");
+    gnuplot_plot_xy(learningRate_step_plot, storedSteps, learningRates, maxSteps, "Learning Rate/Step");
 
     printf("Press enter to close plot...\n");
     getchar();
 
-    gnuplot_close(training_plot);
+    gnuplot_close(loss_step_plot);
+    gnuplot_close(learningRate_step_plot);
+
     free(losses);
     free(storedSteps);
 

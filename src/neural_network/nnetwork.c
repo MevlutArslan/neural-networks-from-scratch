@@ -34,12 +34,14 @@ NNetwork* createNetwork(const NetworkConfig* config) {
         layerConfig.inputSize = i == 0 ? config->data->numberOfColumns : network->layers[i - 1]->output->size;
         layerConfig.neuronCount = config->neuronsPerLayer[i];
         layerConfig.activationFunction = &config->activationFunctions[i];
-        
+        layerConfig.willUseMomentum = config->optimizationConfig->shouldUseMomentum;
+
         Layer* layer = createLayer(&layerConfig);
         network->layers[i] = layer;
     }
 
     network->lossFunction = config->lossFunction;
+    network->optimizationConfig = config->optimizationConfig;
 
     return network;
 }
@@ -112,11 +114,11 @@ void backpropagation(NNetwork* network) {
 
                 double dLoss_dWeight = dLoss_dWeightedSum * dWeightedSum_dWeight;
                 
-                if(network->shouldUseGradientClipping == 1) {
-                    if(dLoss_dWeight < network->gradientClippingLowerBound) {
-                        dLoss_dWeight = network->gradientClippingLowerBound;
-                    }else if(dLoss_dWeight > network->gradientClippingUpperBound) {
-                        dLoss_dWeight = network->gradientClippingUpperBound;
+                if(network->optimizationConfig->shouldUseGradientClipping == 1) {
+                    if(dLoss_dWeight < network->optimizationConfig->gradientClippingLowerBound) {
+                        dLoss_dWeight = network->optimizationConfig->gradientClippingLowerBound;
+                    }else if(dLoss_dWeight > network->optimizationConfig->gradientClippingUpperBound) {
+                        dLoss_dWeight = network->optimizationConfig->gradientClippingUpperBound;
                     }
                 }
 
@@ -149,11 +151,11 @@ void backpropagation(NNetwork* network) {
                     }
                     
                     double dLoss_dWeight = dLoss_dWeightedSum * dWeightedSum_dWeight;
-                    if(network->shouldUseGradientClipping == 1) {
-                        if(dLoss_dWeight < network->gradientClippingLowerBound) {
-                            dLoss_dWeight = network->gradientClippingLowerBound;
-                        }else if(dLoss_dWeight > network->gradientClippingUpperBound) {
-                            dLoss_dWeight = network->gradientClippingUpperBound;
+                    if(network->optimizationConfig->shouldUseGradientClipping == 1) {
+                        if(dLoss_dWeight < network->optimizationConfig->gradientClippingLowerBound) {
+                            dLoss_dWeight = network->optimizationConfig->gradientClippingLowerBound;
+                        }else if(dLoss_dWeight > network->optimizationConfig->gradientClippingUpperBound) {
+                            dLoss_dWeight = network->optimizationConfig->gradientClippingUpperBound;
                         }
                     }
                     currentLayer->biasGradients->elements[neuronIndex] = dLoss_dOutput;
@@ -166,17 +168,33 @@ void backpropagation(NNetwork* network) {
     }
 }
 
-void updateWeightsAndBiases(NNetwork* network, double learningRate) {
+void optimize(NNetwork* network, double learningRate) {
     for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
 
         for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
+            double biasGradient = currentLayer->biasGradients->elements[neuronIndex];
+            double biasValueToUpdateBy = -1 * (learningRate * biasGradient);
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
                 double gradient = currentLayer->gradients->data[neuronIndex]->elements[weightIndex];
+                double valueToUpdateBy = -1 * (learningRate * gradient);
                 
-                currentLayer->weights->data[neuronIndex]->elements[weightIndex] -= learningRate * gradient;
+                if(network->optimizationConfig->shouldUseMomentum == 1) {
+                    double momentumUpdate = network->optimizationConfig->momentum * currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex];
+                    valueToUpdateBy = momentumUpdate - (learningRate * gradient);
+
+                    currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex] = valueToUpdateBy;
+                }
+
+                currentLayer->weights->data[neuronIndex]->elements[weightIndex] += valueToUpdateBy;
             }
-            currentLayer->biases->elements[neuronIndex] -= learningRate * currentLayer->biasGradients->elements[neuronIndex];
+            if(network->optimizationConfig->shouldUseMomentum == 1) {
+                double momentumUpdate = network->optimizationConfig->momentum * currentLayer->biasMomentums->elements[neuronIndex];
+                biasValueToUpdateBy = momentumUpdate - (learningRate * biasGradient);
+                currentLayer->biasMomentums->elements[neuronIndex] = biasValueToUpdateBy;
+            }
+
+            currentLayer->biases->elements[neuronIndex] += biasValueToUpdateBy;
         }
     }
 }
@@ -185,50 +203,4 @@ void deleteNNetwork(NNetwork* network){
     for(int i = network->layerCount - 1; i >= 0; i--) {
         deleteLayer(network->layers[i]);
     }
-}
-
-void dumpNetworkState(NNetwork* network) {
-    printf("------------------------------ Network State ------------------------------\n");
-    printf("Loss: %f\n", network->loss);
-
-    // Dump information for each layer
-    for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
-        Layer* currentLayer = network->layers[layerIndex];
-
-        printf("------------------------ Layer %d ------------------------\n", layerIndex);
-        printf("Neuron count: %d\n", currentLayer->neuronCount);
-
-        // Print input matrix
-        printf("Input matrix:\n");
-        printMatrix(currentLayer->input);
-
-        // Print weights matrix
-        printf("Weights matrix:\n");
-        printMatrix(currentLayer->weights);
-
-        // Print biases vector
-        printf("Biases vector:\n");
-        printVector(currentLayer->biases);
-
-        // Print weighted sums vector
-        printf("Weighted sums vector:\n");
-        printVector(currentLayer->weightedSums);
-
-        // Print output vector
-        printf("Output vector:\n");
-        printVector(currentLayer->output);
-
-        // // Print error vector
-        // printf("Error vector:\n");
-        // printVector(currentLayer->error);
-
-        // Print gradients matrix
-        printf("Gradients matrix:\n");
-        printMatrix(currentLayer->gradients);
-
-        // Print other layer information here
-        printf("------------------------------------------------------------\n");
-    }
-
-    printf("------------------------------------------------------------------------\n");
 }

@@ -19,12 +19,17 @@ typedef struct Layer{
 
     ActivationFunction* activationFunction;
     Vector* dLoss_dWeightedSums;
+
+    Matrix* weightMomentums;
+    Vector* biasMomentums;
 } Layer;
 
 typedef struct {
     int neuronCount;
     int inputSize;
     ActivationFunction* activationFunction;
+
+    int willUseMomentum;
 } LayerConfig;
 
 Layer* createLayer(LayerConfig* config);

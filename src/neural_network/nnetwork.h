@@ -9,6 +9,19 @@
 #include "loss_functions.h"
 
 typedef struct {
+    int shouldUseGradientClipping;
+    double gradientClippingLowerBound;
+    double gradientClippingUpperBound;
+
+    int shouldUseLearningRateDecay;
+    double learningRateDecayAmount;
+
+    int shouldUseMomentum;
+    double momentum;
+
+} OptimizationConfig;
+
+typedef struct {
     Data* data;
 
     int layerCount;
@@ -17,12 +30,7 @@ typedef struct {
     LossFunction* lossFunction;
     double loss;
 
-    // Gradient Clipping
-    int shouldUseGradientClipping;
-    int gradientClippingLowerBound;
-    int gradientClippingUpperBound;
-
-
+    OptimizationConfig* optimizationConfig;
 } NNetwork;
 
 typedef struct {
@@ -33,9 +41,7 @@ typedef struct {
     LossFunction* lossFunction;
     Data* data;
 
-    int shouldUseGradientClipping;
-    double gradientClippingLowerBound;
-    double gradientClippingUpperBound;
+    OptimizationConfig* optimizationConfig;
 } NetworkConfig;
 
 NNetwork* createNetwork(const NetworkConfig* config);
@@ -43,12 +49,7 @@ void deleteNNetwork(NNetwork* network);
 
 void forwardPass(NNetwork* network);
 void backpropagation(NNetwork* network);
-void updateWeightsAndBiases(NNetwork* network, double learningRate);
-void calculateNumericalGradients(NNetwork* network, double epsilon);
+void optimize(NNetwork* network, double learningRate);
 
 void dumpNetworkState(NNetwork* network);
-
-// void calculateOutputLayerGradient(Layer* outputLayer, Vector* target);
-// void calculateHiddenLayerGradient(Layer* layer);
-
 #endif
