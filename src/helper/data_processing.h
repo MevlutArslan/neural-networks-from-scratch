@@ -10,9 +10,13 @@ typedef struct {
     int numberOfColumns;
 
     Matrix* evaluationData;
+
     Matrix* trainingData;
-    
     Vector* yValues;
+
+    Vector* minValues;
+    Vector* maxValues;
+
     Matrix* trainingOutputs;
 } Data;
 
@@ -27,5 +31,7 @@ int getColumnCount(char* fileLocation);
 void normalizeColumn(Matrix* matrix, int columnIndex);
 void normalizeVector(Vector* vector);
 
+void unnormalizeColumn(Matrix* vector, int columnIndex, double min, double max);
 
+void unnormalizeVector(Vector* vector, double min, double max);
 #endif

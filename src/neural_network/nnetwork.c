@@ -59,15 +59,19 @@ NNetwork* createNetwork(const NetworkConfig* config) {
         default:
             break;
     }
+    network->data->trainingOutputs = createMatrix(network->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
 
     return network;
 }
 
-void forwardPass(NNetwork* network) {
-    network->data->trainingOutputs = createMatrix(network->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
-    
-    for (int i = 0; i < network->data->trainingData->rows; i++) {
-        network->layers[0]->input = network->data->trainingData->data[i];
+void forwardPass(NNetwork* network, Matrix* input, Matrix* output) {
+    if((input->rows != output->rows)) {
+        printf("INPUT AND OUTPUT MATRIX SIZE MISMATCH! \n");
+        return;
+    }
+
+    for (int i = 0; i < input->rows; i++) {
+        network->layers[0]->input = input->data[i];
 
         for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
             Layer* currentLayer = network->layers[layerIndex];
@@ -83,14 +87,12 @@ void forwardPass(NNetwork* network) {
                 network->layers[layerIndex + 1]->input = currentLayer->output;
             }
         }
-        network->data->trainingOutputs->data[i] = copyVector(network->layers[network->layerCount - 1]->output);
+        output->data[i] = copyVector(network->layers[network->layerCount - 1]->output);
     }
-
-    network->loss = meanSquaredError(network->data->trainingOutputs, network->data->yValues);
 }
 
 void backpropagation(NNetwork* network) {
-
+    network->loss = meanSquaredError(network->data->trainingOutputs, network->data->yValues);
     Layer* outputLayer = network->layers[network->layerCount - 1];
 
     // for each output

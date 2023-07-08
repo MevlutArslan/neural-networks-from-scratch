@@ -59,7 +59,7 @@ typedef struct {
 NNetwork* createNetwork(const NetworkConfig* config);
 void deleteNNetwork(NNetwork* network);
 
-void forwardPass(NNetwork* network);
+void forwardPass(NNetwork* network, Matrix* input, Matrix* output);
 void backpropagation(NNetwork* network);
 
 void dumpNetworkState(NNetwork* network);

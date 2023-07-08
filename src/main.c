@@ -14,7 +14,7 @@ void runProgram();
 int main(int argc, char* argv[])
 {
     //for testing only, otherwise set to time(NULL)
-    srand(time(NULL));
+    srand(306);
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
@@ -54,7 +54,7 @@ NNetwork* createCustomNetwork() {
     OptimizationConfig optimizationConfig;
     // Learning Rate Decay
     optimizationConfig.shouldUseLearningRateDecay = 1;
-    optimizationConfig.learningRateDecayAmount = 1e-2;
+    optimizationConfig.learningRateDecayAmount = 1e-4;
     
     // Gradient Clipping
     optimizationConfig.shouldUseGradientClipping = 1;
@@ -104,7 +104,6 @@ void runProgram() {
     loss_step_plot = gnuplot_init();
     learningRate_step_plot = gnuplot_init();
 
-
     gnuplot_setstyle(loss_step_plot, "linespoints");
     
     gnuplot_set_xlabel(loss_step_plot, "Steps");
@@ -114,7 +113,7 @@ void runProgram() {
     gnuplot_set_xlabel(learningRate_step_plot, "Steps");
     gnuplot_set_ylabel(learningRate_step_plot, "Loss");
 
-    double learningRate = 0.01;
+    double learningRate = 0.001;
     double currentLearningRate = learningRate;
     int step = 0;
     int maxSteps = 40;
@@ -129,7 +128,7 @@ void runProgram() {
 
     while(step < maxSteps) {
         learningRates[step] = currentLearningRate;
-        forwardPass(network);        
+        forwardPass(network, network->data->trainingData, network->data->trainingOutputs);        
         backpropagation(network);
 
         if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
@@ -148,12 +147,29 @@ void runProgram() {
         storedSteps[step] = step;
         step++;
     }
-    printf("MIN LOSS: %f \n", minLoss);
+    printf("MIN LOSS TRAINING: %f \n", minLoss);
 
     // Plot loss/step
     gnuplot_plot_xy(loss_step_plot, storedSteps, losses, maxSteps, "Loss/Step");
     gnuplot_plot_xy(learningRate_step_plot, storedSteps, learningRates, maxSteps, "Learning Rate/Step");
 
+    Matrix* evaluationOutputs = createMatrix(network->data->evaluationData->rows, network->layers[network->layerCount - 1]->neuronCount);
+    
+    forwardPass(network, network->data->evaluationData, evaluationOutputs);
+
+    // unnormalize the output
+    // i have the same number of rows as the evaluation data, and I have 1 column which i need to normalize
+    for(int i = 0; i < evaluationOutputs->rows; i++) {
+        unnormalizeVector(evaluationOutputs->data[i], network->data->minValues->elements[network->data->minValues->size - 1], network->data->maxValues->elements[network->data->maxValues->size - 1]);
+    }
+
+    // unnormalize the yValues
+    Vector* unnormalizedYValues = spliceVector(network->data->yValues, network->data->trainingData->rows + 1, network->data->numberOfRows);
+    unnormalizeVector(unnormalizedYValues, network->data->minValues->elements[network->data->minValues->size - 1], network->data->maxValues->elements[network->data->maxValues->size - 1]);
+    
+    printMatrix(evaluationOutputs);
+    printVector(unnormalizedYValues);
+    
     printf("Press enter to close plot...\n");
     getchar();
 
@@ -162,6 +178,9 @@ void runProgram() {
 
     free(losses);
     free(storedSteps);
+
+    freeMatrix(evaluationOutputs);
+    freeVector(unnormalizedYValues);
 
     // deleteNNetwork(network);
 }   

@@ -74,6 +74,27 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
 
     fclose(file);
 
+    Vector* maxValues = createVector(data->numberOfColumns);
+    Vector* minValues = createVector(data->numberOfColumns);
+    for (int col = 0; col < data->numberOfColumns; col++) {
+        maxValues->elements[col] = -DBL_MAX;
+        minValues->elements[col] = DBL_MAX;
+    }
+
+    for (int row = 0; row < data->numberOfRows; row++) {
+        for (int col = 0; col < data->numberOfColumns; col++) {
+            double value = matrix->data[row]->elements[col];
+           
+            if (value > maxValues->elements[col]) {
+                maxValues->elements[col] = value;
+            }
+            
+            if (value < minValues->elements[col]) {
+                minValues->elements[col] = value;
+            }
+        }
+    }
+
     data->trainingData = createMatrix(data->numberOfRows * separationFactor, data->numberOfColumns);
 
     for(int i = 0; i < data->trainingData->rows; i++) {
@@ -102,10 +123,12 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
     for(int col = 0; col < data->numberOfColumns; col++) {
         normalizeColumn(data->evaluationData, col);
     }
-
+    
     freeMatrix(matrix);
     removeResultsFromEvaluationSet(data->evaluationData, data->numberOfColumns - 1);
 
+    data->maxValues = maxValues;
+    data->minValues = minValues;
     return data;
 }
 
@@ -196,9 +219,16 @@ void normalizeVector(Vector* vector) {
         maxValueOfVector = fmax(maxValueOfVector, vector->elements[i]);
         minValueOfVector = fmin(minValueOfVector, vector->elements[i]);
     }
+    double range = maxValueOfVector - minValueOfVector;
 
     for(int i = 0; i < vector->size; i++) {
-        vector->elements[i] = (vector->elements[i] - minValueOfVector) / maxValueOfVector;
+        vector->elements[i] = (vector->elements[i] - minValueOfVector) / range;
     }
 
+}
+
+void unnormalizeVector(Vector* vector, double min, double max) {
+    for(int i = 0; i < vector->size; i++) {
+        vector->elements[i] = (vector->elements[i] * (max - min)) + min;
+    }
 }
