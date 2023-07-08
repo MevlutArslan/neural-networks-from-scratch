@@ -34,7 +34,8 @@ NNetwork* createNetwork(const NetworkConfig* config) {
         layerConfig.neuronCount = config->neuronsPerLayer[i];
         layerConfig.activationFunction = &config->activationFunctions[i];
         layerConfig.willUseMomentum = config->optimizationConfig->shouldUseMomentum;
-
+        layerConfig.optimizer = config->optimizationConfig->optimizer;
+        
         Layer* layer = createLayer(&layerConfig);
         network->layers[i] = layer;
     }

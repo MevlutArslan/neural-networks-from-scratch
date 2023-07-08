@@ -54,7 +54,7 @@ NNetwork* createCustomNetwork() {
     OptimizationConfig optimizationConfig;
     // Learning Rate Decay
     optimizationConfig.shouldUseLearningRateDecay = 1;
-    optimizationConfig.learningRateDecayAmount = 0.0001;
+    optimizationConfig.learningRateDecayAmount = 1e-3;
     
     // Gradient Clipping
     optimizationConfig.shouldUseGradientClipping = 1;
@@ -66,6 +66,7 @@ NNetwork* createCustomNetwork() {
     optimizationConfig.momentum = 0.3;
 
     optimizationConfig.optimizer = SGD;
+    optimizationConfig.epsilon = 1e-7;
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
     
@@ -114,10 +115,15 @@ void runProgram() {
     double currentLearningRate = learningRate;
     int steps = 0;
     int maxSteps = 40;
+
+    // ------------------------ FOR PLOTTING ------------------------
     double* losses = malloc(sizeof(double) * maxSteps);
     double* storedSteps = malloc(sizeof(double) * maxSteps);
     double* learningRates = malloc(sizeof(double) * maxSteps);
+    // --------------------------------------------------------------
+
     double minLoss = __DBL_MAX__;
+
     while(steps < maxSteps) {
         learningRates[steps] = currentLearningRate;
         forwardPass(network);        

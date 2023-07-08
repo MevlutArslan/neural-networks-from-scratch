@@ -7,6 +7,7 @@
 #include "../nmath/nmath.h"
 #include "../helper/data_processing.h"
 #include "loss_functions.h"
+#include "../helper/constants.h"
 
 typedef struct {
     int shouldUseGradientClipping;
@@ -20,6 +21,7 @@ typedef struct {
     double momentum;
 
     int optimizer;
+    double epsilon;
 } OptimizationConfig;
 
 typedef struct {
@@ -54,9 +56,6 @@ void backpropagation(NNetwork* network);
 
 void dumpNetworkState(NNetwork* network);
 
-// OPTIMIZERS
-#define SGD 0
-#define ADAGRAD 1
 
 void sgd(NNetwork* network, double learningRate);
 void adagrad(NNetwork* network, double learningRate);

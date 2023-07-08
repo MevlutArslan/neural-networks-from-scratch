@@ -3,6 +3,7 @@
 
 #include "activation_function.h"
 #include "../nmath/nmath.h"
+#include "../helper/constants.h"
 
 typedef struct Layer{
     int neuronCount;
@@ -22,6 +23,9 @@ typedef struct Layer{
 
     Matrix* weightMomentums;
     Vector* biasMomentums;
+
+    Matrix* weightCache_Adagrad;
+    Vector* biasCache_Adagrad;
 } Layer;
 
 typedef struct {
@@ -30,6 +34,7 @@ typedef struct {
     ActivationFunction* activationFunction;
 
     int willUseMomentum;
+    int optimizer;
 } LayerConfig;
 
 Layer* createLayer(LayerConfig* config);

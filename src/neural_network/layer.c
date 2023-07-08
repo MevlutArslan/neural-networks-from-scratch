@@ -27,6 +27,11 @@ Layer* createLayer(LayerConfig* config) {
         layer->biasMomentums = createVector(layer->biases->size);
     }
 
+    if(config->optimizer == ADAGRAD) {
+        layer->weightCache_Adagrad = createMatrix(layer->weights->rows, layer->weights->columns);
+        layer->biasCache_Adagrad = createVector(layer->biases->size);
+    }
+
     return layer;
 }
 
