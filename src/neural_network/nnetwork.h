@@ -22,6 +22,7 @@ typedef struct {
 
     int optimizer;
     double epsilon;
+    double rho;
 } OptimizationConfig;
 
 typedef struct {
@@ -59,4 +60,6 @@ void dumpNetworkState(NNetwork* network);
 
 void sgd(NNetwork* network, double learningRate);
 void adagrad(NNetwork* network, double learningRate);
+void rms_prop(NNetwork* network, double learningRate);
+
 #endif

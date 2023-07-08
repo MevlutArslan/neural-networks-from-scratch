@@ -24,8 +24,8 @@ typedef struct Layer{
     Matrix* weightMomentums;
     Vector* biasMomentums;
 
-    Matrix* weightCache_Adagrad;
-    Vector* biasCache_Adagrad;
+    Matrix* weightCache;
+    Vector* biasCache;
 } Layer;
 
 typedef struct {

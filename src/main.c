@@ -65,8 +65,9 @@ NNetwork* createCustomNetwork() {
     optimizationConfig.shouldUseMomentum = 1;
     optimizationConfig.momentum = 0.3;
 
-    optimizationConfig.optimizer = SGD;
+    optimizationConfig.optimizer = RMS_PROP;
     optimizationConfig.epsilon = 1e-7;
+    optimizationConfig.rho = 0.9;
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
     
