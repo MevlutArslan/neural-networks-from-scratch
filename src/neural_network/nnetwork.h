@@ -19,6 +19,7 @@ typedef struct {
     int shouldUseMomentum;
     double momentum;
 
+    int optimizer;
 } OptimizationConfig;
 
 typedef struct {
@@ -30,6 +31,7 @@ typedef struct {
     LossFunction* lossFunction;
     double loss;
 
+    void (*optimizer)(struct NNetwork*, double);
     OptimizationConfig* optimizationConfig;
 } NNetwork;
 
@@ -49,7 +51,13 @@ void deleteNNetwork(NNetwork* network);
 
 void forwardPass(NNetwork* network);
 void backpropagation(NNetwork* network);
-void optimize(NNetwork* network, double learningRate);
 
 void dumpNetworkState(NNetwork* network);
+
+// OPTIMIZERS
+#define SGD 0
+#define ADAGRAD 1
+
+void sgd(NNetwork* network, double learningRate);
+void adagrad(NNetwork* network, double learningRate);
 #endif

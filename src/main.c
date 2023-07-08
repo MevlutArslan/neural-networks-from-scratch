@@ -65,6 +65,8 @@ NNetwork* createCustomNetwork() {
     optimizationConfig.shouldUseMomentum = 1;
     optimizationConfig.momentum = 0.3;
 
+    optimizationConfig.optimizer = SGD;
+
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
     
     config.optimizationConfig = malloc(sizeof(OptimizationConfig));
@@ -126,12 +128,9 @@ void runProgram() {
             currentLearningRate = learningRate * (1 / (1.0 + (decayRate * (double)steps)));
         }
 
-        optimize(network, currentLearningRate);
+        network->optimizer(network, currentLearningRate);
         
-        // every x steps
-        // if(steps % 10 == 0) {
-        printf("Step: %d, Loss: %f \n", steps, network->loss);
-        // }
+        printf("Step: %d, Loss: %f \n", steps, network->loss);  
 
         minLoss = fmin(minLoss, network->loss);
 
