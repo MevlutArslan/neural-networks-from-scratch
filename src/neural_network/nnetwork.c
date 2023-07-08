@@ -53,6 +53,9 @@ NNetwork* createNetwork(const NetworkConfig* config) {
         case RMS_PROP:
             network->optimizer = rms_prop;
             break;
+        case ADAM:
+            network->optimizer = adam;
+            break;
         default:
             break;
     }

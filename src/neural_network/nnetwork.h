@@ -21,8 +21,13 @@ typedef struct {
     double momentum;
 
     int optimizer;
+    
     double epsilon;
     double rho;
+
+    // ADAM
+    double beta1;
+    double beta2;
 } OptimizationConfig;
 
 typedef struct {
@@ -36,6 +41,8 @@ typedef struct {
 
     void (*optimizer)(struct NNetwork*, double);
     OptimizationConfig* optimizationConfig;
+
+    int currentStep;
 } NNetwork;
 
 typedef struct {
@@ -61,5 +68,5 @@ void dumpNetworkState(NNetwork* network);
 void sgd(NNetwork* network, double learningRate);
 void adagrad(NNetwork* network, double learningRate);
 void rms_prop(NNetwork* network, double learningRate);
-
+void adam(NNetwork* network, double learningRate);
 #endif

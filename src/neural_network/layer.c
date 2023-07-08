@@ -22,12 +22,12 @@ Layer* createLayer(LayerConfig* config) {
     layer->gradients = createMatrix(layer->weights->rows, layer->weights->columns);
     layer->dLoss_dWeightedSums = createVector(layer->neuronCount);
         
-    if(config->willUseMomentum == 1){
+    if(config->willUseMomentum == 1 || config->optimizer == ADAM){
         layer->weightMomentums = createMatrix(layer->weights->rows, layer->weights->columns);
         layer->biasMomentums = createVector(layer->biases->size);
     }
 
-    if(config->optimizer == ADAGRAD || config->optimizer == RMS_PROP) {
+    if(config->optimizer == ADAGRAD || config->optimizer == RMS_PROP || config->optimizer == ADAM) {
         layer->weightCache = createMatrix(layer->weights->rows, layer->weights->columns);
         layer->biasCache = createVector(layer->biases->size);
     }

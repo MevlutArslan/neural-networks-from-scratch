@@ -14,7 +14,7 @@ void runProgram();
 int main(int argc, char* argv[])
 {
     //for testing only, otherwise set to time(NULL)
-    srand(306);
+    srand(time(NULL));
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
@@ -65,9 +65,11 @@ NNetwork* createCustomNetwork() {
     optimizationConfig.shouldUseMomentum = 1;
     optimizationConfig.momentum = 0.3;
 
-    optimizationConfig.optimizer = RMS_PROP;
+    optimizationConfig.optimizer = ADAM;
+    
     optimizationConfig.epsilon = 1e-7;
-    optimizationConfig.rho = 0.9;
+    optimizationConfig.beta1 = 0.9;
+    optimizationConfig.beta2 = 0.999;
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
     
@@ -114,7 +116,7 @@ void runProgram() {
 
     double learningRate = 0.01;
     double currentLearningRate = learningRate;
-    int steps = 0;
+    int step = 0;
     int maxSteps = 40;
 
     // ------------------------ FOR PLOTTING ------------------------
@@ -125,25 +127,26 @@ void runProgram() {
 
     double minLoss = __DBL_MAX__;
 
-    while(steps < maxSteps) {
-        learningRates[steps] = currentLearningRate;
+    while(step < maxSteps) {
+        learningRates[step] = currentLearningRate;
         forwardPass(network);        
         backpropagation(network);
 
         if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
             double decayRate = network->optimizationConfig->learningRateDecayAmount;
-            currentLearningRate = learningRate * (1 / (1.0 + (decayRate * (double)steps)));
+            currentLearningRate = learningRate * (1 / (1.0 + (decayRate * (double)step)));
         }
 
+        network->currentStep = step;
         network->optimizer(network, currentLearningRate);
         
-        printf("Step: %d, Loss: %f \n", steps, network->loss);  
+        printf("Step: %d, Loss: %f \n", step, network->loss);  
 
         minLoss = fmin(minLoss, network->loss);
 
-        losses[steps] = network->loss;
-        storedSteps[steps] = steps;
-        steps++;
+        losses[step] = network->loss;
+        storedSteps[step] = step;
+        step++;
     }
     printf("MIN LOSS: %f \n", minLoss);
 
