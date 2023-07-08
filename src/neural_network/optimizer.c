@@ -1,6 +1,13 @@
 #include "nnetwork.h"
 
 void sgd(NNetwork* network, double learningRate) {
+    double momentum = network->optimizationConfig->momentum;
+
+    if(network->optimizationConfig->shouldUseMomentum == 1 && momentum == 0) {
+        printf("MOMENTUM HASN'T BEEN SET!");
+        return;
+    }
+
     for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
 
@@ -12,7 +19,7 @@ void sgd(NNetwork* network, double learningRate) {
                 double valueToUpdateBy = -1 * (learningRate * gradient);
                     
                 if(network->optimizationConfig->shouldUseMomentum == 1) {
-                    double momentumUpdate = network->optimizationConfig->momentum * currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex];
+                    double momentumUpdate = momentum * currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex];
                     valueToUpdateBy = momentumUpdate - (learningRate * gradient);
 
                     currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex] = valueToUpdateBy;
@@ -21,7 +28,7 @@ void sgd(NNetwork* network, double learningRate) {
                 currentLayer->weights->data[neuronIndex]->elements[weightIndex] += valueToUpdateBy;
             }
             if(network->optimizationConfig->shouldUseMomentum == 1) {
-                double momentumUpdate = network->optimizationConfig->momentum * currentLayer->biasMomentums->elements[neuronIndex];
+                double momentumUpdate = momentum * currentLayer->biasMomentums->elements[neuronIndex];
                 biasValueToUpdateBy = momentumUpdate - (learningRate * biasGradient);
                 currentLayer->biasMomentums->elements[neuronIndex] = biasValueToUpdateBy;
             }
@@ -98,15 +105,15 @@ void rms_prop(NNetwork* network, double learningRate) {
                 double fractionOfCache = rho *  currentLayer->weightCache->data[neuronIndex]->elements[weightIndex];
                 double fractionOfGradientSquarred = (1 - rho) * gradientSquared;
 
-                currentLayer->weightCache->data[neuronIndex]->elements[weightIndex] = fractionOfCache * fractionOfGradientSquarred;
-                currentLayer->weights->data[neuronIndex]->elements[weightIndex] += valueToUpdateBy / (sqrt(gradientSquared) + epsilon);
+                currentLayer->weightCache->data[neuronIndex]->elements[weightIndex] = fractionOfCache + fractionOfGradientSquarred;
+                currentLayer->weights->data[neuronIndex]->elements[weightIndex] += valueToUpdateBy / (sqrt(fractionOfCache + fractionOfGradientSquarred) + epsilon);
             }
 
             //  cache = rho * cache + (1 - rho) * gradient ** 2
             double fractionOfCache = rho * currentLayer->biasCache->elements[neuronIndex];
             double fractionOfGradientSquarred = (1 - rho) * biasGradientSquared;
             currentLayer->biasCache->elements[neuronIndex] = fractionOfCache + fractionOfGradientSquarred;
-            currentLayer->biases->elements[neuronIndex] += biasValueToUpdateBy / (sqrt(biasGradientSquared) + epsilon);
+            currentLayer->biases->elements[neuronIndex] += biasValueToUpdateBy / (sqrt(fractionOfCache + fractionOfGradientSquarred) + epsilon);
         }
     }
 }

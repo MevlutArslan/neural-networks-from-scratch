@@ -54,7 +54,7 @@ NNetwork* createCustomNetwork() {
     OptimizationConfig optimizationConfig;
     // Learning Rate Decay
     optimizationConfig.shouldUseLearningRateDecay = 1;
-    optimizationConfig.learningRateDecayAmount = 1e-3;
+    optimizationConfig.learningRateDecayAmount = 1e-2;
     
     // Gradient Clipping
     optimizationConfig.shouldUseGradientClipping = 1;
