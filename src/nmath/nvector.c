@@ -24,17 +24,29 @@ void fillVector(Vector* vector, double value) {
     memset(vector->elements, value, vector->size * sizeof(double));
 }
 
-
-void printVector(const Vector* vector) {
-    printf("[");
-    int i;
-    for(i = 0; i < vector->size - 1; i++) {
-        printf("%f, ", vector->elements[i]);
+char* vectorToString(const Vector* vector) {
+    char* output = (char*) malloc(sizeof(char) * vector->size * 20); // Assume up to 20 characters per number
+    if (output == NULL) {
+        // handle error
+        return NULL;
     }
 
-    printf("%f", vector->elements[i]);
-    printf("]\n");
+    sprintf(output, "[");
+    int i;
+    for(i = 0; i < vector->size - 1; i++) {
+        char buffer[20];
+        sprintf(buffer, "%f, ", vector->elements[i]);
+        strcat(output, buffer);
+    }
+    
+    // Add last element and closing bracket
+    char buffer[20];
+    sprintf(buffer, "%f]", vector->elements[i]);
+    strcat(output, buffer);
+
+    return output;
 }
+
 
 Vector* copyVector(const Vector* vector) {
     Vector* copy = createVector(vector->size);

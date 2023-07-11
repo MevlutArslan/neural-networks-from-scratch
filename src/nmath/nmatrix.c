@@ -41,22 +41,41 @@ void freeMatrix(Matrix* matrix){
     free(matrix);
 }
 
-void printMatrix(const Matrix* matrix) {
-    printf("[");
-    for (int i = 0; i < matrix->rows; i++) {
-        printf("[ ");
-        for (int j = 0; j < matrix->columns; j++) {
-            if(j == matrix->columns - 1) {
-                printf("%f", matrix->data[i]->elements[j]);
-                continue;
-            }
-            printf("%f, ", matrix->data[i]->elements[j]);
-        }
-        printf("]\n");
-    }
-    printf("]\n");
+char* matrixToString(const Matrix* matrix) {
+    // Initial size for the string
+    int size = matrix->rows * matrix->columns * 20;
+    char* str = (char*)malloc(size * sizeof(char));
 
+    // Start of the matrix
+    strcat(str, "[");
+
+    // Loop through each row
+    for (int i = 0; i < matrix->rows; i++) {
+        strcat(str, "[");
+        // Loop through each column
+        for (int j = 0; j < matrix->columns; j++) {
+            // Convert the current element to a string
+            char element[20];
+            sprintf(element, "%f", matrix->data[i]->elements[j]);
+            strcat(str, element);
+
+            // Add a comma and space if not at the end of the row
+            if (j != matrix->columns - 1) {
+                strcat(str, ", ");
+            }
+        }
+        strcat(str, "]");
+        // Add a newline for all but the last row
+        if (i != matrix->rows - 1) {
+            strcat(str, "\n");
+        }
+    }
+    // End of the matrix
+    strcat(str, "]\n");
+
+    return str;
 }
+
 
 
 int isEqual(const Matrix* m1, const Matrix* m2) {

@@ -16,7 +16,7 @@ void freeVector(Vector* vector);
 void initializeVectorWithRandomValuesInRange(Vector* vector, double min, double max);
 void fillVector(Vector* vector, double value);
 
-void printVector(const Vector* vector);
+char* vectorToString(const Vector* vector);
 Vector* copyVector(const Vector* vector);
 
 Vector* spliceVector(const Vector* vector, int beginIndex, int endIndex);

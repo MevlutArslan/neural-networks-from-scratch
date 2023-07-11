@@ -20,7 +20,7 @@ void fillMatrix(Matrix* matrix, double value);
 
 void freeMatrix(Matrix* matrix);
 
-void printMatrix(const Matrix* matrix);
+char* matrixToString(const Matrix* matrix);
 
 int isEqual(const Matrix* m1, const Matrix* m2);
 
