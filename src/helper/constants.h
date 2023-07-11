@@ -6,5 +6,10 @@
 #define ADAGRAD 1
 #define RMS_PROP 2
 #define ADAM 3
+const char* get_optimizer_name(int optimizer);
+
+// DEBUG VARIABLES
+#define DEBUG 1
+#define ROWS_TO_USE 10
 
 #endif

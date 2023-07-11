@@ -8,6 +8,7 @@
 #include "../helper/data_processing.h"
 #include "loss_functions.h"
 #include "../helper/constants.h"
+#include "../../libraries/logger/log.h"
 
 typedef struct {
     int shouldUseGradientClipping;
@@ -38,7 +39,8 @@ typedef struct {
 
     LossFunction* lossFunction;
     double loss;
-
+    double accuracy;
+    
     void (*optimizer)(struct NNetwork*, double);
     OptimizationConfig* optimizationConfig;
 
@@ -64,9 +66,10 @@ void backpropagation(NNetwork* network);
 
 void dumpNetworkState(NNetwork* network);
 
-
 void sgd(NNetwork* network, double learningRate);
 void adagrad(NNetwork* network, double learningRate);
 void rms_prop(NNetwork* network, double learningRate);
 void adam(NNetwork* network, double learningRate);
+
+double accuracy(Matrix* targets, Matrix* outputs);
 #endif

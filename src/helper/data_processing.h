@@ -12,7 +12,7 @@ typedef struct {
     Matrix* evaluationData;
 
     Matrix* trainingData;
-    Vector* yValues;
+    Matrix* yValues;
 
     Vector* minValues;
     Vector* maxValues;
@@ -20,10 +20,13 @@ typedef struct {
     Matrix* trainingOutputs;
 } Data;
 
-Data* loadCSV(char* fileLocation, double separationFactor);
+Data* loadCSV(char* fileLocation, double separationFactor, int shouldNormalize);
+
+void shuffleRows(Matrix* matrix);
 
 void removeResultsFromEvaluationSet(Matrix* evalMatrix, int columnIndex);
 Vector* extractYValues(Matrix* trainingMatrix, int columnIndex);
+Matrix* oneHotEncode(Vector* categories, int numberOfCategories);
 
 int getRowCount(char* fileLocation);
 int getColumnCount(char* fileLocation);
@@ -34,4 +37,5 @@ void normalizeVector(Vector* vector);
 void unnormalizeColumn(Matrix* vector, int columnIndex, double min, double max);
 
 void unnormalizeVector(Vector* vector, double min, double max);
+
 #endif

@@ -4,6 +4,8 @@
 #include <math.h>
 #include "nvector.h"
 #include "nmatrix.h"
+#include "../../libraries/logger/log.h"
+#include "../helper/constants.h"
 
 // MATRIX MATH OPERATIONS
 Matrix* matrix_dot_product(const Matrix* m1, const Matrix* m2);
@@ -35,4 +37,5 @@ Vector* dot_product(Matrix* matrix, Vector* vector);
 Matrix* reshapeVectorToMatrix(const Vector* vector);
 Vector* reshapeMatrixToVector(Matrix* matrix);
 
+int getIndexOfMax(Vector* output);
 #endif

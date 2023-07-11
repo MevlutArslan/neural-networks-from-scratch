@@ -69,46 +69,90 @@ NNetwork* createNetwork(const NetworkConfig* config) {
 
 void forwardPass(NNetwork* network, Matrix* input, Matrix* output) {
     if((input->rows != output->rows)) {
-        printf("INPUT AND OUTPUT MATRIX SIZE MISMATCH! \n");
+        log_error("Input and Output matrix size mismatch! \n");
         return;
     }
-    for (int i = 0; i < 5; i++) {
+
+    for (int i = 0; i < ROWS_TO_USE; i++) {
         network->layers[0]->input = input->data[i];
-        for (int layerIndex = 0; layerIndex < 1; layerIndex++) {
+        for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
             Layer* currentLayer = network->layers[layerIndex];
 
-            Vector* weightedSum = dot_product(currentLayer->weights, currentLayer->input);
-    
-            currentLayer->output = vector_addition(weightedSum, currentLayer->biases);;
+            Vector* dotProduct = dot_product(currentLayer->weights, currentLayer->input);
+            if(DEBUG == 1) {
+                char* dotProductStr = vectorToString(dotProduct);
+                log_debug(
+                    "Dot Product For Input Row: %d & Layer: %d: %s", 
+                    i, 
+                    layerIndex, 
+                    dotProductStr
+                );
+                free(dotProductStr);
+            }
+
+            currentLayer->output = vector_addition(dotProduct, currentLayer->biases);
+            log_info("Calculated output for layer: %d", layerIndex);
+
+            if(DEBUG == 1) {
+                char* netInput = vectorToString(dotProduct);
+                log_debug(
+                    "Net Input For Input Row: %d & Layer: %d: %s", 
+                    i, 
+                    layerIndex, 
+                    netInput
+                );
+                free(netInput);
+            }
             currentLayer->weightedSums = copyVector(currentLayer->output);
             
             currentLayer->activationFunction->activation(currentLayer->output);
-            
+            log_info("Applied activation function for layer: %d", layerIndex);
+            if(DEBUG == 1) {
+                char* outputStr = vectorToString(currentLayer->output);
+                log_debug(
+                    "Output of activation function for Input Row: %d & Layer: %d: %s", 
+                    i, 
+                    layerIndex, 
+                    outputStr
+                );
+                free(outputStr);
+            }
+
             if(layerIndex != network->layerCount - 1) {
                 network->layers[layerIndex + 1]->input = currentLayer->output;
             }
         }
         output->data[i] = copyVector(network->layers[network->layerCount - 1]->output);
+        log_info("Copied output for input row: %d", i);
+
     }
+    log_info("Completed forward pass.");
+
 }
 
 void backpropagation(NNetwork* network) {
     network->loss = network->lossFunction->loss_function(network->data->yValues, network->data->trainingOutputs);
-    
+    network->accuracy = accuracy(network->data->yValues, network->data->trainingOutputs);
+
     // Clear the gradients
     for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         fillMatrix(network->layers[layerIndex]->gradients, 0);
     }
+    log_info("Reset the gradient matrices for each layer.");
 
     Layer* outputLayer = network->layers[network->layerCount - 1];
+    log_info("Start of backward pass.");
 
     // for each output
-    for(int outputIndex = 0; outputIndex < 1; outputIndex++) {
-        
+    for(int outputIndex = 0; outputIndex < ROWS_TO_USE; outputIndex++) {
+        log_info("Outputs row index: %d", outputIndex);
+
         // the output layer's step
         int layerIndex = network->layerCount - 1;
         Layer* currentLayer = network->layers[layerIndex];
         for(int outputNeuronIndex = 0; outputNeuronIndex < outputLayer->neuronCount; outputNeuronIndex++) {
+            log_info("Output neuron index: %d", outputNeuronIndex);
+
             double prediction = network->data->trainingOutputs->data[outputIndex]->elements[outputNeuronIndex];
 
             double target = network->data->yValues->data[outputIndex]->elements[outputNeuronIndex];
@@ -158,8 +202,10 @@ void backpropagation(NNetwork* network) {
             }
             currentLayer->dLoss_dWeightedSums->elements[outputNeuronIndex] = dLoss_dWeightedSum;
         }
+        log_info("Gradient for weights and biases computed for the output layer.");
 
         for(layerIndex = network->layerCount - 2; layerIndex >= 0; layerIndex --) {
+            log_info("Backward propagation for layer index: %d", layerIndex);
             currentLayer = network->layers[layerIndex];
             for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
                 double dLoss_dOutput = 0.0f;
@@ -195,9 +241,14 @@ void backpropagation(NNetwork* network) {
                 }
 
                 currentLayer->dLoss_dWeightedSums->elements[neuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
+
+                log_info("Gradient for weights and biases computed for neuron index: %d in layer index: %d", neuronIndex, layerIndex);
             }
+            log_info("Gradient computation complete for current hidden layer at index: %d", layerIndex);
         }
+        log_info("Backward pass complete for current output row.");
     }
+    log_info("End of backward pass.");
 }
 
 void deleteNNetwork(NNetwork* network){
@@ -207,19 +258,46 @@ void deleteNNetwork(NNetwork* network){
 }
 
 double accuracy(Matrix* targets, Matrix* outputs) {
-   
     int value = 0;
-    for(int i = 0; i < outputs->rows; i++){
+    for(int i = 0; i < ROWS_TO_USE; i++){
         int predictedCategory = getIndexOfMax(outputs->data[i]);
         int targetCategory = getIndexOfMax(targets->data[i]);
    
         if (predictedCategory == targetCategory) {
             value++;
-        }    
+        } 
+
+        if(DEBUG == 1) {
+            char* targetVectorStr = vectorToString(targets->data[i]);
+            char* outputVectorStr = vectorToString(outputs->data[i]);
+            log_debug(
+                "Accuracy Calculation: \n"
+                "\t\t\t\tTarget Vector: %s \n"
+                "\t\t\t\tOutput Vector: %s \n"
+                "\t\t\t\tPredicted Category: %d \n"
+                "\t\t\t\tTarget Category: %d \n"
+                "\t\t\t\tCorrect Predictions Count: %d \n", 
+                targetVectorStr, 
+                outputVectorStr, 
+                predictedCategory, 
+                targetCategory, 
+                value
+            );
+            free(targetVectorStr);
+            free(outputVectorStr);
+        }
+
     }
 
-    return (double)value / (double)outputs->rows;
+    double averageAccuracy = (double)value / (double)outputs->rows;
+
+    if(DEBUG == 1) {
+        log_debug("Average Accuracy: %f \n", averageAccuracy);
+    }
+
+    return averageAccuracy;
 }
+
 
 void dumpNetworkState(NNetwork* network) {
    char json_output[5000]; // adjust the size to suit your needs
@@ -273,7 +351,7 @@ void dumpNetworkState(NNetwork* network) {
         "\t\t\t\"rho\": %.2f,\n"
         "\t\t\t\"beta1\": %.2f,\n"
         "\t\t\t\"beta2\": %.2f\n"
-        "\t\t},\n", // add a comma as this might not be the last item in its parent object
+        "\t\t}\n", // add a comma as this might not be the last item in its parent object
         opt_config->shouldUseGradientClipping,
         opt_config->gradientClippingLowerBound,
         opt_config->gradientClippingUpperBound,
@@ -287,12 +365,6 @@ void dumpNetworkState(NNetwork* network) {
         opt_config->beta1,
         opt_config->beta2
     );
-
-
-    // end of log
-    // spritnf(json_output + strlen(json_output),
-    //     "}\n"
-    // );
 
     log_info("%s", json_output);
 

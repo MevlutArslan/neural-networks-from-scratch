@@ -289,7 +289,6 @@ Vector* dot_product(Matrix* matrix, Vector* vector) {
         printf("Matrix's column size needs to be equal to the length of the vector to be able to calculate dot product! \n");
         return NULL;
     }
-
     Vector* result = createVector(matrix->rows);
     //each column by each row
     for(int matrixRow = 0; matrixRow < matrix->rows; matrixRow++) {
@@ -301,4 +300,29 @@ Vector* dot_product(Matrix* matrix, Vector* vector) {
     }
 
     return result;
+}
+
+int getIndexOfMax(Vector* output) {
+    int maxIndex = 0;
+    double max = __DBL_MIN__;
+    for(int i = 0; i < output->size; i++) {
+        if(output->elements[i] > max) {
+            max = output->elements[i];
+            maxIndex = i;
+        }
+    }
+
+    if(DEBUG == 1) {
+        char* outputVectorStr = vectorToString(output);
+        log_debug(
+            "getIndexOfMax: "
+            "Vector: %s, "
+            "Max Index: %d \n", 
+            outputVectorStr, 
+            maxIndex
+        );
+        free(outputVectorStr);
+    }
+
+    return maxIndex;
 }

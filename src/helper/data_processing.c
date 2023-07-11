@@ -10,7 +10,7 @@
 
 
 // TODO: Generalize this to accept indices of the rows and columns we want to skip
-Data* loadCSV(char* fileLocation, double separationFactor) {
+Data* loadCSV(char* fileLocation, double separationFactor, int shouldNormalize) {
     FILE* file = fopen(fileLocation, "r");
     if (file == NULL) {
         printf("Failed to open file: %s\n", fileLocation);
@@ -24,7 +24,7 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
         return NULL;
     }
 
-    data->numberOfColumns = getColumnCount(fileLocation) - 1;
+    data->numberOfColumns = getColumnCount(fileLocation);
     data->numberOfRows = getRowCount(fileLocation) - 1;
     
     Matrix* matrix = createMatrix(data->numberOfRows, data->numberOfColumns);
@@ -51,20 +51,15 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
 
         // strtok separates a line by the delimiter and writes the remaining of the line into the address provided
         // we look a step ahead in the while loop but we assign that to the correct index of the matrix
-        while ((token = strtok_r(rest, DELIMITER, &rest)) && rowIndex < data->numberOfRows + 1 && colIndex < data->numberOfColumns + 1) {
+        while ((token = strtok_r(rest, DELIMITER, &rest)) && rowIndex < data->numberOfRows + 1 && colIndex < data->numberOfColumns) {
             if (rowIndex == 0) {
                 break;
             }
 
-            if (colIndex == 0) {
-                colIndex++;
-                continue;
-            }
-
+            
             double value = atof(token);
 
-            // want to skip first col and first row cause they are useless
-            matrix->data[rowIndex - 1]->elements[colIndex - 1] = value;
+            matrix->data[rowIndex - 1]->elements[colIndex] = value;
 
             colIndex++;
         }
@@ -73,62 +68,65 @@ Data* loadCSV(char* fileLocation, double separationFactor) {
     }
 
     fclose(file);
+    shuffleRows(matrix);
 
-    Vector* maxValues = createVector(data->numberOfColumns);
-    Vector* minValues = createVector(data->numberOfColumns);
-    for (int col = 0; col < data->numberOfColumns; col++) {
-        maxValues->elements[col] = -DBL_MAX;
-        minValues->elements[col] = DBL_MAX;
-    }
+    data->yValues = oneHotEncode(extractYValues(matrix, 0), 3);
 
-    for (int row = 0; row < data->numberOfRows; row++) {
-        for (int col = 0; col < data->numberOfColumns; col++) {
-            double value = matrix->data[row]->elements[col];
-           
-            if (value > maxValues->elements[col]) {
-                maxValues->elements[col] = value;
-            }
-            
-            if (value < minValues->elements[col]) {
-                minValues->elements[col] = value;
-            }
-        }
-    }
-
-    data->trainingData = createMatrix(data->numberOfRows * separationFactor, data->numberOfColumns);
+    data->trainingData = createMatrix(data->numberOfRows * separationFactor, data->numberOfColumns - 1);
 
     for(int i = 0; i < data->trainingData->rows; i++) {
-        for(int j = 0; j < data->numberOfColumns; j++) {
-            data->trainingData->data[i]->elements[j] = matrix->data[i]->elements[j];
+        for(int j = 0; j < data->numberOfColumns - 1; j++) {
+            data->trainingData->data[i]->elements[j] = matrix->data[i]->elements[j+1];
         }
     }
-
-    for(int col = 0; col < data->numberOfColumns; col++) {
-        normalizeColumn(data->trainingData, col);
-    }
-
-    data->yValues = extractYValues(matrix, data->numberOfColumns - 1);
-    normalizeVector(data->yValues);
     
-    data->evaluationData = createMatrix(data->numberOfRows - data->trainingData->rows, data->numberOfColumns);
+    data->evaluationData = createMatrix(data->numberOfRows - data->trainingData->rows, data->numberOfColumns - 1);
 
     for(int i = 0; i < data->trainingData->rows; i++) {
-        for(int j = 0; j < data->numberOfColumns; j++) {
+        for(int j = 0; j < data->numberOfColumns - 1; j++) {
             if(data->trainingData->rows + i < matrix->rows) {
-                data->evaluationData->data[i]->elements[j] = matrix->data[data->trainingData->rows + i]->elements[j];
+                data->evaluationData->data[i]->elements[j] = matrix->data[data->trainingData->rows + i]->elements[j + 1];
             }
         }
     }
 
-    for(int col = 0; col < data->numberOfColumns; col++) {
-        normalizeColumn(data->evaluationData, col);
+    if(shouldNormalize == 1) {
+        Vector* maxValues = createVector(data->trainingData->columns);
+        Vector* minValues = createVector(data->trainingData->columns);
+        for (int col = 0; col < data->trainingData->columns; col++) {
+            maxValues->elements[col] = -DBL_MAX;
+            minValues->elements[col] = DBL_MAX;
+        }
+
+        for (int row = 0; row < data->numberOfRows; row++) {
+            for (int col = 0; col < data->trainingData->columns; col++) {
+                double value = matrix->data[row]->elements[col];
+            
+                if (value > maxValues->elements[col]) {
+                    maxValues->elements[col] = value;
+                }
+                
+                if (value < minValues->elements[col]) {
+                    minValues->elements[col] = value;
+                }
+            }
+        }
+        for(int col = 0; col < data->trainingData->columns; col++) {
+            normalizeColumn(data->trainingData, col);
+        }
+       
+        for(int col = 0; col < data->trainingData->columns; col++) {
+            normalizeColumn(data->evaluationData, col);
+        }
+
+
+        data->maxValues = maxValues;
+        data->minValues = minValues;
     }
     
     freeMatrix(matrix);
-    removeResultsFromEvaluationSet(data->evaluationData, data->numberOfColumns - 1);
-
-    data->maxValues = maxValues;
-    data->minValues = minValues;
+    // removeResultsFromEvaluationSet(data->evaluationData, 0);
+   
     return data;
 }
 
@@ -231,4 +229,57 @@ void unnormalizeVector(Vector* vector, double min, double max) {
     for(int i = 0; i < vector->size; i++) {
         vector->elements[i] = (vector->elements[i] * (max - min)) + min;
     }
+}
+
+void shuffleRows(Matrix* matrix) {
+    int numberOfRows = matrix->rows;
+
+    // Step 1: Initialize the permutation array with the original order
+    int* permutation = malloc(numberOfRows * sizeof(int));
+    for (int i = 0; i < numberOfRows; i++) {
+        permutation[i] = i;
+    }
+
+    // Step 2: Shuffle the permutation array using the Fisher-Yates algorithm
+    for (int i = numberOfRows - 1; i > 0; i--) {
+        // Generate a random index
+        int j = rand() % (i + 1);
+
+        // Swap permutation[i] and permutation[j]
+        int temp = permutation[i];
+        permutation[i] = permutation[j];
+        permutation[j] = temp;
+    }
+
+    // Create a new matrix to hold the shuffled rows
+    Matrix* shuffledMatrix = createMatrix(numberOfRows, matrix->columns);
+
+    // Fill the new matrix with rows in the order specified by the permutation
+    for (int i = 0; i < numberOfRows; i++) {
+        shuffledMatrix->data[i] = matrix->data[permutation[i]];
+    }
+
+    // Replace the old matrix data with the shuffled data
+    free(matrix->data);
+    matrix->data = shuffledMatrix->data;
+
+    // Clean up
+    free(shuffledMatrix);
+    free(permutation);
+}
+
+Matrix* oneHotEncode(Vector* categories, int numberOfCategories) {
+    // Create a matrix to hold the one-hot encoded categories
+    Matrix* oneHotEncoded = createMatrix(categories->size, numberOfCategories);
+
+    // For each category in the input vector
+    for (int i = 0; i < categories->size; i++) {
+        // Subtract 1 from the category to get a zero-based index
+        int index = (int)categories->elements[i] - 1;
+
+        // Set the corresponding element in the one-hot encoded matrix to 1
+        oneHotEncoded->data[i]->elements[index] = 1.0;
+    }
+
+    return oneHotEncoded;
 }
