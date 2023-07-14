@@ -26,9 +26,23 @@ int is_equal(const Matrix* m1, const Matrix* m2);
 
 int is_square(const Matrix* m);
 
+void shuffle_rows(Matrix* matrix);
+
+Matrix* copy_matrix(const Matrix* source);
+
 // not sure what to call this.
 // in the formulas for calculating determinants there is the step of working 
 // on a part of the matrix which is obtatined by excluding current row and current column
 Matrix* generate_mini_matrix(const Matrix* m, int excludeRow, int excludeColumn);
+
+/*
+    Gets submatrix with in the specified boundaries.
+*/
+Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, int endCol);
+
+/*
+    Gets submatrix with in the specified boundaries and skips a column.
+*/
+Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, int startCol, int endCol, int columnIndex);
 
 #endif

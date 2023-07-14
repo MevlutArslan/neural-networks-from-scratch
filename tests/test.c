@@ -5,7 +5,9 @@
 
 void run_tests() {
     testMatrixCreation();
-    test_matrix_dot_product();
+    test_get_sub_matrix();
+    test_get_sub_matrix_except_column();
+    test_matrix_product();
     test_matrix_addition();
     test_matrix_subtraction();
     test_matrix_multiplication();

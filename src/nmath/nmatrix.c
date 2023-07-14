@@ -40,7 +40,8 @@ void free_matrix(Matrix* matrix){
     free(matrix->data);
     free(matrix);
 }
-char* matrixToString(const Matrix* matrix) {
+
+char* matrix_to_string(const Matrix* matrix) {
     // Initial size for the string
 
     int size = matrix->rows * matrix->columns * 20;
@@ -106,6 +107,45 @@ int is_square(const Matrix* m){
     return 1;
 }
 
+
+void shuffle_rows(Matrix* matrix) {
+    int numberOfRows = matrix->rows;
+
+    // Step 1: Initialize the permutation array with the original order
+    int* permutation = malloc(numberOfRows * sizeof(int));
+    for (int i = 0; i < numberOfRows; i++) {
+        permutation[i] = i;
+    }
+
+    // Step 2: Shuffle the permutation array using the Fisher-Yates algorithm
+    for (int i = numberOfRows - 1; i > 0; i--) {
+        // Generate a random index
+        int j = rand() % (i + 1);
+
+        // Swap permutation[i] and permutation[j]
+        int temp = permutation[i];
+        permutation[i] = permutation[j];
+        permutation[j] = temp;
+    }
+
+    // Create a new matrix to hold the shuffled rows
+    Matrix* shuffledMatrix = create_matrix(numberOfRows, matrix->columns);
+
+    // Fill the new matrix with rows in the order specified by the permutation
+    for (int i = 0; i < numberOfRows; i++) {
+        shuffledMatrix->data[i] = matrix->data[permutation[i]];
+    }
+
+    // Replace the old matrix data with the shuffled data
+    free(matrix->data);
+    matrix->data = shuffledMatrix->data;
+
+    // Clean up
+    free(shuffledMatrix);
+    free(permutation);
+}
+
+
 Matrix* generate_mini_matrix(const Matrix* m, int excludeRow, int excludeColumn) {
     Matrix* miniMatrix = create_matrix(m->rows - 1, m->columns - 1);
     
@@ -129,4 +169,54 @@ Matrix* generate_mini_matrix(const Matrix* m, int excludeRow, int excludeColumn)
     }
     
     return miniMatrix;
+}
+
+Matrix* copy_matrix(const Matrix* source) {
+    Matrix* matrix = create_matrix(source->rows, source->columns);
+
+    for(int i = 0; i < matrix->rows; i++) {
+        for(int j = 0; j < matrix->columns; j++) {
+            matrix->data[i][j] = source->data[i][j];
+        }
+    }
+
+    return matrix;
+}
+
+
+Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, int endCol) {
+    Matrix* matrix = create_matrix(endRow - startRow, endCol - startCol); // 
+    // lets say my source is of dimensions 8,12 and 
+    // I want the part of the matrix from the 2nd row to 10th row and 1st column to 13th col
+    for(int i = startRow; i < endRow; i++) { // i goes 2 -> 10 
+        for(int j = startCol; j < endCol; j++) { // j goes 1 -> 13
+            // how do i map i and j to my matrix's index
+            matrix->data[i - startRow][j - startCol] = source->data[i][j]; 
+        }
+    }
+
+    return matrix;
+}
+
+Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, int startCol, int endCol, int columnIndex) {
+    // if the column we want to remove is out of the range we want our submatrix to be in
+    // the column we want to remove can automatically be left out of the submatrix.
+    if(columnIndex < startCol || columnIndex > endCol) {
+        return get_sub_matrix(source, startRow, endRow, startCol, endCol);
+    }
+
+    Matrix* newMatrix = create_matrix(endRow - startRow + 1, (endCol - startCol + 1) - 1);
+    for(int row = startRow; row <= endRow; row++) {
+        int columnIndexDif = startCol;
+        for(int col = startCol; col <= endCol; col++) {
+            if(col == columnIndex) {
+                columnIndexDif += 1;
+                continue;
+            }
+        
+            newMatrix->data[row - startRow][col - columnIndexDif] = source->data[row][col];
+        }
+    }
+
+    return newMatrix;
 }
