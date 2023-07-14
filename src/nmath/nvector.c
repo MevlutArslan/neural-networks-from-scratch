@@ -1,7 +1,7 @@
 #include "nvector.h"
 
 
-Vector* createVector(int size) {
+Vector* create_vector(int size) {
     Vector* vector = malloc(sizeof(Vector));
     vector->elements = malloc(size * sizeof(double));
     vector->size = size;
@@ -9,22 +9,22 @@ Vector* createVector(int size) {
     return vector;
 }
 
-void freeVector(Vector* vector) {
+void free_vector(Vector* vector) {
     free(vector->elements);
     free(vector);
 }
 
-void initializeVectorWithRandomValuesInRange(Vector* vector, double min, double max) {
+void fill_vector_random(Vector* vector, double min, double max) {
     for(int i = 0; i < vector->size; i++) {
         vector->elements[i] = ((double)rand() / (double)RAND_MAX) * (max - min) + min;
     }
 }
 
-void fillVector(Vector* vector, double value) {
+void fill_vector(Vector* vector, double value) {
     memset(vector->elements, value, vector->size * sizeof(double));
 }
 
-char* vectorToString(const Vector* vector) {
+char* vector_to_string(const Vector* vector) {
     char* output = (char*) malloc(sizeof(char) * vector->size * 20); // Assume up to 20 characters per number
     if (output == NULL) {
         // handle error
@@ -48,8 +48,8 @@ char* vectorToString(const Vector* vector) {
 }
 
 
-Vector* copyVector(const Vector* vector) {
-    Vector* copy = createVector(vector->size);
+Vector* copy_vector(const Vector* vector) {
+    Vector* copy = create_vector(vector->size);
 
     for(int i = 0; i < vector->size; i++) {
         copy->elements[i] = vector->elements[i];
@@ -58,9 +58,9 @@ Vector* copyVector(const Vector* vector) {
     return copy;
 }
 
-Vector* spliceVector(const Vector* vector, int beginIndex, int endIndex) {
+Vector* slice_vector(const Vector* vector, int beginIndex, int endIndex) {
     int newSize = endIndex - beginIndex ;
-    Vector* newVector = createVector(newSize);
+    Vector* newVector = create_vector(newSize);
 
     for (int i = beginIndex, j = 0; i <= endIndex; i++, j++) {
         newVector->elements[j] = vector->elements[i];

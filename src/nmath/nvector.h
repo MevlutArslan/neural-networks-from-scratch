@@ -10,15 +10,15 @@ typedef struct {
     int size;
 } Vector;
 
-Vector* createVector(int size);
-void freeVector(Vector* vector);
+Vector* create_vector(int size);
+void free_vector(Vector* vector);
 
-void initializeVectorWithRandomValuesInRange(Vector* vector, double min, double max);
-void fillVector(Vector* vector, double value);
+void fill_vector_random(Vector* vector, double min, double max);
+void fill_vector(Vector* vector, double value);
 
-char* vectorToString(const Vector* vector);
-Vector* copyVector(const Vector* vector);
+char* vector_to_string(const Vector* vector);
+Vector* copy_vector(const Vector* vector);
 
-Vector* spliceVector(const Vector* vector, int beginIndex, int endIndex);
+Vector* slice_vector(const Vector* vector, int beginIndex, int endIndex);
 
 #endif

@@ -10,22 +10,25 @@
 typedef struct {
     int rows;
     int columns;
-    Vector** data;
+    double** data;
 } Matrix;
 
-Matrix* createMatrix(const int rows, const int cols);
+Matrix* create_matrix(const int rows, const int cols);
 
-void initializeMatrixWithRandomValuesInRange(Matrix* matrix, double min, double max);
-void fillMatrix(Matrix* matrix, double value);
+void fill_matrix_random(Matrix* matrix, double min, double max);
+void fill_matrix(Matrix* matrix, double value);
 
-void freeMatrix(Matrix* matrix);
+void free_matrix(Matrix* matrix);
 
-char* matrixToString(const Matrix* matrix);
+char* matrix_to_string(const Matrix* matrix);
 
-int isEqual(const Matrix* m1, const Matrix* m2);
+int is_equal(const Matrix* m1, const Matrix* m2);
 
-int isSquare(const Matrix* m);
+int is_square(const Matrix* m);
 
-Matrix* generateMiniMatrix(const Matrix* m, int excludeRow, int excludeColumn);
+// not sure what to call this.
+// in the formulas for calculating determinants there is the step of working 
+// on a part of the matrix which is obtatined by excluding current row and current column
+Matrix* generate_mini_matrix(const Matrix* m, int excludeRow, int excludeColumn);
 
 #endif
