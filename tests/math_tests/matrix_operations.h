@@ -3,7 +3,7 @@
 
 #include "../../src/nmath/nmath.h"
 
-void test_matrix_dot_product();
+void test_matrix_product();
 void test_matrix_addition();
 void test_matrix_subtraction();
 void test_matrix_multiplication();

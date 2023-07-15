@@ -31,9 +31,8 @@ typedef struct {
     double beta2;
 } OptimizationConfig;
 
-typedef struct {
-    Data* data;
 
+typedef struct {
     int layerCount;
     Layer** layers;
 
@@ -45,6 +44,8 @@ typedef struct {
     OptimizationConfig* optimizationConfig;
 
     int currentStep;
+
+    Matrix* output;
 } NNetwork;
 
 typedef struct {
@@ -53,7 +54,7 @@ typedef struct {
     ActivationFunction* activationFunctions;  // Array of activation functions for each layer
     double learningRate;         // Learning rate for training the network
     LossFunction* lossFunction;
-    Data* data;
+    int inputSize;
 
     OptimizationConfig* optimizationConfig;
 } NetworkConfig;
@@ -61,8 +62,9 @@ typedef struct {
 NNetwork* createNetwork(const NetworkConfig* config);
 void deleteNNetwork(NNetwork* network);
 
-void forwardPass(NNetwork* network, Matrix* input, Matrix* output);
-void backpropagation(NNetwork* network);
+void forwardPass(NNetwork* network, Matrix* input);
+void calculateLoss(NNetwork* network, Matrix* yValues);
+void backpropagation(NNetwork* network, Matrix* yValues);
 
 void dumpNetworkState(NNetwork* network);
 

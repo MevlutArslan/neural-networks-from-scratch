@@ -3,8 +3,8 @@
 
 void test_activation_function_relu() {
     int size = 5;
-    Vector* input = createVector(size);
-    Vector* expected = createVector(size);
+    Vector* input = create_vector(size);
+    Vector* expected = create_vector(size);
 
     // Set input values
     for (int i = 0; i < size; i++) {
@@ -14,7 +14,7 @@ void test_activation_function_relu() {
 
     // Apply relu activation function to the input vector
     relu(input);
-    Vector* output = copyVector(input);
+    Vector* output = copy_vector(input);
 
     // Check if output matches the expected values
     int passed = 1;
@@ -33,13 +33,13 @@ void test_activation_function_relu() {
     }
 
     // Clean up memory
-    freeVector(input);
-    freeVector(expected);
-    freeVector(output);
+    free_vector(input);
+    free_vector(expected);
+    free_vector(output);
 }
 
 void test_activation_function_sigmoid() {
-    Vector* input = createVector(1);
+    Vector* input = create_vector(1);
     input->elements[0] = 2.5;
     sigmoid(input);
 

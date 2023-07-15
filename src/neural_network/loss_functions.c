@@ -10,9 +10,9 @@ double meanSquaredError(Matrix* outputs, Matrix* targets) {
         double difference = target->elements[0] - output->elements[0]; // assuming both vectors have size 1
         mse += (difference * difference) / 2;
 
-        if(DEBUG == 1) {
-            char* outputVectorStr = vectorToString(output);
-            char* targetVectorStr = vectorToString(target);
+        #ifdef DEBUG
+            char* outputVectorStr = vector_to_string(output);
+            char* targetVectorStr = vector_to_string(target);
             
             log_debug(
                 "MSE Input & Intermediate Output: \n"
@@ -26,14 +26,14 @@ double meanSquaredError(Matrix* outputs, Matrix* targets) {
             
             free(outputVectorStr);
             free(targetVectorStr);
-        }
+        #endif
     }
 
     mse /= (double)outputs->rows;
 
-    if(DEBUG == 1) {
+    #ifdef DEBUG
         log_debug("Final MSE: %f \n", mse);
-    }
+    #endif
 
     return mse;
 }
@@ -43,17 +43,17 @@ double meanSquaredErrorDerivative(double target, double predicted) {
     return -1 * (target - predicted);
 }
 
-double crossEntropyForEachRow(Vector* target, Vector* output) {
-    double sum = 0.0;
-    int size = target->size;
+/*
+    Should be used when both target and prediction are one hot encoded vectors!
+    The formula for Categorical Cross Entropy simplifies to: 
+        -1 * log(prediction_vector[index of the target category in the target vector])
+*/
+double categoricalCrossEntropyPerInput(Vector* target, Vector* output) {
+    double loss = -1 * target->elements[arg_max(target)] * log(output->elements[arg_max(output)]);
 
-    for (int i = 0; i < size; i++) {
-        sum += -1 * (target->elements[i]) * log(output->elements[i]);
-    }
-    
-    if(DEBUG == 1) {
-        char* targetVectorStr = vectorToString(target);
-        char* outputVectorStr = vectorToString(output);
+    #ifdef DEBUG
+        char* targetVectorStr = vector_to_string(target);
+        char* outputVectorStr = vector_to_string(output);
 
         // log the inputs and the output
         log_debug(
@@ -63,33 +63,61 @@ double crossEntropyForEachRow(Vector* target, Vector* output) {
             "\t\t\t\tCross Entropy: %f \n", 
             targetVectorStr, 
             outputVectorStr, 
-            sum
+            loss
         );
 
         free(targetVectorStr);
         free(outputVectorStr);
-    }
-    return sum;
+    #endif
+    // we don't care about the cases where target_i is 0 as 0 * log(output_i) will return 0 nonetheless
+    return loss;
 }
 
+/* 
+    * The categorical cross-entropy loss is exclusively used in multi-class classification tasks.
+*/
+double categoricalCrossEntropyLoss(Matrix* targetOutputs, Matrix* outputs) {
+    double sum = 0.0f;
+    for(int i = 0; i < outputs->rows; i++) {
+        Vector* targetVector = targetOutputs->data[i];
+        Vector* outputVector = outputs->data[i];
 
-double crossEntropyLoss(Matrix* targetOutputs, Matrix* outputs) {
-    double totalLoss = 0.0;
-    int dataSize = ROWS_TO_USE;
-    for (int i = 0; i < dataSize; i++) {
-        Vector* target = targetOutputs->data[i];
-        Vector* output = outputs->data[i];
-        totalLoss += crossEntropyForEachRow(target, output);
+        sum += categoricalCrossEntropyPerInput(targetVector, outputVector);
     }
-    if(DEBUG == 1) {
-        log_info("Called crossEntropyLoss & returned: %f \n", totalLoss / ROWS_TO_USE);
-    }
-    return totalLoss / ROWS_TO_USE;
+    #ifdef DEBUG
+        // todo: change this back to output.rows
+        log_info("Called multiClassCrossEntropyLoss & returned: %f \n", sum / 20);
+    #endif
+    return sum / outputs->rows;
 }
 
-double crossEntropyLossDerivative(double target, double predicted) {
-    if(DEBUG == 1) {
-        log_info("Called crossEntropyLossDerivative & returned: %f \n", predicted - target);
+/*
+    * Derivative of sum equals sum of the derivatives
+    * Derivative of the logarithmic function is the reciprocal of its parameter, multiplied by the partial derivative of this parameter.
+      1/prediction_vector[index] * d_prediction_vector[index]
+*/
+Vector* categoricalCrossEntropyLossDerivative(Vector* target, Vector* predictions) {
+    Vector* lossGrads = create_vector(predictions->size);
+    for(int i = 0; i < predictions->size; i++) {
+        double target_i = target->elements[i];
+        double prediction_i = predictions->elements[i];
+        lossGrads->elements[i] = -1 * (target_i / prediction_i + 1e-7);
     }
-    return (predicted - target);
+
+    #ifdef DEBUG
+        char* targetVectorStr = vector_to_string(target);
+        char* outputVectorStr = vector_to_string(predictions);
+        char* lossGradStr = vector_to_string(lossGrads);
+        log_debug(
+            "Cross Entropy Derivative Inputs & Output: \n"
+            "\t\t\t\tTarget Vector: %s \n"
+            "\t\t\t\tOutput Vector: %s \n"
+            "\t\t\t\tLoss Grads: %s \n", 
+            targetVectorStr, 
+            outputVectorStr, 
+            lossGradStr
+        );
+    #endif
+
+    return lossGrads;
 }

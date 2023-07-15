@@ -1,6 +1,7 @@
 #include "nmatrix.h"
 #include "../../libraries/logger/log.h"
 
+
 Matrix* create_matrix(const int rows, const int cols) {
     Matrix* matrix = malloc(sizeof(Matrix));
     
@@ -10,7 +11,7 @@ Matrix* create_matrix(const int rows, const int cols) {
     matrix->data = malloc(rows * sizeof(Vector*));
 
     for(int i = 0; i < matrix->rows; i++) {
-        matrix->data[i] = malloc(sizeof(double) * cols);
+        matrix->data[i] = create_vector(cols);
     }
 
     return matrix;
@@ -19,7 +20,7 @@ Matrix* create_matrix(const int rows, const int cols) {
 void fill_matrix_random(Matrix* matrix, double min, double max) {
     for(int row = 0; row < matrix->rows; row++) {
         for(int col = 0; col < matrix->columns; col++) {
-            matrix->data[row][col] = ((double)rand() / (double)RAND_MAX) * (max - min) + min;
+            matrix->data[row]->elements[col] = ((double)rand() / (double)RAND_MAX) * (max - min) + min;
         }
     }    
 }
@@ -40,6 +41,7 @@ void free_matrix(Matrix* matrix){
     free(matrix->data);
     free(matrix);
 }
+
 
 char* matrix_to_string(const Matrix* matrix) {
     // Initial size for the string
@@ -62,7 +64,7 @@ char* matrix_to_string(const Matrix* matrix) {
         for (int j = 0; j < matrix->columns; j++) {
             // Convert the current element to a string
             char element[20];
-            sprintf(element, "%f", matrix->data[i][j]);
+            sprintf(element, "%f", matrix->data[i]->elements[j]);
 
             // Add a comma and space if not at the beginning of the row
             if (j != 0) {
@@ -79,6 +81,7 @@ char* matrix_to_string(const Matrix* matrix) {
 
 
 
+
 int is_equal(const Matrix* m1, const Matrix* m2) {
     double epsilon = 1e-6; // Adjust the epsilon value as needed
 
@@ -88,7 +91,7 @@ int is_equal(const Matrix* m1, const Matrix* m2) {
 
     for (int i = 0; i < m1->rows; i++) {
         for (int j = 0; j < m1->columns; j++) {
-            double diff = fabs(m1->data[i][j] - m2->data[i][j]);
+            double diff = fabs(m1->data[i]->elements[j] - m2->data[i]->elements[j]);
             if (diff > epsilon) {
                 return 0; // Element mismatch
             }
@@ -161,7 +164,7 @@ Matrix* generate_mini_matrix(const Matrix* m, int excludeRow, int excludeColumn)
                 continue;
             }
             
-            miniMatrix->data[miniMatrixRow][miniMatrixColumn] = m->data[matrixRow][matrixColumn];
+            miniMatrix->data[miniMatrixRow]->elements[miniMatrixColumn] = m->data[matrixRow]->elements[matrixColumn];
             miniMatrixColumn++;
         }
         
@@ -176,7 +179,7 @@ Matrix* copy_matrix(const Matrix* source) {
 
     for(int i = 0; i < matrix->rows; i++) {
         for(int j = 0; j < matrix->columns; j++) {
-            matrix->data[i][j] = source->data[i][j];
+            matrix->data[i]->elements[j] = source->data[i]->elements[j];
         }
     }
 
@@ -191,7 +194,7 @@ Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, i
     for(int i = startRow; i < endRow; i++) { // i goes 2 -> 10 
         for(int j = startCol; j < endCol; j++) { // j goes 1 -> 13
             // how do i map i and j to my matrix's index
-            matrix->data[i - startRow][j - startCol] = source->data[i][j]; 
+            matrix->data[i - startRow]->elements[j - startCol] = source->data[i]->elements[j]; 
         }
     }
 
@@ -214,7 +217,7 @@ Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, i
                 continue;
             }
         
-            newMatrix->data[row - startRow][col - columnIndexDif] = source->data[row][col];
+            newMatrix->data[row - startRow]->elements[col - columnIndexDif] = source->data[row]->elements[col];
         }
     }
 

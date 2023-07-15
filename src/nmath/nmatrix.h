@@ -10,7 +10,7 @@
 typedef struct {
     int rows;
     int columns;
-    double** data;
+    Vector** data;
 } Matrix;
 
 Matrix* create_matrix(const int rows, const int cols);
@@ -21,7 +21,6 @@ void fill_matrix(Matrix* matrix, double value);
 void free_matrix(Matrix* matrix);
 
 char* matrix_to_string(const Matrix* matrix);
-
 int is_equal(const Matrix* m1, const Matrix* m2);
 
 int is_square(const Matrix* m);

@@ -32,12 +32,10 @@ typedef struct {
     int neuronCount;
     int inputSize;
     ActivationFunction* activationFunction;
-
-    int willUseMomentum;
-    int optimizer;
 } LayerConfig;
 
 Layer* createLayer(LayerConfig* config);
 void deleteLayer(Layer* layer);
 
+void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* weights);
 #endif

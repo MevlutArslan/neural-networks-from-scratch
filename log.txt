@@ -1,0 +1,244 @@
+" INFO  src/neural_network/nnetwork.c:62: Created Network:
+" INFO  src/neural_network/nnetwork.c:473: {
+	"Network Config": {
+		"Loss Function": cross_entropy 
+		"Layers": [
+			{
+				"Layer Index": 0,
+				"Number Of Neurons": 8,
+				"Input Size": 13,
+				"Weight Initialization Method": "he initializer",
+				"Biases in Range": [-0.500000, 0.500000]
+				"Activation Function": leaky relu 
+			}
+,
+			{
+				"Layer Index": 1,
+				"Number Of Neurons": 3,
+				"Input Size": 8,
+				"Weight Initialization Method": "he initializer",
+				"Biases in Range": [-0.500000, 0.500000]
+				"Activation Function": softmax 
+			}
+			]
+	}
+		"Optimizer Config": {
+			"shouldUseGradientClipping": 0,
+			"gradientClippingLowerBound": -1.000000,
+			"gradientClippingUpperBound": 1.000000,
+			"shouldUseLearningRateDecay": 1,
+			"learningRateDecayAmount": 0.000000,
+			"shouldUseMomentum": 1,
+			"momentum": 0.900000,
+			"optimizer": ADAM,
+			"epsilon": 0.000000,
+			"rho": 0.000000,
+			"beta1": 0.900000,
+			"beta2": 0.999000
+		}
+
+" INFO  src/main.c:103: Starting training with learning rate of: 0.001000 for 1000 epochs.
+" INFO  src/main.c:120: Step: 1, Accuracy: 0.300000, Loss: 0.853561 
+
+" INFO  src/main.c:120: Step: 10, Accuracy: 0.300000, Loss: 0.889431 
+
+" INFO  src/main.c:120: Step: 20, Accuracy: 0.300000, Loss: 0.931731 
+
+" INFO  src/main.c:120: Step: 30, Accuracy: 0.300000, Loss: 0.972179 
+
+" INFO  src/main.c:120: Step: 40, Accuracy: 0.300000, Loss: 1.002200 
+
+" INFO  src/main.c:120: Step: 50, Accuracy: 0.550000, Loss: 0.998475 
+
+" INFO  src/main.c:120: Step: 60, Accuracy: 0.550000, Loss: 0.998695 
+
+" INFO  src/main.c:120: Step: 70, Accuracy: 0.550000, Loss: 1.003671 
+
+" INFO  src/main.c:120: Step: 80, Accuracy: 0.550000, Loss: 1.011426 
+
+" INFO  src/main.c:120: Step: 90, Accuracy: 0.550000, Loss: 1.018836 
+
+" INFO  src/main.c:120: Step: 100, Accuracy: 0.300000, Loss: 1.013206 
+
+" INFO  src/main.c:120: Step: 110, Accuracy: 0.300000, Loss: 1.001901 
+
+" INFO  src/main.c:120: Step: 120, Accuracy: 0.300000, Loss: 0.992489 
+
+" INFO  src/main.c:120: Step: 130, Accuracy: 0.300000, Loss: 0.985683 
+
+" INFO  src/main.c:120: Step: 140, Accuracy: 0.300000, Loss: 0.981917 
+
+" INFO  src/main.c:120: Step: 150, Accuracy: 0.300000, Loss: 0.981403 
+
+" INFO  src/main.c:120: Step: 160, Accuracy: 0.550000, Loss: 0.978200 
+
+" INFO  src/main.c:120: Step: 170, Accuracy: 0.550000, Loss: 0.959215 
+
+" INFO  src/main.c:120: Step: 180, Accuracy: 0.550000, Loss: 0.940598 
+
+" INFO  src/main.c:120: Step: 190, Accuracy: 0.550000, Loss: 0.921332 
+
+" INFO  src/main.c:120: Step: 200, Accuracy: 0.550000, Loss: 0.899325 
+
+" INFO  src/main.c:120: Step: 210, Accuracy: 0.550000, Loss: 0.878147 
+
+" INFO  src/main.c:120: Step: 220, Accuracy: 0.550000, Loss: 0.856577 
+
+" INFO  src/main.c:120: Step: 230, Accuracy: 0.550000, Loss: 0.832745 
+
+" INFO  src/main.c:120: Step: 240, Accuracy: 0.550000, Loss: 0.806819 
+
+" INFO  src/main.c:120: Step: 250, Accuracy: 0.550000, Loss: 0.779031 
+
+" INFO  src/main.c:120: Step: 260, Accuracy: 0.550000, Loss: 0.752324 
+
+" INFO  src/main.c:120: Step: 270, Accuracy: 0.550000, Loss: 0.726916 
+
+" INFO  src/main.c:120: Step: 280, Accuracy: 0.550000, Loss: 0.700416 
+
+" INFO  src/main.c:120: Step: 290, Accuracy: 0.550000, Loss: 0.673048 
+
+" INFO  src/main.c:120: Step: 300, Accuracy: 0.550000, Loss: 0.645056 
+
+" INFO  src/main.c:120: Step: 310, Accuracy: 0.550000, Loss: 0.620377 
+
+" INFO  src/main.c:120: Step: 320, Accuracy: 0.550000, Loss: 0.600039 
+
+" INFO  src/main.c:120: Step: 330, Accuracy: 0.550000, Loss: 0.584294 
+
+# INFO  src/main.c:120: Step: 340, Accuracy: 0.550000, Loss: 0.568162 
+
+# INFO  src/main.c:120: Step: 350, Accuracy: 0.550000, Loss: 0.554332 
+
+# INFO  src/main.c:120: Step: 360, Accuracy: 0.550000, Loss: 0.547834 
+
+# INFO  src/main.c:120: Step: 370, Accuracy: 0.550000, Loss: 0.541949 
+
+# INFO  src/main.c:120: Step: 380, Accuracy: 0.550000, Loss: 0.536147 
+
+# INFO  src/main.c:120: Step: 390, Accuracy: 0.550000, Loss: 0.530425 
+
+# INFO  src/main.c:120: Step: 400, Accuracy: 0.550000, Loss: 0.524781 
+
+# INFO  src/main.c:120: Step: 410, Accuracy: 0.550000, Loss: 0.519213 
+
+# INFO  src/main.c:120: Step: 420, Accuracy: 0.550000, Loss: 0.513721 
+
+# INFO  src/main.c:120: Step: 430, Accuracy: 0.550000, Loss: 0.508306 
+
+# INFO  src/main.c:120: Step: 440, Accuracy: 0.550000, Loss: 0.502967 
+
+# INFO  src/main.c:120: Step: 450, Accuracy: 0.550000, Loss: 0.497704 
+
+# INFO  src/main.c:120: Step: 460, Accuracy: 0.550000, Loss: 0.492516 
+
+# INFO  src/main.c:120: Step: 470, Accuracy: 0.550000, Loss: 0.487405 
+
+# INFO  src/main.c:120: Step: 480, Accuracy: 0.550000, Loss: 0.482368 
+
+# INFO  src/main.c:120: Step: 490, Accuracy: 0.550000, Loss: 0.477406 
+
+# INFO  src/main.c:120: Step: 500, Accuracy: 0.550000, Loss: 0.472518 
+
+# INFO  src/main.c:120: Step: 510, Accuracy: 0.550000, Loss: 0.467704 
+
+# INFO  src/main.c:120: Step: 520, Accuracy: 0.550000, Loss: 0.462963 
+
+# INFO  src/main.c:120: Step: 530, Accuracy: 0.550000, Loss: 0.458295 
+
+# INFO  src/main.c:120: Step: 540, Accuracy: 0.550000, Loss: 0.453698 
+
+# INFO  src/main.c:120: Step: 550, Accuracy: 0.550000, Loss: 0.449173 
+
+# INFO  src/main.c:120: Step: 560, Accuracy: 0.550000, Loss: 0.444718 
+
+# INFO  src/main.c:120: Step: 570, Accuracy: 0.550000, Loss: 0.440334 
+
+# INFO  src/main.c:120: Step: 580, Accuracy: 0.550000, Loss: 0.436018 
+
+# INFO  src/main.c:120: Step: 590, Accuracy: 0.550000, Loss: 0.431771 
+
+# INFO  src/main.c:120: Step: 600, Accuracy: 0.550000, Loss: 0.427592 
+
+# INFO  src/main.c:120: Step: 610, Accuracy: 0.550000, Loss: 0.423479 
+
+# INFO  src/main.c:120: Step: 620, Accuracy: 0.550000, Loss: 0.419433 
+
+# INFO  src/main.c:120: Step: 630, Accuracy: 0.550000, Loss: 0.415452 
+
+# INFO  src/main.c:120: Step: 640, Accuracy: 0.550000, Loss: 0.411535 
+
+# INFO  src/main.c:120: Step: 650, Accuracy: 0.550000, Loss: 0.407683 
+
+# INFO  src/main.c:120: Step: 660, Accuracy: 0.550000, Loss: 0.403893 
+
+# INFO  src/main.c:120: Step: 670, Accuracy: 0.550000, Loss: 0.400165 
+
+# INFO  src/main.c:120: Step: 680, Accuracy: 0.550000, Loss: 0.396498 
+
+# INFO  src/main.c:120: Step: 690, Accuracy: 0.550000, Loss: 0.392892 
+
+# INFO  src/main.c:120: Step: 700, Accuracy: 0.550000, Loss: 0.389345 
+
+# INFO  src/main.c:120: Step: 710, Accuracy: 0.550000, Loss: 0.385858 
+
+# INFO  src/main.c:120: Step: 720, Accuracy: 0.550000, Loss: 0.382428 
+
+# INFO  src/main.c:120: Step: 730, Accuracy: 0.550000, Loss: 0.379055 
+
+# INFO  src/main.c:120: Step: 740, Accuracy: 0.550000, Loss: 0.375738 
+
+# INFO  src/main.c:120: Step: 750, Accuracy: 0.550000, Loss: 0.372477 
+
+# INFO  src/main.c:120: Step: 760, Accuracy: 0.550000, Loss: 0.369270 
+
+# INFO  src/main.c:120: Step: 770, Accuracy: 0.550000, Loss: 0.366117 
+
+# INFO  src/main.c:120: Step: 780, Accuracy: 0.550000, Loss: 0.363017 
+
+# INFO  src/main.c:120: Step: 790, Accuracy: 0.550000, Loss: 0.359969 
+
+# INFO  src/main.c:120: Step: 800, Accuracy: 0.550000, Loss: 0.356973 
+
+# INFO  src/main.c:120: Step: 810, Accuracy: 0.550000, Loss: 0.354027 
+
+# INFO  src/main.c:120: Step: 820, Accuracy: 0.550000, Loss: 0.351131 
+
+# INFO  src/main.c:120: Step: 830, Accuracy: 0.550000, Loss: 0.348284 
+
+# INFO  src/main.c:120: Step: 840, Accuracy: 0.550000, Loss: 0.345485 
+
+# INFO  src/main.c:120: Step: 850, Accuracy: 0.550000, Loss: 0.342733 
+
+# INFO  src/main.c:120: Step: 860, Accuracy: 0.550000, Loss: 0.340029 
+
+# INFO  src/main.c:120: Step: 870, Accuracy: 0.550000, Loss: 0.337370 
+
+# INFO  src/main.c:120: Step: 880, Accuracy: 0.550000, Loss: 0.334756 
+
+# INFO  src/main.c:120: Step: 890, Accuracy: 0.550000, Loss: 0.332187 
+
+# INFO  src/main.c:120: Step: 900, Accuracy: 0.550000, Loss: 0.329662 
+
+# INFO  src/main.c:120: Step: 910, Accuracy: 0.550000, Loss: 0.327179 
+
+# INFO  src/main.c:120: Step: 920, Accuracy: 0.550000, Loss: 0.324739 
+
+# INFO  src/main.c:120: Step: 930, Accuracy: 0.550000, Loss: 0.322341 
+
+# INFO  src/main.c:120: Step: 940, Accuracy: 0.550000, Loss: 0.319984 
+
+# INFO  src/main.c:120: Step: 950, Accuracy: 0.550000, Loss: 0.317667 
+
+# INFO  src/main.c:120: Step: 960, Accuracy: 0.550000, Loss: 0.315389 
+
+# INFO  src/main.c:120: Step: 970, Accuracy: 0.550000, Loss: 0.313150 
+
+# INFO  src/main.c:120: Step: 980, Accuracy: 0.550000, Loss: 0.310950 
+
+# INFO  src/main.c:120: Step: 990, Accuracy: 0.550000, Loss: 0.308788 
+
+# INFO  src/main.c:140: Minimum loss: 0.306873 
+
+# INFO  src/main.c:141: Maximum accuracy: 0.550000 
+

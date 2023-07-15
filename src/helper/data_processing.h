@@ -4,25 +4,14 @@
 #include <csv.h>
 #include "../nmath/nmath.h"
 
+// TODO: Move data separation out of this
 typedef struct {
-    char** columnNames;
-    int numberOfRows;
-    int numberOfColumns;
-
-    Matrix* evaluationData;
-
-    Matrix* trainingData;
-    Matrix* yValues;
-
-    Vector* minValues;
-    Vector* maxValues;
-
-    Matrix* trainingOutputs;
+    int rows;
+    int columns;
+    Matrix* data;
 } Data;
 
-Data* loadCSV(char* fileLocation, double separationFactor, int shouldNormalize);
-
-void shuffleRows(Matrix* matrix);
+Data* load_csv(char* fileLocation);
 
 void removeResultsFromEvaluationSet(Matrix* evalMatrix, int columnIndex);
 Vector* extractYValues(Matrix* trainingMatrix, int columnIndex);

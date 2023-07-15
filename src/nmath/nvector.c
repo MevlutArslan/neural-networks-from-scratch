@@ -1,6 +1,5 @@
 #include "nvector.h"
 
-
 Vector* create_vector(int size) {
     Vector* vector = malloc(sizeof(Vector));
     vector->elements = malloc(size * sizeof(double));
@@ -67,4 +66,15 @@ Vector* slice_vector(const Vector* vector, int beginIndex, int endIndex) {
     }
 
     return newVector;
+}
+
+Vector* array_to_vector(double* array, int length) {
+    Vector* vector = create_vector(length);
+
+    for(int i = 0; i < vector->size; i++) {
+        vector->elements[i] = array[i];
+        // log_debug("array[%d]:%f", i, array[i]);
+    }
+
+    return vector;
 }

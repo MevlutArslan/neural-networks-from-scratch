@@ -14,8 +14,8 @@ typedef struct {
 double meanSquaredError(Matrix* outputs, Matrix* targets);
 double meanSquaredErrorDerivative(double target, double predicted);
 
-double crossEntropyForEachRow(Vector* target, Vector* output);
-double crossEntropyLoss(Matrix* targetOutputs, Matrix* outputs);
+double categoricalCrossEntropyLoss(Matrix* targetOutputs, Matrix* outputs);
+double categoricalCrossEntropyPerInput(Vector* target, Vector* output);
+Vector* categoricalCrossEntropyLossDerivative(Vector* target, Vector* predicted);
 
-double crossEntropyLossDerivative(double target, double predicted);
 #endif

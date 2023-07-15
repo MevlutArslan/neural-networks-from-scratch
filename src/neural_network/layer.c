@@ -6,32 +6,27 @@ Layer* createLayer(LayerConfig* config) {
     layer->neuronCount = config->neuronCount;
 
     // If 2 subsequent layers have X and Y neurons, then the number of weights is X*Y
-    layer->weights = createMatrix(config->neuronCount, config->inputSize);
-    initializeMatrixWithRandomValuesInRange(layer->weights, -1, 1);
+    layer->weights = create_matrix(config->neuronCount, config->inputSize);
+    initialize_weights_he(config->inputSize, config->neuronCount, layer->weights);
 
-    layer->biases = createVector(config->neuronCount);
-    initializeVectorWithRandomValuesInRange(layer->biases, -0.5, 0.5);
+    layer->biases = create_vector(config->neuronCount);
+    fill_vector_random(layer->biases, -0.5, 0.5);
 
-    layer->biasGradients = createVector(config->neuronCount);
+    layer->biasGradients = create_vector(config->neuronCount);
 
-    layer->weightedSums = createVector(config->neuronCount);
-    layer->output = createVector(config->neuronCount);
+    layer->weightedSums = create_vector(config->neuronCount);
+    layer->output = create_vector(config->neuronCount);
 
     layer->activationFunction = config->activationFunction;
     
-    layer->gradients = createMatrix(layer->weights->rows, layer->weights->columns);
-    layer->dLoss_dWeightedSums = createVector(layer->neuronCount);
-        
-    if(config->willUseMomentum == 1 || config->optimizer == ADAM){
-        layer->weightMomentums = createMatrix(layer->weights->rows, layer->weights->columns);
-        layer->biasMomentums = createVector(layer->biases->size);
-    }
-
-    if(config->optimizer == ADAGRAD || config->optimizer == RMS_PROP || config->optimizer == ADAM) {
-        layer->weightCache = createMatrix(layer->weights->rows, layer->weights->columns);
-        layer->biasCache = createVector(layer->biases->size);
-    }
-
+    layer->gradients = create_matrix(layer->weights->rows, layer->weights->columns);
+    layer->dLoss_dWeightedSums = create_vector(layer->neuronCount);
+    
+    layer->weightMomentums = create_matrix(layer->weights->rows, layer->weights->columns);
+    layer->biasMomentums = create_vector(layer->biases->size);
+    layer->weightCache = create_matrix(layer->weights->rows, layer->weights->columns);
+    layer->biasCache = create_vector(layer->biases->size);
+    
     return layer;
 }
 
@@ -40,13 +35,35 @@ void deleteLayer(Layer* layer) {
         return;
     }
 
-    // Now it's safe to delete this layer
-    freeMatrix(layer->input);
-    freeMatrix(layer->weights);
-    freeVector(layer->biases);
-    freeVector(layer->output);
+    // Free the resources allocated for the layer
+    free_matrix(layer->input);
+    free_matrix(layer->weights);
+    free_vector(layer->biases);
+    free_vector(layer->output);
+    free_vector(layer->error);
+    free_matrix(layer->gradients);
+    free_vector(layer->biasGradients);
+    free_vector(layer->dLoss_dWeightedSums);
+    free_matrix(layer->weightMomentums);
+    free_vector(layer->biasMomentums);
+    free_matrix(layer->weightCache);
+    free_vector(layer->biasCache);
 
-    free(layer->activationFunction);
-    
+    // Free the layer itself
     free(layer);
+}
+
+void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* weights) {
+    // Calculate limit
+    double limit = sqrt(2.0 / (double)inputNeuronCount);
+
+    // Initialize weights
+    for(int i = 0; i < outputNeuronCount; i++) {
+        for(int j = 0; j < inputNeuronCount; j++) {
+            // Generate a random number between -limit and limit
+            double rand_num = (double)rand() / RAND_MAX; // This generates a random number between 0 and 1
+            rand_num = rand_num * 2 * limit - limit; // This shifts the range to [-limit, limit]
+            weights->data[i]->elements[j] = rand_num;
+        }
+    }
 }

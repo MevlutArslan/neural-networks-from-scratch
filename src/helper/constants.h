@@ -9,7 +9,7 @@
 const char* get_optimizer_name(int optimizer);
 
 // DEBUG VARIABLES
-#define DEBUG 1
-#define ROWS_TO_USE 10
+// #define DEBUG
+// #define ROWS_TO_USE 100
 
 #endif
