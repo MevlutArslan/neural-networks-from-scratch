@@ -61,4 +61,8 @@ Matrix* vector_to_matrix(const Vector* vector);
 Vector* matrix_to_vector(Matrix* matrix);
 
 int arg_max(Vector* output);
+
+double column_mean(Matrix* matrix, int columnIndex);
+double column_standard_deviation(Matrix* matrix, int columnIndex);
+
 #endif

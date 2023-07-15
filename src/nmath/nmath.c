@@ -329,3 +329,24 @@ int arg_max(Vector* output) {
 
     return maxIndex;
 }
+
+double column_mean(Matrix* matrix, int columnIndex) {
+    double sum = 0.0f;
+
+    for(int row = 0; row < matrix->rows; row++) {
+        sum += matrix->data[row]->elements[columnIndex];
+    }
+
+    return sum / matrix->rows;
+}
+
+double column_standard_deviation(Matrix* matrix, int columnIndex) {
+   double mean = column_mean(matrix, columnIndex);
+    double sum_squared_diff = 0.0;
+
+    for(int row = 0; row < matrix->rows; row++) {
+        sum_squared_diff += pow(matrix->data[row]->elements[columnIndex] - mean, 2);
+    }
+
+    return sqrt(sum_squared_diff / matrix->rows);
+}

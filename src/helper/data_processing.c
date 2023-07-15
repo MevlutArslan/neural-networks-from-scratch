@@ -129,17 +129,11 @@ int getRowCount(char* fileLocation) {
 
 
 void normalizeColumn(Matrix* matrix, int columnIndex) {
-    double maxValueOfColumn = DBL_MIN;
-    double minValueOfColumn = DBL_MAX;
+    double mean = column_mean(matrix, columnIndex);
+    double standard_deviation = column_standard_deviation(matrix, columnIndex);
 
     for(int row = 0; row < matrix->rows; row++) {
-        maxValueOfColumn = fmax(maxValueOfColumn, matrix->data[row]->elements[columnIndex]);
-        minValueOfColumn = fmin(minValueOfColumn, matrix->data[row]->elements[columnIndex]);
-    }
-
-    for(int row = 0; row < matrix->rows; row++) {
-        double value = matrix->data[row]->elements[columnIndex];
-        matrix->data[row]->elements[columnIndex] = (value - minValueOfColumn) / (maxValueOfColumn - minValueOfColumn);
+        matrix->data[row]->elements[columnIndex] = (matrix->data[row]->elements[columnIndex] - mean) / standard_deviation;
     }
 }
 
