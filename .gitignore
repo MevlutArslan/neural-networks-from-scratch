@@ -7,3 +7,4 @@ build/
 *.out
 *.gch
 file_structure.txt
+log.txt
