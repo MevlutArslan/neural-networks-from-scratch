@@ -393,7 +393,7 @@ double accuracy(Matrix* targets, Matrix* outputs) {
 
     }
     // todo: change this back to output.rows
-    double averageAccuracy = (double)counter / 20;
+    double averageAccuracy = (double)counter / outputs->rows;
 
     #ifdef DEBUG
         log_debug("Average Accuracy: %f \n", averageAccuracy);

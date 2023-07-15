@@ -10,6 +10,8 @@ void sgd(NNetwork* network, double learningRate) {
 
     for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
+        fill_matrix(currentLayer->weightMomentums, 0.0f);
+        fill_vector(currentLayer->biasMomentums, 0.0f);
         
         for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
@@ -49,7 +51,8 @@ void adagrad(NNetwork* network, double learningRate) {
     
     for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
-
+        fill_matrix(currentLayer->weightCache, 0.0f);
+        fill_vector(currentLayer->biasCache, 0.0f);
         for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
             double biasGradient = currentLayer->biasGradients->elements[neuronIndex];
             // TODO rename biasValueToUpdateBy!!!!
@@ -89,7 +92,8 @@ void rms_prop(NNetwork* network, double learningRate) {
 
     for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
-
+        fill_matrix(currentLayer->weightCache, 0.0f);
+        fill_vector(currentLayer->biasCache, 0.0f);
         for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
             double biasGradient = currentLayer->biasGradients->elements[neuronIndex];
             // TODO rename biasValueToUpdateBy!!!!
@@ -144,6 +148,11 @@ void adam(NNetwork* network, double learningRate) {
     for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
 
+        fill_matrix(currentLayer->weightMomentums, 0.0f);
+        fill_vector(currentLayer->biasMomentums, 0.0f);
+
+        fill_matrix(currentLayer->weightCache, 0.0f);
+        fill_vector(currentLayer->biasCache, 0.0f);
         for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
                 double gradient = currentLayer->gradients->data[neuronIndex]->elements[weightIndex];

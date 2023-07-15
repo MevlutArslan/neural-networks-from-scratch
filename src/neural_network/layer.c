@@ -8,6 +8,8 @@ Layer* createLayer(LayerConfig* config) {
     // If 2 subsequent layers have X and Y neurons, then the number of weights is X*Y
     layer->weights = create_matrix(config->neuronCount, config->inputSize);
     initialize_weights_he(config->inputSize, config->neuronCount, layer->weights);
+    
+    layer->gradients = create_matrix(layer->weights->rows, layer->weights->columns);
 
     layer->biases = create_vector(config->neuronCount);
     fill_vector_random(layer->biases, -0.5, 0.5);
@@ -19,7 +21,6 @@ Layer* createLayer(LayerConfig* config) {
 
     layer->activationFunction = config->activationFunction;
     
-    layer->gradients = create_matrix(layer->weights->rows, layer->weights->columns);
     layer->dLoss_dWeightedSums = create_vector(layer->neuronCount);
     
     layer->weightMomentums = create_matrix(layer->weights->rows, layer->weights->columns);

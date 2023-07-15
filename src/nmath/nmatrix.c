@@ -26,11 +26,11 @@ void fill_matrix_random(Matrix* matrix, double min, double max) {
 }
 
 void fill_matrix(Matrix* matrix, double value) {
-    double* dataPtr = matrix->data[0];  // Pointer to the first element in the matrix
-
-    size_t dataSize = matrix->rows * matrix->columns * sizeof(double);  // Calculate the size of the data in bytes
-
-    memset(dataPtr, value, dataSize);
+    for(int i = 0; i < matrix->rows; i++) {
+        for(int j = 0; j < matrix->columns; j++) {
+            matrix->data[i]->elements[j] = value;
+        }
+    }
 }
 
 void free_matrix(Matrix* matrix){

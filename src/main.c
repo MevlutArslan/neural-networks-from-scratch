@@ -17,9 +17,34 @@ Matrix* trainingData;
 Matrix* validationData;
 Matrix* yValues;
 
-OptimizationConfig create_optimizer(int optimizer);
+
 void file_log(log_Event *ev);
 NNetwork* create_custom_network();
+
+OptimizationConfig create_optimizer(int optimizer) {
+    OptimizationConfig optimizationConfig;
+    optimizationConfig.optimizer = optimizer;
+
+    // Learning Rate Decay
+    optimizationConfig.shouldUseLearningRateDecay = 1;
+    
+    // Gradient Clipping
+    optimizationConfig.shouldUseGradientClipping = 0;
+    optimizationConfig.gradientClippingLowerBound = -1.0;
+    optimizationConfig.gradientClippingUpperBound = 1.0;
+    
+    // Momentum
+    optimizationConfig.shouldUseMomentum = 1;
+    optimizationConfig.momentum = 0.6;
+    
+    // optimizationConfig.rho = 0.9;
+    optimizationConfig.epsilon = 1e-8;
+    optimizationConfig.beta1 = 0.9;
+    optimizationConfig.beta2 = 0.999;
+
+    return optimizationConfig;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -112,7 +137,6 @@ void runProgram() {
             double decayRate = network->optimizationConfig->learningRateDecayAmount;
             currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)step)));
         }
-
         network->currentStep = step;
         network->optimizer(network, currentLearningRate);
 
@@ -126,16 +150,14 @@ void runProgram() {
         losses[step] = network->loss;
         storedSteps[step] = step;
         accuracies[step] = network->accuracy;
+
         step++;
         // Clear the gradients
-        // for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
-        //     fill_matrix(network->layers[layerIndex]->gradients, 0.0f);
-        //     fill_vector(network->layers[layerIndex]->biasGradients, 0.0f);
-        // }
+        for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
+            fill_matrix(network->layers[layerIndex]->gradients, 0.0f);
+            fill_vector(network->layers[layerIndex]->biasGradients, 0.0f);
+        }
     }
-
-    // double acc = accuracy(network->data->yValues, network->data->trainingOutputs);
-    // printf("Step: %d, Accuracy: %f, Loss: %f \n", step, acc, network->loss);  
 
     log_info("Minimum loss: %f \n", minLoss);
     log_info("Maximum accuracy: %f \n", maxAccuracy);
@@ -146,24 +168,22 @@ void runProgram() {
 
     gnuplot_plot_xy(learningRate_step_plot, storedSteps, learningRates, maxSteps, "Learning Rate/Step");
 
-    // Matrix* evaluationOutputs = create_matrix(network->data->evaluationData->rows, network->layers[network->layerCount - 1]->neuronCount);
-    
-    // forwardPass(network, network->data->evaluationData, evaluationOutputs);
+    // Matrix* validationOutputs = create_matrix(validationData->rows, network->layers[network->layerCount - 1]->neuronCount);
+    // forwardPass(network, validationData);
 
-    // // unnormalize the output
-    // // i have the same number of rows as the evaluation data, and I have 1 column which i need to normalize
-    int correctPredictions = 0;
-    // for(int i = 0; i < evaluationOutputs->rows; i++) {
-        // log_info("Target for Index %d: %s \n", i,vectorToString(network->data->yValues->data[network->data->trainingData->rows + i]));
-        // log_info("Prediction for Index %d: %s \n", i,vectorToString(evaluationOutputs->data[i]));
+    // // // unnormalize the output
+    // // // i have the same number of rows as the evaluation data, and I have 1 column which i need to normalize
+    // int correctPredictions = 0;
+    // for(int i = 0; i < validationOutputs->rows; i++) {
+    //     log_info("Target for Index %d: %s \n", i, vector_to_string(yValues->data[trainingData->rows + i]));
+    //     log_info("Prediction for Index %d: %s \n", i, vector_to_string(validationOutputs->data[i]));
 
-        // if(arg_max(network->data->yValues->data[trainingData->rows + i]) == arg_max(evaluationOutputs->data[i])) {
-        //     correctPredictions++;
-        // }
-
+    //     if(arg_max(yValues->data[trainingData->rows + i]) == arg_max(validationOutputs->data[i])) {
+    //         correctPredictions++;
+    //     }
     // }
 
-    // log_debug("Accuracy with evaluation data: %f \n", correctPredictions / (double)evaluationOutputs->rows);
+    // log_debug("Accuracy with evaluation data: %f \n", correctPredictions / (double)validationOutputs->rows);
     printf("Press enter to close plot...\n");
     getchar();
 
@@ -171,39 +191,13 @@ void runProgram() {
     gnuplot_close(accuracy_step_plot);
     gnuplot_close(learningRate_step_plot);
 
-    // free(losses);
-    // free(storedSteps);
-
-    // free_matrix(evaluationOutputs);
-    // free_vector(unnormalizedYValues);
+    free(losses);
+    free(storedSteps);
+    // free_matrix(validationOutputs);
 
     // deleteNNetwork(network);
     fclose(logFile);
 }   
-
-OptimizationConfig create_optimizer(int optimizer) {
-    OptimizationConfig optimizationConfig;
-    optimizationConfig.optimizer = optimizer;
-
-    // Learning Rate Decay
-    optimizationConfig.shouldUseLearningRateDecay = 1;
-    
-    // Gradient Clipping
-    optimizationConfig.shouldUseGradientClipping = 0;
-    optimizationConfig.gradientClippingLowerBound = -1.0;
-    optimizationConfig.gradientClippingUpperBound = 1.0;
-    
-    // Momentum
-    optimizationConfig.shouldUseMomentum = 1;
-    optimizationConfig.momentum = 0.9;
-    
-    // optimizationConfig.rho = 0.9;
-    optimizationConfig.epsilon = 1e-8;
-    optimizationConfig.beta1 = 0.9;
-    optimizationConfig.beta2 = 0.999;
-
-    return optimizationConfig;
-}
 
 void file_log(log_Event *ev) {
   fprintf(
@@ -251,13 +245,13 @@ NNetwork* create_custom_network() {
     }
 
     ActivationFunction reluFunc;
-    reluFunc.activation = relu;
-    reluFunc.derivative = relu_derivative;
+    reluFunc.activation = leakyRelu;
+    reluFunc.derivative = leakyRelu_derivative;
 
     NetworkConfig config;
     config.numLayers = 2;
     config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);
-    config.neuronsPerLayer[0] = 8;
+    config.neuronsPerLayer[0] = 12;
     config.neuronsPerLayer[1] = 3;
     // config.neuronsPerLayer[2] = 3;
     // config.neuronsPerLayer[3] = 3;
