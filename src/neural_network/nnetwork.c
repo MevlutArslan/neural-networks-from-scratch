@@ -68,7 +68,7 @@ NNetwork* createNetwork(const NetworkConfig* config) {
 void forwardPass(NNetwork* network, Matrix* input) {
 
     for (int i = 0; i < input->rows; i++) {
-        network->layers[0]->input = array_to_vector(input->data[i], input->columns);
+        network->layers[0]->input = input->data[i];
 
         for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
             Layer* currentLayer = network->layers[layerIndex];
