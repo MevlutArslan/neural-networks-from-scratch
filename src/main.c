@@ -48,7 +48,7 @@ OptimizationConfig create_optimizer(int optimizer) {
 int main(int argc, char* argv[])
 {
     //for testing only, otherwise set to time(NULL)
-    srand(306);
+    srand(time(NULL));
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
@@ -146,9 +146,9 @@ void runProgram() {
         network->currentStep = step;
         network->optimizer(network, currentLearningRate);
 
-        // if(step == 1 || step % 10 == 0){
+        if(step == 1 || step % 10 == 0){
             log_info("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
-        // }
+        }
         minLoss = fmin(minLoss, network->loss);
         
         maxAccuracy = fmax(maxAccuracy, network->accuracy);
@@ -174,22 +174,25 @@ void runProgram() {
 
     gnuplot_plot_xy(learningRate_step_plot, storedSteps, learningRates, maxSteps, "Learning Rate/Step");
 
-    // Matrix* validationOutputs = create_matrix(validationData->rows, network->layers[network->layerCount - 1]->neuronCount);
-    // forwardPass(network, validationData);
-
-    // // // unnormalize the output
+    Matrix* validationOutputs = create_matrix(validationData->rows, network->layers[network->layerCount - 1]->neuronCount);
+    
+    for(int inputRow = 0; inputRow < validationData->rows; inputRow++) {
+        Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
+        forwardPass(network, validationData->data[inputRow], output); 
+        validationOutputs->data[inputRow] = copy_vector(output);
+        free_vector(output);
+    }
     // // // i have the same number of rows as the evaluation data, and I have 1 column which i need to normalize
-    // int correctPredictions = 0;
-    // for(int i = 0; i < validationOutputs->rows; i++) {
-    //     log_info("Target for Index %d: %s \n", i, vector_to_string(yValues->data[trainingData->rows + i]));
-    //     log_info("Prediction for Index %d: %s \n", i, vector_to_string(validationOutputs->data[i]));
+    int correctPredictions = 0;
+    for(int i = 0; i < validationOutputs->rows; i++) {
 
-    //     if(arg_max(yValues->data[trainingData->rows + i]) == arg_max(validationOutputs->data[i])) {
-    //         correctPredictions++;
-    //     }
-    // }
+        if(arg_max(yValues->data[trainingData->rows + i]) == arg_max(validationOutputs->data[i])) {
+            correctPredictions++;
+        }
+    }
 
-    // log_debug("Accuracy with evaluation data: %f \n", correctPredictions / (double)validationOutputs->rows);
+    log_info("Accuracy of validation: %f", (double) correctPredictions / (double)validationOutputs->rows);
+
     printf("Press enter to close plot...\n");
     getchar();
 
