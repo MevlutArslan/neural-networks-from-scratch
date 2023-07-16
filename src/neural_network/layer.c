@@ -10,11 +10,13 @@ Layer* createLayer(LayerConfig* config) {
     initialize_weights_he(config->inputSize, config->neuronCount, layer->weights);
     
     layer->gradients = create_matrix(layer->weights->rows, layer->weights->columns);
+    fill_matrix(layer->gradients, 0.0);
 
     layer->biases = create_vector(config->neuronCount);
     fill_vector_random(layer->biases, -0.5, 0.5);
 
     layer->biasGradients = create_vector(config->neuronCount);
+    fill_vector(layer->biases, 0.0f);
 
     layer->weightedSums = create_vector(config->neuronCount);
     layer->output = create_vector(config->neuronCount);

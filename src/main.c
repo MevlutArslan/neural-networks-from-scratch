@@ -17,7 +17,6 @@ Matrix* trainingData;
 Matrix* validationData;
 Matrix* yValues;
 
-
 void file_log(log_Event *ev);
 NNetwork* create_custom_network();
 
@@ -35,7 +34,7 @@ OptimizationConfig create_optimizer(int optimizer) {
     
     // Momentum
     optimizationConfig.shouldUseMomentum = 1;
-    optimizationConfig.momentum = 0.6;
+    optimizationConfig.momentum = 0.9;
     
     // optimizationConfig.rho = 0.9;
     optimizationConfig.epsilon = 1e-8;
@@ -100,17 +99,18 @@ void runProgram() {
     gnuplot_set_xlabel(accuracy_step_plot, "Steps");
     gnuplot_set_ylabel(accuracy_step_plot, "Loss");
 
-    gnuplot_setstyle(learningRate_step_plot, "linespoints");
+    gnuplot_setstyle(learningRate_step_plot, "dots");
     gnuplot_set_xlabel(learningRate_step_plot, "Steps");
-    gnuplot_set_ylabel(learningRate_step_plot, "Loss");
+    gnuplot_set_ylabel(learningRate_step_plot, "Learning Rate");
 
     // --------------------------------------------------------------
 
     // default rate of keras -> 0.001
-    double learningRate = 0.001;
+    // kaparthy's recommendation for adam: 0.0003
+    double learningRate = 0.01;
     double currentLearningRate = learningRate;
     int step = 1;
-    int maxSteps = 1000;
+    int maxSteps = 250;
 
     network->optimizationConfig->learningRateDecayAmount = learningRate / maxSteps;
 
@@ -128,10 +128,16 @@ void runProgram() {
     log_info("Starting training with learning rate of: %f for %d epochs.", learningRate, maxSteps);
     while(step < maxSteps) {
         learningRates[step] = currentLearningRate;
-        forwardPass(network, trainingData);
+        
+        for(int inputRow = 0; inputRow < trainingData->rows; inputRow++) {
+            Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
+            forwardPass(network, trainingData->data[inputRow], output); 
+            backpropagation(network, trainingData->data[inputRow], output, yValues->data[inputRow]);
+            network->output->data[inputRow] = copy_vector(output);
+            free_vector(output);
+        }
         
         calculateLoss(network, yValues);
-        backpropagation(network, yValues);
         
         if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
             double decayRate = network->optimizationConfig->learningRateDecayAmount;
@@ -140,9 +146,9 @@ void runProgram() {
         network->currentStep = step;
         network->optimizer(network, currentLearningRate);
 
-         if(step == 1 || step % 10 == 0){
+        // if(step == 1 || step % 10 == 0){
             log_info("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
-        }
+        // }
         minLoss = fmin(minLoss, network->loss);
         
         maxAccuracy = fmax(maxAccuracy, network->accuracy);
@@ -224,7 +230,6 @@ NNetwork* create_custom_network() {
     int targetColumn = 0;
     int trainingDataSize = data->rows * splitPercentage;
     trainingData = get_sub_matrix_except_column(data->data, 0, trainingDataSize - 1, 0, data->columns - 1, 0);
-    // log_info("Training Data Matrix: %s", matrix_to_string(trainingData));
     
     // extract validation data
     validationData = get_sub_matrix_except_column(data->data, trainingData->rows + 1, data->rows - 1, 0, data->columns - 1, 0);
@@ -238,6 +243,8 @@ NNetwork* create_custom_network() {
     for(int col = 0; col < trainingData->columns; col++) {
         normalizeColumn(trainingData, col);
     }
+    log_info("Training Data Matrix: %s", matrix_to_string(trainingData));
+
 
     // normalize validation data
     for(int col = 0; col < validationData->columns; col++) {
@@ -251,10 +258,8 @@ NNetwork* create_custom_network() {
     NetworkConfig config;
     config.numLayers = 2;
     config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);
-    config.neuronsPerLayer[0] = 12;
+    config.neuronsPerLayer[0] = 2;
     config.neuronsPerLayer[1] = 3;
-    // config.neuronsPerLayer[2] = 3;
-    // config.neuronsPerLayer[3] = 3;
 
     config.inputSize = trainingData->columns;
 
@@ -272,13 +277,9 @@ NNetwork* create_custom_network() {
     }
 
     config.activationFunctions[config.numLayers - 1].activation = softmax;
-    // config.activationFunctions[config.numLayers - 1].derivative = softmax_derivative;
-
-    // config.data = data;
 
     config.lossFunction = malloc(sizeof(LossFunction));
     config.lossFunction->loss_function = categoricalCrossEntropyLoss;
-    // config.lossFunction->derivative = categoricalCrossEntropyLossDerivative;
 
     NNetwork* network = createNetwork(&config);
     network->output = create_matrix(trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);

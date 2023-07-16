@@ -49,6 +49,7 @@ double meanSquaredErrorDerivative(double target, double predicted) {
         -1 * log(prediction_vector[index of the target category in the target vector])
 */
 double categoricalCrossEntropyPerInput(Vector* target, Vector* output) {
+    // natural log
     double loss = -1 * target->elements[arg_max(target)] * log(output->elements[arg_max(output)]);
 
     #ifdef DEBUG

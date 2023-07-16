@@ -62,9 +62,9 @@ typedef struct {
 NNetwork* createNetwork(const NetworkConfig* config);
 void deleteNNetwork(NNetwork* network);
 
-void forwardPass(NNetwork* network, Matrix* input);
+void forwardPass(NNetwork* network, Vector* input, Vector* output);
 void calculateLoss(NNetwork* network, Matrix* yValues);
-void backpropagation(NNetwork* network, Matrix* yValues);
+void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* yValues);
 
 void dumpNetworkState(NNetwork* network);
 

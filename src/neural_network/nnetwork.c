@@ -65,75 +65,67 @@ NNetwork* createNetwork(const NetworkConfig* config) {
     return network;
 }
 
-void forwardPass(NNetwork* network, Matrix* input) {
+void forwardPass(NNetwork* network, Vector* input, Vector* output) {
+    network->layers[0]->input = input;
+    for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
+        Layer* currentLayer = network->layers[layerIndex];
 
-    for (int i = 0; i < input->rows; i++) {
-        network->layers[0]->input = input->data[i];
+        Vector* dotProduct = dot_product(currentLayer->weights, currentLayer->input);
+        #ifdef DEBUG
+            char* weightsStr = matrix_to_string(currentLayer->weights);
+            char* dotProductStr = vector_to_string(dotProduct);
+            log_debug(
+                "Weights For Input Row: %d & Layer: %d: %s", 
+                i, 
+                layerIndex, 
+                weightsStr
+            );
 
-        for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
-            Layer* currentLayer = network->layers[layerIndex];
+            log_debug(
+                "Dot Product For Input Row: %d & Layer: %d: %s", 
+                i, 
+                layerIndex, 
+                dotProductStr
+            );
 
-            Vector* dotProduct = dot_product(currentLayer->weights, currentLayer->input);
-            #ifdef DEBUG
-                char* weightsStr = matrix_to_string(currentLayer->weights);
-                char* dotProductStr = vector_to_string(dotProduct);
-                log_debug(
-                    "Weights For Input Row: %d & Layer: %d: %s", 
-                    i, 
-                    layerIndex, 
-                    weightsStr
-                );
+            // free(weightsStr);
+            free(dotProductStr);
+        #endif
+        
+        currentLayer->output = vector_addition(dotProduct, currentLayer->biases);
 
-                log_debug(
-                    "Dot Product For Input Row: %d & Layer: %d: %s", 
-                    i, 
-                    layerIndex, 
-                    dotProductStr
-                );
-
-                // free(weightsStr);
-                free(dotProductStr);
-            #endif
-
-            currentLayer->output = vector_addition(dotProduct, currentLayer->biases);
-
-            #ifdef DEBUG
-                char* netInput = vector_to_string(currentLayer->output);
-                log_debug(
-                    "Net Input For Input Row: %d & Layer: %d: %s", 
-                    i, 
-                    layerIndex, 
-                    netInput
-                );
-                free(netInput);
-            #endif
-            currentLayer->weightedSums = copy_vector(currentLayer->output);
+        #ifdef DEBUG
+            char* netInput = vector_to_string(currentLayer->output);
+            log_debug(
+                "Net Input For Input Row's Layer: %d: %s",  
+                layerIndex, 
+                netInput
+            );
+            free(netInput);
+        #endif
+        currentLayer->weightedSums = copy_vector(currentLayer->output);
             
-            currentLayer->activationFunction->activation(currentLayer->output);
+        currentLayer->activationFunction->activation(currentLayer->output);
             
-            #ifdef DEBUG
-                char* outputStr = vector_to_string(currentLayer->output);
-                log_debug(
-                    "Output of activation function for Input Row: %d & Layer: %d: %s", 
-                    i, 
-                    layerIndex, 
-                    outputStr
-                );
-                free(outputStr);
-            #endif
+        #ifdef DEBUG
+            char* outputStr = vector_to_string(currentLayer->output);
+            log_debug(
+                "Output of activation function for Input Row for Layer: %d: %s", 
+                layerIndex, 
+                outputStr
+            );
+            free(outputStr);
+        #endif
 
-            if(layerIndex != network->layerCount - 1) {
-                network->layers[layerIndex + 1]->input = currentLayer->output;
-            }
-            
+        if(layerIndex != network->layerCount - 1) {
+            network->layers[layerIndex + 1]->input = currentLayer->output;
         }
 
-        network->output->data[i] = copy_vector(network->layers[network->layerCount - 1]->output);
-        
     }
-
-    // log_debug("output matrix after forward pass: %s", matrix_to_string(network->output));
-
+    // copy out the outputs
+    for(int i = 0; i < output->size; i++) {
+        output->elements[i] = network->layers[network->layerCount - 1]->output->elements[i];
+    }
     #ifdef DEBUG
         log_info("Completed forward pass.");
     #endif
@@ -144,22 +136,29 @@ void calculateLoss(NNetwork* network, Matrix* yValues) {
     network->accuracy = accuracy(yValues, network->output);
 }
 
-void backpropagation(NNetwork* network, Matrix* yValues) {
+void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* target) {
     #ifdef DEBUG
         log_info("Start of backward pass.");
     #endif
     // for each output
     // todo: change this back to output.rows
-    for(int outputIndex = 0; outputIndex < network->output->rows; outputIndex++) {
-        Vector* target = yValues->data[outputIndex];
-        Vector* prediction = network->output->data[outputIndex];
+        Vector* prediction = output;
         
         // @todo: try to abstract this out.
         Vector* dLoss_dOutputs = categoricalCrossEntropyLossDerivative(target, prediction);
 
         Matrix* jacobian = softmax_derivative(prediction);
         Vector* dLoss_dWeightedSums = dot_product(jacobian, dLoss_dOutputs);
+
+        /* These calculations are verified to be correct, but you can comment out the log statements
+           to check again.
         
+            #ifdef DEBUG
+                log_debug("jacobian matrix: %s", matrix_to_string(jacobian));
+                log_debug("dLoss/dWeightedSums is: %s", vector_to_string(dLoss_dWeightedSums));
+            #endif
+        */
+       
         // Calculating dLoss/dWeights and dLoss/dInputs for the output layer
         int layerIndex = network->layerCount - 1;
         Layer* currentLayer = network->layers[layerIndex];
@@ -176,7 +175,7 @@ void backpropagation(NNetwork* network, Matrix* yValues) {
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
                 double dWeightedSum_dWeight = 0.0f;
                 if(layerIndex == 0) {
-                    dWeightedSum_dWeight= network->layers[layerIndex]->input->elements[weightIndex];
+                    dWeightedSum_dWeight= input->elements[weightIndex];
                 }else {
                     dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
                 }
@@ -242,6 +241,7 @@ void backpropagation(NNetwork* network, Matrix* yValues) {
                 #endif
             }
 
+            // Backpropagating the error to the hidden layers
             currentLayer->dLoss_dWeightedSums->elements[outputNeuronIndex] = dLoss_dWeightedSums->elements[outputNeuronIndex];
             #ifdef DEBUG
                 log_debug(
@@ -265,28 +265,37 @@ void backpropagation(NNetwork* network, Matrix* yValues) {
         free_vector(dLoss_dOutputs);
         free_vector(dLoss_dWeightedSums);
 
+        #ifdef DEBUG
+            log_debug("Calculating gradients for the hidden layers of output index: %d", outputIndex);
+        #endif
         for(layerIndex = network->layerCount - 2; layerIndex >= 0; layerIndex --) {
             // log_info("Backward propagation for layer index: %d", layerIndex);
             currentLayer = network->layers[layerIndex];
             for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
                 double dLoss_dOutput = 0.0f;
                 
+                // this calculation is correct
                 Layer* nextLayer = network->layers[layerIndex + 1];
                 for(int neuronIndexNext = 0; neuronIndexNext < nextLayer->neuronCount; neuronIndexNext++) {
                     dLoss_dOutput += nextLayer->dLoss_dWeightedSums->elements[neuronIndexNext] * nextLayer->weights->data[neuronIndexNext]->elements[neuronIndex];
                 }
 
                 #ifdef DEBUG
-                    log_debug("Partial derivative of Loss with respect to Output is: %f \n", dLoss_dOutput);
+                    log_debug("Partial derivative of Loss with respect to Output is: %f", dLoss_dOutput);
                 #endif
                 
                 double dOutput_dWeightedSum = currentLayer->activationFunction->derivative(currentLayer->weightedSums->elements[neuronIndex]);
                 double dLoss_dWeightedSum = dLoss_dOutput * dOutput_dWeightedSum;
 
+                #ifdef DEBUG
+                    log_debug("Partial derivative of Output with respect to Net Input is: %f", dOutput_dWeightedSum);
+                    log_debug("Partial derivative of Loss with respect to Net Input is: %f", dLoss_dWeightedSum);
+                #endif
+
                 for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
                     double dWeightedSum_dWeight = 0.0f;
                     if(layerIndex == 0) {
-                        dWeightedSum_dWeight= network->layers[layerIndex]->input->elements[weightIndex];
+                        dWeightedSum_dWeight= input->elements[weightIndex];
                     }else {
                         dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
                     }
@@ -348,7 +357,7 @@ void backpropagation(NNetwork* network, Matrix* yValues) {
             // log_info("Gradient computation complete for current hidden layer at index: %d", layerIndex);
         }
         // log_info("Backward pass complete for current output row.");
-    }
+    
     #ifdef DEBUG
         log_info("End of backward pass.");
     #endif
@@ -363,7 +372,7 @@ void backpropagation(NNetwork* network, Matrix* yValues) {
 double accuracy(Matrix* targets, Matrix* outputs) {
     int counter = 0;
     // todo: change this back to output.rows
-    for(int i = 0; i < 20; i++){
+    for(int i = 0; i < outputs->rows; i++){
         int maxIndexOutputs = arg_max(outputs->data[i]);
         int maxIndexTargets = arg_max(targets->data[i]);
    
