@@ -10,6 +10,5 @@ const char* get_optimizer_name(int optimizer);
 
 // DEBUG VARIABLES
 // #define DEBUG
-// #define ROWS_TO_USE 100
 
 #endif

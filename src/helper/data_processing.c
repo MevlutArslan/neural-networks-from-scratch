@@ -4,7 +4,8 @@
 #include <string.h>
 #include <float.h>
 
-#define MAX_LINE_LENGTH 1024
+// length of mnist rows
+#define MAX_LINE_LENGTH 4206
 #define MAX_TOKENS 256
 #define DELIMITER ","
 
@@ -24,7 +25,7 @@ Data* load_csv(char* fileLocation) {
 
     data->rows = (getRowCount(fileLocation) - 1);
     data->columns = getColumnCount(fileLocation);
-    
+
     Matrix* matrix = create_matrix(data->rows, data->columns);
     if (matrix == NULL) {
         printf("Failed to create matrix\n");
@@ -39,7 +40,12 @@ Data* load_csv(char* fileLocation) {
     // while there are lines to read
     while (fgets(currentLine, sizeof(currentLine), file) != NULL) {
 
-        if (currentLine[0] == '\n' || currentLine[0] == '\r') {
+        if (feof(file)) {
+            printf("End of file reached at row index: %d\n", rowIndex);
+            break;
+        }
+
+        if(currentLine[0] == '\n' || (currentLine[0] == '\r' && currentLine[1] == '\n')) {
             continue;
         }
 
@@ -49,21 +55,21 @@ Data* load_csv(char* fileLocation) {
 
         // strtok separates a line by the delimiter and writes the remaining of the line into the address provided
         // we look a step ahead in the while loop but we assign that to the correct index of the matrix
-        while ((token = strtok_r(rest, DELIMITER, &rest)) && rowIndex < data->rows + 1 && colIndex < data->columns) {
+        while ((token = strtok_r(rest, DELIMITER, &rest)) && rowIndex < data->rows && colIndex < data->columns) {
             if (rowIndex == 0) {
                 break;
             }
-            
             double value = atof(token);
 
             matrix->data[rowIndex - 1]->elements[colIndex] = value;
 
+            // log_debug("at column index: %d", colIndex);
             colIndex++;
         }
 
         rowIndex++;
     }
-
+    log_debug("matrix: %s", matrix_to_string(matrix));
     fclose(file);
 
     data->data = matrix;
@@ -116,7 +122,7 @@ int getRowCount(char* fileLocation) {
     int rowCount = 0;
     char currentLine[MAX_LINE_LENGTH];
     while (fgets(currentLine, sizeof(currentLine), file) != NULL) {
-        if(currentLine[0] == '\n' || currentLine[0] == '\r') {
+        if(currentLine[0] == '\n' || (currentLine[0] == '\r' && currentLine[1] == '\n')) {
             continue;
         }
 

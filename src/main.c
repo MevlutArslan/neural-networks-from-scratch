@@ -15,10 +15,20 @@ void runProgram();
 FILE* logFile;
 Matrix* trainingData;
 Matrix* validationData;
-Matrix* yValues;
+Matrix* yValues_Training;
+Matrix* yValues_Testing;
 
-void file_log(log_Event *ev);
+
 NNetwork* create_custom_network();
+
+void file_log(log_Event *ev) {
+  fprintf(
+    logFile, "%s %-5s %s:%d: ",
+    ev->time, log_level_string(ev->level), ev->file, ev->line);
+  vfprintf(logFile, ev->fmt, ev->ap);
+  fprintf(logFile, "\n");
+  fflush(logFile);
+}
 
 OptimizationConfig create_optimizer(int optimizer) {
     OptimizationConfig optimizationConfig;
@@ -44,10 +54,17 @@ OptimizationConfig create_optimizer(int optimizer) {
     return optimizationConfig;
 }
 
-
 int main(int argc, char* argv[])
 {
-    //for testing only, otherwise set to time(NULL)
+    logFile = fopen("log.txt", "w");
+    if (logFile == NULL) {
+        printf("Failed to open log file.\n");
+        return 0;
+    }
+
+    // Add the file_log as a callback to the logging library
+    log_add_callback(file_log, NULL, LOG_TRACE);
+    
     srand(time(NULL));
 
     int isTesting = 0;
@@ -69,17 +86,7 @@ int main(int argc, char* argv[])
 
 
 void runProgram() {
-    logFile = fopen("log.txt", "w");
-    if (logFile == NULL) {
-        printf("Failed to open log file.\n");
-        return;
-    }
-
-    // Add the file_log as a callback to the logging library
-    log_add_callback(file_log, NULL, LOG_TRACE);
-
-    // log_info("Debug %s \n", DEBUG == 1? "is enabled" : "is diabled");
-
+    
     NNetwork* network = create_custom_network();
 
     // ------------------------ FOR PLOTTING ------------------------
@@ -110,7 +117,7 @@ void runProgram() {
     double learningRate = 0.01;
     double currentLearningRate = learningRate;
     int step = 1;
-    int maxSteps = 250;
+    int maxSteps = 100;
 
     network->optimizationConfig->learningRateDecayAmount = learningRate / maxSteps;
 
@@ -124,77 +131,75 @@ void runProgram() {
     double minLoss = __DBL_MAX__;
     double maxAccuracy = 0.0;
         
-    double momentum = network->optimizationConfig->momentum;
     log_info("Starting training with learning rate of: %f for %d epochs.", learningRate, maxSteps);
-    while(step < maxSteps) {
-        learningRates[step] = currentLearningRate;
+    // while(step < maxSteps) {
+    //     learningRates[step] = currentLearningRate;
         
-        for(int inputRow = 0; inputRow < trainingData->rows; inputRow++) {
-            Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
-            forwardPass(network, trainingData->data[inputRow], output); 
-            backpropagation(network, trainingData->data[inputRow], output, yValues->data[inputRow]);
-            network->output->data[inputRow] = copy_vector(output);
-            free_vector(output);
-        }
+    //     for(int inputRow = 0; inputRow < trainingData->rows; inputRow++) {
+    //         Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
+    //         forward_pass(network, trainingData->data[inputRow], output); 
+    //         backpropagation(network, trainingData->data[inputRow], output, yValues_Training->data[inputRow]);
+    //         network->output->data[inputRow] = copy_vector(output);
+    //         free_vector(output);
+    //     }
         
-        calculateLoss(network, yValues);
+    //     calculate_loss(network, yValues_Training);
         
-        if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
-            double decayRate = network->optimizationConfig->learningRateDecayAmount;
-            currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)step)));
-        }
-        network->currentStep = step;
-        network->optimizer(network, currentLearningRate);
+    //     if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
+    //         double decayRate = network->optimizationConfig->learningRateDecayAmount;
+    //         currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)step)));
+    //     }
+    //     network->currentStep = step;
+    //     network->optimizer(network, currentLearningRate);
 
-        if(step == 1 || step % 10 == 0){
-            log_info("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
-        }
-        minLoss = fmin(minLoss, network->loss);
+    //     if(step == 1 || step % 10 == 0){
+    //         log_info("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
+    //     }
+    //     minLoss = fmin(minLoss, network->loss);
         
-        maxAccuracy = fmax(maxAccuracy, network->accuracy);
+    //     maxAccuracy = fmax(maxAccuracy, network->accuracy);
 
-        losses[step] = network->loss;
-        storedSteps[step] = step;
-        accuracies[step] = network->accuracy;
+    //     losses[step] = network->loss;
+    //     storedSteps[step] = step;
+    //     accuracies[step] = network->accuracy;
 
-        step++;
-        // Clear the gradients
-        for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
-            fill_matrix(network->layers[layerIndex]->gradients, 0.0f);
-            fill_vector(network->layers[layerIndex]->biasGradients, 0.0f);
-        }
-    }
+    //     step++;
+    //     // Clear the gradients
+    //     for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
+    //         fill_matrix(network->layers[layerIndex]->gradients, 0.0f);
+    //         fill_vector(network->layers[layerIndex]->biasGradients, 0.0f);
+    //     }
+    // }
 
-    log_info("Minimum loss: %f \n", minLoss);
-    log_info("Maximum accuracy: %f \n", maxAccuracy);
+    // log_info("Minimum loss: %f \n", minLoss);
+    // log_info("Maximum accuracy: %f \n", maxAccuracy);
 
-    // Plot loss/step
-    gnuplot_plot_xy(loss_step_plot, storedSteps, losses, maxSteps, "Loss/Step");
-    gnuplot_plot_xy(accuracy_step_plot, storedSteps, accuracies, maxSteps, "Accuracy/Step");
+    // // Plot loss/step & accuracy/step & learning rate/step
+    // gnuplot_plot_xy(loss_step_plot, storedSteps, losses, maxSteps, "Loss/Step");
+    // gnuplot_plot_xy(accuracy_step_plot, storedSteps, accuracies, maxSteps, "Accuracy/Step");
+    // gnuplot_plot_xy(learningRate_step_plot, storedSteps, learningRates, maxSteps, "Learning Rate/Step");
 
-    gnuplot_plot_xy(learningRate_step_plot, storedSteps, learningRates, maxSteps, "Learning Rate/Step");
-
-    Matrix* validationOutputs = create_matrix(validationData->rows, network->layers[network->layerCount - 1]->neuronCount);
+    // Matrix* validationOutputs = create_matrix(validationData->rows, network->layers[network->layerCount - 1]->neuronCount);
     
-    for(int inputRow = 0; inputRow < validationData->rows; inputRow++) {
-        Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
-        forwardPass(network, validationData->data[inputRow], output); 
-        validationOutputs->data[inputRow] = copy_vector(output);
-        free_vector(output);
-    }
+    // for(int inputRow = 0; inputRow < validationData->rows; inputRow++) {
+    //     Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
+    //     forward_pass(network, validationData->data[inputRow], output); 
+    //     validationOutputs->data[inputRow] = copy_vector(output);
+    //     free_vector(output);
+    // }
     // // // i have the same number of rows as the evaluation data, and I have 1 column which i need to normalize
-    int correctPredictions = 0;
-    for(int i = 0; i < validationOutputs->rows; i++) {
+    // int correctPredictions = 0;
+    // for(int i = 0; i < validationOutputs->rows; i++) {
 
-        if(arg_max(yValues->data[trainingData->rows + i]) == arg_max(validationOutputs->data[i])) {
-            correctPredictions++;
-        }
-    }
+    //     if(arg_max(yValues_Testing->data[trainingData->rows + i]) == arg_max(validationOutputs->data[i])) {
+    //         correctPredictions++;
+    //     }
+    // }
 
-    log_info("Accuracy of validation: %f", (double) correctPredictions / (double)validationOutputs->rows);
+    // log_info("Accuracy of validation: %f", (double) correctPredictions / (double)validationOutputs->rows);
 
-    printf("Press enter to close plot...\n");
-    getchar();
+    // printf("Press enter to close plot...\n");
+    // getchar();
 
     gnuplot_close(loss_step_plot);
     gnuplot_close(accuracy_step_plot);
@@ -204,55 +209,56 @@ void runProgram() {
     free(storedSteps);
     // free_matrix(validationOutputs);
 
-    // deleteNNetwork(network);
+    // delete_network(network);
     fclose(logFile);
 }   
 
-void file_log(log_Event *ev) {
-  fprintf(
-    logFile, "%s %-5s %s:%d: ",
-    ev->time, log_level_string(ev->level), ev->file, ev->line);
-  vfprintf(logFile, ev->fmt, ev->ap);
-  fprintf(logFile, "\n");
-  fflush(logFile);
-}
+
 
 NNetwork* create_custom_network() {
-    Data* data = load_csv("/Users/mevlutarslan/Downloads/datasets/wine_with_headers.csv");
-    if(data == NULL) {
-        log_error("Failed to load CSV");
+    Data* training_data = load_csv("/Users/mevlutarslan/Downloads/datasets/mnistcsv/mnist_train.csv");
+    // Data* validation_data = load_csv("/Users/mevlutarslan/Downloads/datasets/mnistcsv/mnist_test.csv");
+
+    if(training_data == NULL) {
+        log_error("Failed to load training_data");
     }
+    log_info("Training Data Matrix: %s", matrix_to_string(training_data->data));
+
+    // if(validation_data == NULL) {
+    //     log_error("Failed to load training_data");
+    // }
 
     // shuffling data to have various classes in both my training and validation sets
-    shuffle_rows(data->data);
+    // shuffle_rows(data->data);
 
     // amount to split the dataset by.
-    double splitPercentage = 0.8;
+    double splitPercentage = 1;
 
     // extract training data
     int targetColumn = 0;
-    int trainingDataSize = data->rows * splitPercentage;
-    trainingData = get_sub_matrix_except_column(data->data, 0, trainingDataSize - 1, 0, data->columns - 1, 0);
+    int trainingDataSize = training_data->rows * splitPercentage;
+
+    // trainingData = get_sub_matrix_except_column(training_data->data, 0, trainingDataSize - 1, 0, training_data->columns - 1, 0);
     
-    // extract validation data
-    validationData = get_sub_matrix_except_column(data->data, trainingData->rows + 1, data->rows - 1, 0, data->columns - 1, 0);
-    // log_info("Validation Data Matrix: %s", matrix_to_string(validationData));
+    // // extract validation data
+    // validationData = get_sub_matrix_except_column(validation_data->data, 0, validation_data->rows - 1, 0, validation_data->columns - 1, 0);
+    // // log_info("Validation Data Matrix: %s", matrix_to_string(validationData));
 
-    // extract yValues
-    yValues = oneHotEncode(extractYValues(data->data, 0), 3);
-    // log_info("Y Values Matrix: %s", matrix_to_string(yValues));
+    // // extract yValues
+    // yValues_Training = oneHotEncode(extractYValues(training_data->data, 0), 10);
+    // yValues_Testing = oneHotEncode(extractYValues(validation_data->data, 0), 10);
+    // // log_info("Y Values Matrix: %s", matrix_to_string(yValues));
 
-    // normalize training data 
-    for(int col = 0; col < trainingData->columns; col++) {
-        normalizeColumn(trainingData, col);
-    }
-    log_info("Training Data Matrix: %s", matrix_to_string(trainingData));
+    // // normalize training data 
+    // for(int col = 0; col < trainingData->columns; col++) {
+    //     normalizeColumn(trainingData, col);
+    // }
 
 
-    // normalize validation data
-    for(int col = 0; col < validationData->columns; col++) {
-        normalizeColumn(validationData, col);
-    }
+    // // normalize validation data
+    // for(int col = 0; col < validationData->columns; col++) {
+    //     normalizeColumn(validationData, col);
+    // }
 
     ActivationFunction reluFunc;
     reluFunc.activation = leakyRelu;
@@ -261,12 +267,25 @@ NNetwork* create_custom_network() {
     NetworkConfig config;
     config.numLayers = 2;
     config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);
-    config.neuronsPerLayer[0] = 2;
-    config.neuronsPerLayer[1] = 3;
+    config.neuronsPerLayer[0] = 128;
+    config.neuronsPerLayer[1] = 10;
 
     config.inputSize = trainingData->columns;
 
     OptimizationConfig optimizationConfig = create_optimizer(ADAM);
+
+    // if you want to use l1 and/or l2 regularization you need to set the size to config.numLayers and 
+    // fill these vectors with the lambda values you want
+    config.weightLambdas = create_vector(0);
+    config.biasLambdas = create_vector(0);
+
+    if(config.weightLambdas->size > 0 ){
+        fill_vector(config.weightLambdas, 1e-5);
+    }
+
+    if(config.biasLambdas->size > 0 ){
+        fill_vector(config.biasLambdas, 1e-3);
+    }
 
     config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
     
@@ -284,7 +303,7 @@ NNetwork* create_custom_network() {
     config.lossFunction = malloc(sizeof(LossFunction));
     config.lossFunction->loss_function = categoricalCrossEntropyLoss;
 
-    NNetwork* network = createNetwork(&config);
+    NNetwork* network = create_network(&config);
     network->output = create_matrix(trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
 
     return network;

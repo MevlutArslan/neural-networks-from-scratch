@@ -44,15 +44,16 @@ void free_matrix(Matrix* matrix){
 
 
 char* matrix_to_string(const Matrix* matrix) {
-    // Initial size for the string
 
+    // Initial size for the string
     int size = matrix->rows * matrix->columns * 20;
+    log_debug("got to print statement, size: %d", size);
+
     char* str = (char*)malloc(size * sizeof(char));
 
     // Start of the matrix
     strcat(str, "\t\t\t\t");
     strcat(str, "[");
-
     // Loop through each row
     for (int i = 0; i < matrix->rows; i++) {
         if (i > 0) {
@@ -62,6 +63,7 @@ char* matrix_to_string(const Matrix* matrix) {
         strcat(str, "[");
         // Loop through each column
         for (int j = 0; j < matrix->columns; j++) {
+
             // Convert the current element to a string
             char element[20];
             sprintf(element, "%f", matrix->data[i]->elements[j]);
@@ -72,6 +74,8 @@ char* matrix_to_string(const Matrix* matrix) {
             }
             strcat(str, element);
         }
+        log_debug("got here, row: %d, col: %d", i, 0);
+
         strcat(str, "]");
     }
     // End of the matrix

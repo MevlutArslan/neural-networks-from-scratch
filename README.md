@@ -1,8 +1,21 @@
-# Project Name
+# Neural Network Implementation From Scratch in C
 
 ## Description
 
-* TODO: Provide project's description
+This project implements a basic neural network library from scratch in C. It provides the core components needed to build and train neural network models, including:
+
+Common layers types like dense (will implement more as I learn more)
+Activation functions like ReLU, leaky RELU, softmax, sigmoid, etc.
+Loss functions such as categorical cross-entropy, mean squared error.
+Optimization algorithms including stochastic gradient descent, ADAGRAD, RMS_PROP, ADAM.
+Backpropagation algorithms to calculate gradients.
+Data pre-processing and normalization.
+
+The goal of this library is to provide a "playground" for understanding the underlying mathematical concepts and algorithms that drive neural networks and deep learning. By building from the ground up in C, all aspects of the implementation can be learned and customized.
+
+The library can be used to train neural network models on both CPU and GPU via CUDA extensions (coming soon). It provides building blocks that could be used for projects across computer vision, natural language processing, and other problem domains.
+
+While performance and production-readiness is not a priority, this library serves as an educational tool for hands-on learning. Contributions and improvements are welcome!
 
 ## Prerequisites
 
