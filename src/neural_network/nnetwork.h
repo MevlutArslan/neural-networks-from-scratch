@@ -57,21 +57,44 @@ typedef struct {
     int inputSize;
 
     OptimizationConfig* optimizationConfig;
+
+    Vector* weightLambdas;
+    Vector* biasLambdas;
 } NetworkConfig;
 
-NNetwork* createNetwork(const NetworkConfig* config);
-void deleteNNetwork(NNetwork* network);
+NNetwork* create_network(const NetworkConfig* config);
+void delete_network(NNetwork* network);
 
-void forwardPass(NNetwork* network, Vector* input, Vector* output);
-void calculateLoss(NNetwork* network, Matrix* yValues);
+void forward_pass(NNetwork* network, Vector* input, Vector* output);
+void calculate_loss(NNetwork* network, Matrix* yValues);
 void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* yValues);
 
-void dumpNetworkState(NNetwork* network);
+void dump_network_config(NNetwork* network);
 
 void sgd(NNetwork* network, double learningRate);
 void adagrad(NNetwork* network, double learningRate);
 void rms_prop(NNetwork* network, double learningRate);
 void adam(NNetwork* network, double learningRate);
+
+/*
+    L1 regularization’s penalty is the sum of all the absolute values for the weights and biases.
+    weights_penalty = lambda * sum(weights)
+    bias_penalty = lambda * sum(biases)
+
+    @param lambda dictates how much of an impact the regularization penalty carries.
+*/
+double calculate_l1_penalty(double lambda, Vector* vector);
+Vector* l1_derivative(double lambda, Vector* vector);
+
+/*
+    L2 regularization’s penalty is the sum of the squared weights and biases.
+    updated_weight = lambda * sum(weights^2)
+    updated_bias = lambda * sum(biases ^ 2)
+
+    @param lambda variable dictates how much of an impact the regularization penalty carries.
+*/
+double calculate_l2_penalty(double lambda, Vector* vector);
+Vector* l2_derivative(double lambda, Vector* vector);
 
 double accuracy(Matrix* targets, Matrix* outputs);
 #endif

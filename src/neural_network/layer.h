@@ -26,12 +26,20 @@ typedef struct Layer{
 
     Matrix* weightCache;
     Vector* biasCache;
+
+    // lambda dictates how much of an impact the regularization penalty carries.
+    double weightLambda;
+    double biasLambda;
 } Layer;
 
 typedef struct {
     int neuronCount;
     int inputSize;
     ActivationFunction* activationFunction;
+    
+    int shouldUseRegularization;
+    double weightLambda;
+    double biasLambda;
 } LayerConfig;
 
 Layer* createLayer(LayerConfig* config);

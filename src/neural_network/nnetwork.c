@@ -1,7 +1,7 @@
 #include "nnetwork.h"
 
 /*
-    createNetwork works by getting the config and the inputs.
+    create_network works by getting the config and the inputs.
     It allocates memory for the Neural Network based on the struct 
 
     typedef struct {
@@ -22,7 +22,7 @@
     we loop config.number of layers times and create each layer.
     we mark the first layer to be network's start layer and the last layer to be the end layer
 */
-NNetwork* createNetwork(const NetworkConfig* config) {
+NNetwork* create_network(const NetworkConfig* config) {
     NNetwork* network = malloc(sizeof(NNetwork));
     network->layerCount = config->numLayers;
     network->layers = malloc(network->layerCount * sizeof(Layer));
@@ -32,7 +32,23 @@ NNetwork* createNetwork(const NetworkConfig* config) {
         layerConfig.inputSize = i == 0 ? config->inputSize : network->layers[i - 1]->neuronCount;
         layerConfig.neuronCount = config->neuronsPerLayer[i];
         layerConfig.activationFunction = &config->activationFunctions[i];
-        
+
+        if(i < config->numLayers - 1){
+            int use_regularization = 0;
+
+            if(config->weightLambdas != NULL && config->weightLambdas->size > 0){
+                use_regularization = 1;
+                layerConfig.weightLambda = config->weightLambdas->elements[i]; 
+            }
+
+            if(config->biasLambdas != NULL && config->biasLambdas->size > 0) {
+                use_regularization = 1;
+                layerConfig.biasLambda = config->biasLambdas->elements[i];
+            }
+
+            log_debug("should use regularization? %d", use_regularization);
+            layerConfig.shouldUseRegularization = use_regularization;
+        }
         Layer* layer = createLayer(&layerConfig);
         network->layers[i] = layer;
     }
@@ -60,12 +76,12 @@ NNetwork* createNetwork(const NetworkConfig* config) {
 
 
     log_info("Created Network:");
-    dumpNetworkState(network);
+    dump_network_config(network);
 
     return network;
 }
 
-void forwardPass(NNetwork* network, Vector* input, Vector* output) {
+void forward_pass(NNetwork* network, Vector* input, Vector* output) {
     network->layers[0]->input = input;
     for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
@@ -131,8 +147,24 @@ void forwardPass(NNetwork* network, Vector* input, Vector* output) {
     #endif
 }
 
-void calculateLoss(NNetwork* network, Matrix* yValues) {
+void calculate_loss(NNetwork* network, Matrix* yValues) {
     network->loss = categoricalCrossEntropyLoss(yValues, network->output);
+
+    for(int i = 0; i < network->layerCount; i++) {
+        Layer* layer = network->layers[i];
+        double lambda = layer->weightLambda;
+        double weightPenalty = 0.0f;
+
+        for(int row = 0; row < layer->weights->rows; row ++) {
+            weightPenalty += calculate_l1_penalty(lambda, layer->weights->data[row]);
+            weightPenalty += calculate_l2_penalty(lambda, layer->weights->data[row]);
+        }
+
+        double biasPenalty = calculate_l1_penalty(lambda, layer->biases) + calculate_l2_penalty(lambda, layer->biases);
+
+        network->loss += weightPenalty + biasPenalty;
+    }
+
     network->accuracy = accuracy(yValues, network->output);
 }
 
@@ -271,6 +303,14 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
         for(layerIndex = network->layerCount - 2; layerIndex >= 0; layerIndex --) {
             // log_info("Backward propagation for layer index: %d", layerIndex);
             currentLayer = network->layers[layerIndex];
+            Vector* l1_bias_derivatives;
+            Vector* l2_bias_derivatives;
+
+            if(currentLayer->biasLambda > 0 ){
+                l1_bias_derivatives = l1_derivative(currentLayer->biasLambda, currentLayer->biases);
+                l2_bias_derivatives = l2_derivative(currentLayer->biasLambda, currentLayer->biases);
+            }
+
             for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
                 double dLoss_dOutput = 0.0f;
                 
@@ -291,6 +331,13 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                     log_debug("Partial derivative of Output with respect to Net Input is: %f", dOutput_dWeightedSum);
                     log_debug("Partial derivative of Loss with respect to Net Input is: %f", dLoss_dWeightedSum);
                 #endif
+                Vector* l1_weights_derivatives;
+                Vector* l2_weights_derivatives;
+
+                if(currentLayer->weightLambda > 0) {
+                    l1_weights_derivatives = l1_derivative(currentLayer->weightLambda, currentLayer->weights->data[neuronIndex]);
+                    l2_weights_derivatives = l2_derivative(currentLayer->weightLambda, currentLayer->weights->data[neuronIndex]);
+                }
 
                 for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
                     double dWeightedSum_dWeight = 0.0f;
@@ -300,8 +347,12 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                         dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
                     }
                     
+                    
                     double dLoss_dWeight = dLoss_dWeightedSum * dWeightedSum_dWeight;
-
+                    if(currentLayer->weightLambda > 0) {
+                        dLoss_dWeight += l1_weights_derivatives->elements[weightIndex];
+                        dLoss_dWeight += l2_weights_derivatives->elements[weightIndex];
+                    }
 
                     #ifdef DEBUG
                         log_debug(
@@ -317,6 +368,14 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                 }
                 
                 currentLayer->biasGradients->elements[neuronIndex] = dLoss_dWeightedSum;
+
+                
+                if(currentLayer->biasLambda > 0) {
+                    currentLayer->biasGradients->elements[neuronIndex] += l1_bias_derivatives->elements[neuronIndex] + l2_bias_derivatives->elements[neuronIndex];
+                    
+                }
+
+                
 
                 if(network->optimizationConfig->shouldUseGradientClipping == 1) {
                     double originalBiasGradient = currentLayer->biasGradients->elements[neuronIndex];
@@ -344,8 +403,16 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                 currentLayer->dLoss_dWeightedSums->elements[neuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
 
                 // log_info("Gradient for weights and biases computed for neuron index: %d in layer index: %d", neuronIndex, layerIndex);
-                
+                if(currentLayer->weightLambda > 0) {
+                    free_vector(l1_weights_derivatives);
+                    free_vector(l2_weights_derivatives);
+                }
             }
+            if(currentLayer->biasLambda > 0) {
+                free_vector(l1_bias_derivatives);
+                free_vector(l2_bias_derivatives);
+            }
+           
             #ifdef DEBUG
                 log_debug(
                     "Gradients for layer #%d: \n"
@@ -363,7 +430,7 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
     #endif
 }
 
-// void deleteNNetwork(NNetwork* network){
+// void delete_network(NNetwork* network){
 //     for(int i = network->layerCount - 1; i >= 0; i--) {
 //         deleteLayer(network->layers[i]);
 //     }
@@ -412,7 +479,7 @@ double accuracy(Matrix* targets, Matrix* outputs) {
 }
 
 
-void dumpNetworkState(NNetwork* network) {
+void dump_network_config(NNetwork* network) {
    char json_output[5000]; // adjust the size to suit your needs
 
     sprintf(
@@ -481,4 +548,61 @@ void dumpNetworkState(NNetwork* network) {
 
     log_info("%s", json_output);
 
+}
+
+double calculate_l1_penalty(double lambda, Vector* vector) {
+    double penalty = 0.0f;
+
+    for(int i = 0; i < vector->size; i++) {
+        penalty += fabs(vector->elements[i]);
+    }
+
+    return lambda * penalty;
+}
+
+double calculate_l2_penalty(double lambda, Vector* vector) {
+    double penalty = 0.0f;
+
+    for(int i = 0; i < vector->size; i++) {
+        penalty += pow(vector->elements[i], 2);
+    }
+
+    return lambda * penalty;
+}
+
+Vector* l1_derivative(double lambda, Vector* vector) {
+    Vector* derivatives = create_vector(vector->size);
+
+    for(int i = 0; i < derivatives->size; i++) {
+        if(vector->elements[i] == 0) {
+            derivatives->elements[i] = 0;
+        }else if(vector->elements[i] > 0) {
+            derivatives->elements[i] = lambda * 1;
+        }else{
+            derivatives->elements[i] = lambda * -1;
+        }
+    }
+
+    return derivatives;
+}
+
+/*
+    The L2 regularization penalty is lambda * sum(weights ^ 2).
+
+    To get the derivative, we take the derivative of that penalty term with 
+    respect to each weight parameter w:
+
+    d/dw (lambda * w^2) = 2 * lambda * w
+
+    So the contribution of each weight w to the total gradient is proportional 
+    to 2 * lambda * w.
+*/
+Vector* l2_derivative(double lambda, Vector* vector) {
+    Vector* derivatives = create_vector(vector->size);
+
+    for(int i = 0; i < derivatives->size; i++) {
+        derivatives->elements[i] = 2 * lambda * vector->elements[i];
+    }
+
+    return derivatives;
 }

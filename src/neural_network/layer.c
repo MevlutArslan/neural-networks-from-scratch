@@ -22,7 +22,7 @@ Layer* createLayer(LayerConfig* config) {
     layer->output = create_vector(config->neuronCount);
 
     layer->activationFunction = config->activationFunction;
-    
+
     layer->dLoss_dWeightedSums = create_vector(layer->neuronCount);
     
     layer->weightMomentums = create_matrix(layer->weights->rows, layer->weights->columns);
@@ -30,6 +30,14 @@ Layer* createLayer(LayerConfig* config) {
     layer->weightCache = create_matrix(layer->weights->rows, layer->weights->columns);
     layer->biasCache = create_vector(layer->biases->size);
     
+    if(config->shouldUseRegularization == 1) {
+        if(config->weightLambda != 0) {
+            layer->weightLambda = config->weightLambda;
+        }
+        if(config->biasLambda != 0) {
+            layer->biasLambda = config->biasLambda;
+        }
+    }
     return layer;
 }
 
