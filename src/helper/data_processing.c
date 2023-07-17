@@ -69,7 +69,6 @@ Data* load_csv(char* fileLocation) {
 
         rowIndex++;
     }
-    log_debug("matrix: %s", matrix_to_string(matrix));
     fclose(file);
 
     data->data = matrix;
@@ -134,12 +133,18 @@ int getRowCount(char* fileLocation) {
 }
 
 
-void normalizeColumn(Matrix* matrix, int columnIndex) {
+void normalizeColumn_standard_deviation(Matrix* matrix, int columnIndex) {
     double mean = column_mean(matrix, columnIndex);
     double standard_deviation = column_standard_deviation(matrix, columnIndex);
 
     for(int row = 0; row < matrix->rows; row++) {
         matrix->data[row]->elements[columnIndex] = (matrix->data[row]->elements[columnIndex] - mean) / standard_deviation;
+    }
+}
+
+void normalizeColumn_division(Matrix* matrix, int columnIndex, double toDivideBy) {
+    for(int row = 0; row < matrix->rows; row++) {
+        matrix->data[row]->elements[columnIndex] = matrix->data[row]->elements[columnIndex] / toDivideBy;
     }
 }
 
@@ -180,4 +185,8 @@ Matrix* oneHotEncode(Vector* categories, int numberOfCategories) {
     }
 
     return oneHotEncoded;
+}
+
+void free_data(Data* data) {
+    
 }

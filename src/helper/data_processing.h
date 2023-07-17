@@ -20,11 +20,15 @@ Matrix* oneHotEncode(Vector* categories, int numberOfCategories);
 int getRowCount(char* fileLocation);
 int getColumnCount(char* fileLocation);
 
-void normalizeColumn(Matrix* matrix, int columnIndex);
+void normalizeColumn_standard_deviation(Matrix* matrix, int columnIndex);
+void normalizeColumn_division(Matrix* matrix, int columnIndex, double toDivideBy);
+
 void normalizeVector(Vector* vector);
 
 void unnormalizeColumn(Matrix* vector, int columnIndex, double min, double max);
 
 void unnormalizeVector(Vector* vector, double min, double max);
+
+void free_data(Data* data);
 
 #endif
