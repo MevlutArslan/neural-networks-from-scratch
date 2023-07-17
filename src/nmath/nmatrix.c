@@ -74,7 +74,6 @@ char* matrix_to_string(const Matrix* matrix) {
             }
             strcat(str, element);
         }
-        log_debug("got here, row: %d, col: %d", i, 0);
 
         strcat(str, "]");
     }

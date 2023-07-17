@@ -42,8 +42,8 @@ typedef struct {
     double biasLambda;
 } LayerConfig;
 
-Layer* createLayer(LayerConfig* config);
-void deleteLayer(Layer* layer);
+Layer* create_layer(LayerConfig* config);
+void free_layer(Layer* layer);
 
 void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* weights);
 #endif

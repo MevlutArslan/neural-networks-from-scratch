@@ -49,7 +49,7 @@ NNetwork* create_network(const NetworkConfig* config) {
             log_debug("should use regularization? %d", use_regularization);
             layerConfig.shouldUseRegularization = use_regularization;
         }
-        Layer* layer = createLayer(&layerConfig);
+        Layer* layer = create_layer(&layerConfig);
         network->layers[i] = layer;
     }
     
@@ -85,26 +85,24 @@ void forward_pass(NNetwork* network, Vector* input, Vector* output) {
     network->layers[0]->input = input;
     for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
-
+       
         Vector* dotProduct = dot_product(currentLayer->weights, currentLayer->input);
         #ifdef DEBUG
             char* weightsStr = matrix_to_string(currentLayer->weights);
             char* dotProductStr = vector_to_string(dotProduct);
             log_debug(
-                "Weights For Input Row: %d & Layer: %d: %s", 
-                i, 
+                "Weights For Input@Layer: %d: %s", 
                 layerIndex, 
                 weightsStr
             );
 
             log_debug(
-                "Dot Product For Input Row: %d & Layer: %d: %s", 
-                i, 
+                "Dot Product For Input@Layer: %d: %s", 
                 layerIndex, 
                 dotProductStr
             );
 
-            // free(weightsStr);
+            free(weightsStr);
             free(dotProductStr);
         #endif
         
@@ -432,7 +430,7 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
 
 // void delete_network(NNetwork* network){
 //     for(int i = network->layerCount - 1; i >= 0; i--) {
-//         deleteLayer(network->layers[i]);
+//         free_layer(network->layers[i]);
 //     }
 // }
 
@@ -605,4 +603,28 @@ Vector* l2_derivative(double lambda, Vector* vector) {
     }
 
     return derivatives;
+}
+
+void delete_network(NNetwork* network) {
+    if (network == NULL) {
+        return;
+    }
+
+    // Free the layers
+    for (int i = 0; i < network->layerCount; i++) {
+        free_layer(network->layers[i]);
+    }
+    free(network->layers);
+
+    // Free the loss function
+    free(network->lossFunction);
+
+    // Free the optimization configuration
+    // free_OptimizationConfig(network->optimizationConfig);
+
+    // Free the output matrix
+    free_matrix(network->output);
+
+    // Finally, free the network itself
+    free(network);
 }

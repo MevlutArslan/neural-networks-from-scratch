@@ -1,6 +1,6 @@
 #include "layer.h"
 
-Layer* createLayer(LayerConfig* config) {
+Layer* create_layer(LayerConfig* config) {
     Layer* layer = malloc(sizeof(Layer));
 
     layer->neuronCount = config->neuronCount;
@@ -41,7 +41,7 @@ Layer* createLayer(LayerConfig* config) {
     return layer;
 }
 
-void deleteLayer(Layer* layer) {
+void free_layer(Layer* layer) {
     if (layer == NULL) {
         return;
     }
