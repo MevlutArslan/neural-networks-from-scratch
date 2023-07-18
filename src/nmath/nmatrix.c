@@ -1,16 +1,15 @@
 #include "nmatrix.h"
 #include "../../libraries/logger/log.h"
 
-
 Matrix* create_matrix(const int rows, const int cols) {
     Matrix* matrix = malloc(sizeof(Matrix));
     
     matrix->rows = rows;
     matrix->columns = cols;
 
-    matrix->data = malloc(rows * sizeof(Vector*));
+    matrix->data = calloc(rows, sizeof(Vector*));
 
-    for(int i = 0; i < matrix->rows; i++) {
+    for (int i = 0; i < matrix->rows; i++) {
         matrix->data[i] = create_vector(cols);
     }
 
@@ -47,7 +46,6 @@ char* matrix_to_string(const Matrix* matrix) {
 
     // Initial size for the string
     int size = matrix->rows * matrix->columns * 20;
-    log_debug("got to print statement, size: %d", size);
 
     char* str = (char*)malloc(size * sizeof(char));
 
@@ -191,11 +189,11 @@ Matrix* copy_matrix(const Matrix* source) {
 
 
 Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, int endCol) {
-    Matrix* matrix = create_matrix(endRow - startRow, endCol - startCol); // 
+    Matrix* matrix = create_matrix(endRow - startRow + 1, endCol - startCol + 1); // 
     // lets say my source is of dimensions 8,12 and 
     // I want the part of the matrix from the 2nd row to 10th row and 1st column to 13th col
-    for(int i = startRow; i < endRow; i++) { // i goes 2 -> 10 
-        for(int j = startCol; j < endCol; j++) { // j goes 1 -> 13
+    for(int i = startRow; i <= endRow; i++) { // i goes 2 -> 10 
+        for(int j = startCol; j <= endCol; j++) { // j goes 1 -> 13
             // how do i map i and j to my matrix's index
             matrix->data[i - startRow]->elements[j - startCol] = source->data[i]->elements[j]; 
         }

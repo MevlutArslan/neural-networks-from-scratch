@@ -1,8 +1,8 @@
 #include "nvector.h"
 
 Vector* create_vector(int size) {
-    Vector* vector = malloc(sizeof(Vector));
-    vector->elements = malloc(size * sizeof(double));
+    Vector* vector = calloc(1, sizeof(Vector));
+    vector->elements = calloc(size, sizeof(double));
     vector->size = size;
     
     return vector;
@@ -73,7 +73,6 @@ Vector* array_to_vector(double* array, int length) {
 
     for(int i = 0; i < vector->size; i++) {
         vector->elements[i] = array[i];
-        // log_debug("array[%d]:%f", i, array[i]);
     }
 
     return vector;
