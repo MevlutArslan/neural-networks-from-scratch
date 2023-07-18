@@ -5,7 +5,7 @@
 #include <float.h>
 
 // length of mnist rows
-#define MAX_LINE_LENGTH 4206
+#define MAX_LINE_LENGTH 4500
 #define MAX_TOKENS 256
 #define DELIMITER ","
 
@@ -40,10 +40,12 @@ Data* load_csv(char* fileLocation) {
     // while there are lines to read
     while (fgets(currentLine, sizeof(currentLine), file) != NULL) {
 
+        #ifdef DEBUG
         if (feof(file)) {
             printf("End of file reached at row index: %d\n", rowIndex);
             break;
         }
+        #endif
 
         if(currentLine[0] == '\n' || (currentLine[0] == '\r' && currentLine[1] == '\n')) {
             continue;
@@ -69,6 +71,7 @@ Data* load_csv(char* fileLocation) {
 
         rowIndex++;
     }
+
     fclose(file);
 
     data->data = matrix;
@@ -170,23 +173,30 @@ void unnormalizeVector(Vector* vector, double min, double max) {
         vector->elements[i] = (vector->elements[i] * (max - min)) + min;
     }
 }
-
+/*
+    @param categories: the column containing the expected category
+*/
 Matrix* oneHotEncode(Vector* categories, int numberOfCategories) {
+
     // Create a matrix to hold the one-hot encoded categories
     Matrix* oneHotEncoded = create_matrix(categories->size, numberOfCategories);
 
-    // For each category in the input vector
+    // Encode each category value
     for (int i = 0; i < categories->size; i++) {
-        // Subtract 1 from the category to get a zero-based index
-        int index = (int)categories->elements[i] - 1;
+        double category = categories->elements[i] - 1;
 
-        // Set the corresponding element in the one-hot encoded matrix to 1
-        oneHotEncoded->data[i]->elements[index] = 1.0;
+        for (int j = 0; j < numberOfCategories; j++) {
+            if (j == category) {
+                oneHotEncoded->data[i]->elements[j] = 1.0;
+            } else {
+                oneHotEncoded->data[i]->elements[j] = 0.0;  
+            }
+        }
     }
-
     return oneHotEncoded;
 }
 
 void free_data(Data* data) {
-    
+    // free_matrix(data);
+    free(data);
 }
