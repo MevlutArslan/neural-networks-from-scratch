@@ -48,5 +48,13 @@ void free_layer(Layer* layer);
 
 void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* weights);
 
+/*
+ * Serializes a Layer struct into a JSON string.
+ *
+ * NOTE: Only call this function after the network has been trained.
+ * Many of the matrices within the Layer are not initialized at the start,
+ * so calling this function prematurely can lead to segmentation faults.
+ */
 char* serialize_layer(const Layer* layer);
+
 #endif
