@@ -98,4 +98,8 @@ double calculate_l2_penalty(double lambda, const Vector* vector);
 Vector* l2_derivative(double lambda, const Vector* vector);
 
 double accuracy(Matrix* targets, Matrix* outputs);
+
+char* serialize_network(const NNetwork* network);
+char* serialize_optimization_config(OptimizationConfig* optimizationConfig);
+
 #endif

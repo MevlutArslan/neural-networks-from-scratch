@@ -182,20 +182,34 @@ void calculate_loss(NNetwork* network, Matrix* yValues) {
     network->accuracy = accuracy(yValues, network->output);
 }
 
+/**
+ * Performs the backpropagation process in the neural network.
+ * 
+ * IMPORTANT: If a different activation function is used, the logic for calculating the gradients of 
+ * the output layer needs to be modified accordingly. Specifically, the derivative function of the 
+ * new activation function should be properly implemented and used in place of the existing derivative 
+ * functions (e.g., softmax_derivative).
+ *
+ * @param network The neural network to perform backpropagation on.
+ * @param input The input vector to the forward pass.
+ * @param output The output of the forward pass.
+ * @param target The vector with the expected outputs.
+ */
 void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* target) {
     #ifdef DEBUG
         log_info("Start of backward pass.");
     #endif
         Vector* prediction = output;
         
-        // @todo: try to abstract this out.
         // check: freed later in the code
         Vector* dLoss_dOutputs = categoricalCrossEntropyLossDerivative(target, prediction);
 
         // check: freed later in the code
         Matrix* jacobian = softmax_derivative(prediction);
+
         // check: freed later in the code
-        Vector* dLoss_dWeightedSums = dot_product(jacobian, dLoss_dOutputs);
+        Vector*  dLoss_dWeightedSums = dot_product(jacobian, dLoss_dOutputs);
+        
 
         /* These calculations are verified to be correct, but you can comment out the log statements
            to check again.
@@ -212,10 +226,9 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
             #endif
         */
        
-        // Calculating dLoss/dWeights and dLoss/dInputs for the output layer
+        
         int layerIndex = network->layerCount - 1;
         Layer* currentLayer = network->layers[layerIndex];
-
         for(int outputNeuronIndex = 0; outputNeuronIndex < currentLayer->neuronCount; outputNeuronIndex++) {
             #ifdef DEBUG
                 log_debug("Partial derivative of Loss with respect to Output for target: %f, prediction: %f is %f \n", target->elements[outputNeuronIndex], prediction->elements[outputNeuronIndex], dLoss_dOutputs->elements[outputNeuronIndex]);
@@ -224,7 +237,7 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
             #ifdef DEBUG
                 log_debug("Partial derivative of Loss with respect to the input to the activation function of the output layer's node #%d is: %f \n",outputNeuronIndex ,dLoss_dWeightedSums->elements[outputNeuronIndex]);
             #endif
-
+            
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
                 double dWeightedSum_dWeight = 0.0f;
                 if(layerIndex == 0) {
@@ -653,4 +666,86 @@ void free_network_config(NetworkConfig* config) {
 
     free_vector(config->weightLambdas);
     free_vector(config->biasLambdas);
+}
+
+NNetwork* load_network(char* fileLocation) {
+
+}
+
+int save_network(char* fileLocation) {
+    // convert the struct to json with all the sub structs
+    // write it to a file
+}
+
+char* serialize_optimization_config(OptimizationConfig* config) {
+     if (config == NULL) {
+        printf("Config is NULL\n");
+        return NULL;
+    }
+
+    if(config->shouldUseGradientClipping == 0) {
+        config->gradientClippingLowerBound = 0.0f;
+        config->gradientClippingUpperBound = 0.0f;
+    }
+
+    if(config->optimizer != SGD){
+        config->shouldUseMomentum = 0;
+        config->momentum = 0.0f;
+    }
+    
+    if(config->optimizer != RMS_PROP) {
+        config->rho = 0.0f;
+    }
+
+    if(config->optimizer != ADAM) {
+        config->beta1 = 0.0f;
+        config->beta2 = 0.0f;
+    }
+    cJSON *root = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(root, "shouldUseGradientClipping", cJSON_CreateNumber(config->shouldUseGradientClipping));
+    
+    cJSON_AddItemToObject(root, "gradientClippingLowerBound", cJSON_CreateNumber(config->gradientClippingLowerBound));
+    cJSON_AddItemToObject(root, "gradientClippingUpperBound", cJSON_CreateNumber(config->gradientClippingUpperBound));
+    cJSON_AddItemToObject(root, "shouldUseLearningRateDecay", cJSON_CreateNumber(config->shouldUseLearningRateDecay));
+    cJSON_AddItemToObject(root, "learningRateDecayAmount", cJSON_CreateNumber(config->learningRateDecayAmount));
+    cJSON_AddItemToObject(root, "shouldUseMomentum", cJSON_CreateNumber(config->shouldUseMomentum));
+    cJSON_AddItemToObject(root, "momentum", cJSON_CreateNumber(config->momentum));
+    cJSON_AddItemToObject(root, "optimizer", cJSON_CreateNumber(config->optimizer));
+    cJSON_AddItemToObject(root, "epsilon", cJSON_CreateNumber(config->epsilon));
+    cJSON_AddItemToObject(root, "rho", cJSON_CreateNumber(config->rho));
+    cJSON_AddItemToObject(root, "beta1", cJSON_CreateNumber(config->beta1));
+    cJSON_AddItemToObject(root, "beta2", cJSON_CreateNumber(config->beta2));
+
+    char *jsonString = cJSON_PrintUnformatted(root);
+
+    cJSON_Delete(root);
+
+    return jsonString;
+}
+
+char* serialize_network(const NNetwork* network) {
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON *layers = cJSON_CreateArray();
+
+    for (int i = 0; i < network->layerCount; i++) {
+        char *layerString = serialize_layer(network->layers[i]);
+        cJSON_AddItemToArray(layers, cJSON_CreateRaw(layerString));
+        free(layerString);
+    }
+
+    cJSON_AddItemToObject(root, "layerCount", cJSON_CreateNumber(network->layerCount));
+    cJSON_AddItemToObject(root, "layers", layers);
+    cJSON_AddItemToObject(root, "lossFunction", cJSON_CreateString(get_loss_function_name(network->lossFunction)));
+    cJSON_AddItemToObject(root, "loss", cJSON_CreateNumber(network->loss));
+    cJSON_AddItemToObject(root, "accuracy", cJSON_CreateNumber(network->accuracy));
+    cJSON_AddItemToObject(root, "currentStep", cJSON_CreateNumber(network->currentStep));
+    cJSON_AddItemToObject(root, "optimizationConfig", cJSON_CreateRaw(serialize_optimization_config(network->optimizationConfig)));
+
+
+    char *jsonString = cJSON_Print(root);
+    cJSON_Delete(root);
+   
+    return jsonString;
 }
