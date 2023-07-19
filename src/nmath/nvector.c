@@ -1,7 +1,7 @@
 #include "nvector.h"
 
 Vector* create_vector(int size) {
-    Vector* vector = calloc(1, sizeof(Vector));
+    Vector* vector = malloc(sizeof(Vector));
     vector->elements = calloc(size, sizeof(double));
     vector->size = size;
     

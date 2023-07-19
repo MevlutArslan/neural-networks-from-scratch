@@ -33,7 +33,7 @@ void testMatrixCreation() {
     // Free the memory allocated for the matrix
     free_matrix(matrix);
 
-    log_error("Successfully tested the create_matrix() function! \n");
+    log_error("%s", "Successfully tested the create_matrix() function! \n");
 }
 
 
@@ -58,9 +58,9 @@ void test_get_sub_matrix() {
     
     // Check if the submatrix is equal to the expected submatrix
     if(is_equal(submatrix, expected_submatrix)) {
-        log_info("test_get_sub_matrix passed!\n");
+        log_info("%s", "test_get_sub_matrix passed!\n");
     } else {
-        log_error("test_get_sub_matrix failed!\n");
+        log_error("%s", "test_get_sub_matrix failed!\n");
     }
 }
 
@@ -90,8 +90,8 @@ void test_get_sub_matrix_except_column() {
     
     // Check if the submatrix is equal to the expected submatrix
     if(is_equal(submatrix, expected_submatrix)) {
-        log_info("test_get_sub_matrix_except_column passed!\n");
+        log_info("%s", "test_get_sub_matrix_except_column passed!\n");
     } else {
-        log_error("test_get_sub_matrix_except_column failed!\n");
+        log_error("%s", "test_get_sub_matrix_except_column failed!\n");
     }
 }

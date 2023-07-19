@@ -8,13 +8,14 @@
 typedef struct Layer{
     int neuronCount;
     Vector* input;
+    
     Matrix* weights;
     Vector* biases;
 
     Vector* weightedSums;
     Vector* output;
 
-    Vector* error;
+    // Vector* error;
     Matrix* gradients;
     Vector* biasGradients;
 

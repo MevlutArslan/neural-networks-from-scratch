@@ -41,6 +41,7 @@ Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, i
 
 /*
     Gets submatrix with in the specified boundaries and skips a column.
+    Both endRow & endCol are inclusive
 */
 Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, int startCol, int endCol, int columnIndex);
 

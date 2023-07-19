@@ -36,7 +36,7 @@ OptimizationConfig wine_categorization_create_optimizer(int optimizer) {
 
     // Learning Rate Decay
     optimizationConfig.shouldUseLearningRateDecay = 1;
-    
+    optimizationConfig.shouldUseGradientClipping = 0;
     // optimizationConfig.rho = 0.9;
     optimizationConfig.epsilon = 1e-8;
     optimizationConfig.beta1 = 0.9;
@@ -85,8 +85,8 @@ NNetwork* wine_categorization_get_network(Model* model) {
     memcpy(config.optimizationConfig, &optimizationConfig, sizeof(OptimizationConfig));
     
     for (int i = 0; i < config.numLayers - 1; i++) {
-        config.activationFunctions[i].activation = reluFunc.activation;
-        config.activationFunctions[i].derivative = reluFunc.derivative;
+        config.activationFunctions[i] = reluFunc;
+        memcpy(&config.activationFunctions[i], &reluFunc, sizeof(ActivationFunction));
     }
 
     config.activationFunctions[config.numLayers - 1].activation = softmax;
@@ -109,6 +109,7 @@ void wine_categorization_train_network(Model* model) {
         log_error("%s", "Error creating network!");
         return;
     }
+
     ModelData* modelData = model->data;
     
     // default rate of keras -> 0.001
@@ -129,9 +130,12 @@ void wine_categorization_train_network(Model* model) {
 
         for(int inputRow = 0; inputRow < modelData->trainingData->rows; inputRow++) {
             Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
+            
             forward_pass(network, modelData->trainingData->data[inputRow], output); 
             backpropagation(network, modelData->trainingData->data[inputRow], output, modelData->yValues_Training->data[inputRow]);
+            free_vector(network->output->data[inputRow]);
             network->output->data[inputRow] = copy_vector(output);
+            
             free_vector(output);
         }
         
@@ -195,9 +199,11 @@ int wine_categorization_preprocess_data(ModelData* modelData) {
     
     Vector* yValues_training = extractYValues(trainingData, targetColumn);
     modelData->yValues_Training = oneHotEncode(yValues_training, 3);
+    
     for(int colIndex = 0; colIndex < modelData->trainingData->columns; colIndex++) {
         normalizeColumn_standard_deviation(modelData->trainingData, colIndex);
     }
+    
     Matrix* validationData = get_sub_matrix(wineData->data, modelData->trainingData->rows, wineData->rows - 1, 0, wineData->data->columns - 1);
     modelData->validationData = get_sub_matrix_except_column(validationData, modelData->trainingData->rows, validationData->rows - 1, 0, validationData->columns - 1, targetColumn);
     Vector* yValues_validation = extractYValues(validationData, targetColumn);

@@ -4,7 +4,7 @@ void sgd(NNetwork* network, double learningRate) {
     double momentum = network->optimizationConfig->momentum;
 
     if(network->optimizationConfig->shouldUseMomentum == 1 && momentum == 0) {
-        log_error("MOMENTUM HASN'T BEEN SET! \n");
+        log_error("%s", "MOMENTUM HASN'T BEEN SET! \n");
         return;
     }
 
@@ -45,7 +45,7 @@ void adagrad(NNetwork* network, double learningRate) {
     double epsilon = network->optimizationConfig->epsilon;
 
     if(epsilon == 0) {
-        log_error("EPSILON HAS NOT BEEN SET! \n");
+        log_error("%s", "EPSILON HAS NOT BEEN SET! \n");
         return;
     }
     
@@ -80,12 +80,12 @@ void rms_prop(NNetwork* network, double learningRate) {
     double epsilon = network->optimizationConfig->epsilon;
 
     if(rho == 0) {
-        log_error("RHO HAS NOT BEEN SET! \n");
+        log_error("%s", "RHO HAS NOT BEEN SET! \n");
         return;
     }
 
     if(epsilon == 0) {
-        log_error("EPSILON HAS NOT BEEN SET! \n");
+        log_error("%s", "EPSILON HAS NOT BEEN SET! \n");
         return;
     }
     
@@ -130,17 +130,17 @@ void adam(NNetwork* network, double learningRate) {
 
 
     if(beta1 == 0) {
-        log_error("BETA_1 HAS NOT BEEN SET! \n");
+        log_error("%s", "BETA_1 HAS NOT BEEN SET! \n");
         return;
     }
 
     if(beta2 == 0) {
-        log_error("BETA_2 HAS NOT BEEN SET! \n");
+        log_error("%s", "BETA_2 HAS NOT BEEN SET! \n");
         return;
     }
 
     if(epsilon == 0) {
-        log_error("EPSILON HAS NOT BEEN SET! \n");
+        log_error("%s", "EPSILON HAS NOT BEEN SET! \n");
         return;
     }
     

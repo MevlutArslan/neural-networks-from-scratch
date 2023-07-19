@@ -4,7 +4,7 @@
 Matrix* matrix_product(const Matrix* m1, const Matrix* m2) {
     // m1.cols has to be equal m2.rows
     if( m1->columns != m2->rows) {
-        log_error("Cannot Multiply M1 and M2. M1's column count \n does not match M2's row count! \n");
+        log_error("%s", "Cannot Multiply M1 and M2. M1's column count \n does not match M2's row count! \n");
         return NULL;
     }
     Matrix* m3 = create_matrix(m1->rows, m2->columns);
@@ -26,7 +26,7 @@ Matrix* matrix_product(const Matrix* m1, const Matrix* m2) {
 
 Matrix* matrix_addition(const Matrix* m1, const Matrix* m2) {
     if(m1->rows != m2->rows || m1->columns != m2->columns) {
-        log_error("The sizes of the matrices do not match!");
+        log_error("%s", "The sizes of the matrices do not match!");
         return NULL;
     }
 
@@ -42,7 +42,7 @@ Matrix* matrix_addition(const Matrix* m1, const Matrix* m2) {
 
 Matrix* matrix_subtraction(const Matrix* m1, const Matrix* m2) {
     if(m1->rows != m2->rows || m1->columns != m2->columns) {
-        printf("The sizes of the matrices do not match!");
+        log_error("%s", "The sizes of the matrices do not match!");
         return NULL;
     }
 
@@ -58,7 +58,7 @@ Matrix* matrix_subtraction(const Matrix* m1, const Matrix* m2) {
 
 Matrix* matrix_multiplication(const Matrix* m1, const Matrix* m2){
     if(m1->rows != m2->rows || m1->columns != m2->columns) {
-        log_error("The sizes of the matrices do not match!");
+        log_error("%s", "The sizes of the matrices do not match!");
         return NULL;
     }
 
@@ -94,7 +94,7 @@ Matrix* matrix_inverse(const Matrix* m) {
     double det = matrix_determinant(m);
 
     if(det == 0) {
-        log_error("Cannot invert a matrix with determinant 0!");
+        log_error("%s", "Cannot invert a matrix with determinant 0!");
         return NULL;
     }
 
@@ -140,7 +140,7 @@ Matrix* matrix_scalar_multiply(const Matrix* m, const double scalar){
 
 float matrix_determinant(const Matrix* m) {
     if(is_square(m) == 0) {
-        log_error("Cannot calculate the determinant of a non-square Matrix!");
+        log_error("%s", "Cannot calculate the determinant of a non-square Matrix!");
         return 0;
     }
 
@@ -173,7 +173,7 @@ float matrix_determinant(const Matrix* m) {
 
 Vector* vector_addition(const Vector* v1, const Vector* v2) {
     if(v1->size != v2->size) {
-        log_error("Size's of the vectors need to match to add two vectors!");
+        log_error("%s", "Size's of the vectors need to match to add two vectors!");
         return NULL;
     }
 
@@ -188,7 +188,7 @@ Vector* vector_addition(const Vector* v1, const Vector* v2) {
 
 Vector* vector_subtraction(const Vector* v1, const Vector* v2){
     if(v1->size != v2->size) {
-        log_error("Size's of the vectors need to match to subtract two vectors!");
+        log_error("%s", "Size's of the vectors need to match to subtract two vectors!");
         return NULL;
     }
 
@@ -203,7 +203,7 @@ Vector* vector_subtraction(const Vector* v1, const Vector* v2){
 
 Vector* vector_multiplication(const Vector* v1, const Vector* v2){
     if(v1->size != v2->size) {
-        log_error("Size's of the vectors need to match to add two vectors!");
+        log_error("%s", "Size's of the vectors need to match to add two vectors!");
         return NULL;
     }
 
@@ -228,7 +228,7 @@ Vector* vector_scalar_multiplication(const Vector* v1, double scalar) {
 
 double vector_dot_product(const Vector* v1, const Vector* v2) {
     if(v1->size != v2->size) {
-        log_error("Size's of the vectors need to match to calculate dot product! \n");
+        log_error("%s", "Size's of the vectors need to match to calculate dot product! \n");
         return -1;
     }
 
@@ -289,7 +289,7 @@ Vector* vector_scalar_subtraction(const Vector* v1, double scalar) {
 
 Vector* dot_product(Matrix* matrix, Vector* vector) {
     if(matrix->columns != vector->size) {
-        log_error("Matrix's column size needs to be equal to the length of the vector to be able to calculate dot product! \n");
+        log_error("%s", "Matrix's column size needs to be equal to the length of the vector to be able to calculate dot product! \n");
         return NULL;
     }
     Vector* result = create_vector(matrix->rows);
@@ -314,19 +314,7 @@ int arg_max(Vector* output) {
             maxIndex = i;
         }
     }
-
-    #ifdef DEBUG
-        char* outputVectorStr = vector_to_string(output);
-        log_debug(
-            "arg_max: "
-            "Vector: %s, "
-            "Max Index: %d \n", 
-            outputVectorStr, 
-            maxIndex
-        );
-        free(outputVectorStr);
-    #endif
-
+    
     return maxIndex;
 }
 

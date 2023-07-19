@@ -18,7 +18,7 @@ Model* create_mnist_model() {
     model->plot_data = &mnist_plot_data;
     model->plot_config = &mnist_plot_config;
 
-    model->data = malloc(sizeof(ModelData));
+    model->data = (ModelData*) malloc(sizeof(ModelData));
     model->data->totalEpochs = 250;
     model->data->losses = malloc(sizeof(double) * model->data->totalEpochs);
     model->data->epochs = malloc(sizeof(double) * model->data->totalEpochs);
@@ -34,7 +34,8 @@ OptimizationConfig create_optimizer(int optimizer) {
 
     // Learning Rate Decay
     optimizationConfig.shouldUseLearningRateDecay = 1;
-    
+    optimizationConfig.shouldUseGradientClipping = 0;
+
     // optimizationConfig.rho = 0.9;
     optimizationConfig.epsilon = 1e-8;
     optimizationConfig.beta1 = 0.9;
@@ -81,11 +82,10 @@ NNetwork* mnist_get_network(Model* model) {
     memcpy(config.optimizationConfig, &optimizationConfig, sizeof(OptimizationConfig));
 
     int i;
-    for (i = 0; i < config.numLayers - 1; i++) {
-        config.activationFunctions[i].activation = reluFunc.activation;
-        config.activationFunctions[i].derivative = reluFunc.derivative;
+    for (int i = 0; i < config.numLayers - 1; i++) {
+        config.activationFunctions[i] = reluFunc;
+        memcpy(&config.activationFunctions[i], &reluFunc, sizeof(ActivationFunction));
     }
-
     config.activationFunctions[config.numLayers - 1].activation = softmax;
 
     config.lossFunction = malloc(sizeof(LossFunction));
@@ -93,6 +93,8 @@ NNetwork* mnist_get_network(Model* model) {
 
     NNetwork* network = create_network(&config);
     network->output = create_matrix(model->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
+
+    free_network_config(&config);
 
     return network;
 }
@@ -123,8 +125,11 @@ int mnist_preprocess_data(ModelData* modelData) {
     // log_debug("Validation Data Matrix: %s", matrix_to_string(validationData));
 
     // extract yValues
-    modelData->yValues_Training = oneHotEncode(extractYValues(training_data->data, 0), 10);
-    modelData->yValues_Testing = oneHotEncode(extractYValues(validation_data->data, 0), 10);
+    Vector* yValues_Training = extractYValues(training_data->data, 0);
+    Vector* yValues_Testing = extractYValues(validation_data->data, 0);
+
+    modelData->yValues_Training = oneHotEncode(yValues_Training, 10);
+    modelData->yValues_Testing = oneHotEncode(yValues_Testing, 10);
 
     // normalize training data 
     for(int col = 0; col < modelData->trainingData->columns; col++) {
@@ -138,6 +143,8 @@ int mnist_preprocess_data(ModelData* modelData) {
     
     free_data(training_data);
     free_data(validation_data);
+    free_vector(yValues_Training);
+    free_vector(yValues_Testing);
 
     return 1;
 }
@@ -156,23 +163,16 @@ void mnist_train_network(Model* model) {
     double learningRate = 0.01;
     double currentLearningRate = learningRate;
     int step = 1;
-    int totalEpochs = 100;
+    int totalEpochs = modelData->totalEpochs;
 
     network->optimizationConfig->learningRateDecayAmount = learningRate / totalEpochs;
 
-    // ------------------------ FOR PLOTTING ------------------------
-    double* losses = malloc(sizeof(double) * totalEpochs);
-    double* storedSteps = malloc(sizeof(double) * totalEpochs);
-    double* learningRates = malloc(sizeof(double) * totalEpochs);
-    double* accuracies = malloc(sizeof(double) * totalEpochs);
-    // --------------------------------------------------------------
-    // plot_config();
     double minLoss = __DBL_MAX__;
     double maxAccuracy = 0.0;
 
-      log_info("%s", "Starting training with learning rate of: %f for %d epochs.", learningRate, totalEpochs);
+      log_info("Starting training with learning rate of: %f for %d epochs.", learningRate, totalEpochs);
     while(step < totalEpochs) {
-        learningRates[step] = currentLearningRate;
+        // learningRates[step] = currentLearningRate;
         
         for(int inputRow = 0; inputRow < model->data->trainingData->rows; inputRow++) {
             Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
@@ -198,9 +198,9 @@ void mnist_train_network(Model* model) {
         
         maxAccuracy = fmax(maxAccuracy, network->accuracy);
 
-        losses[step] = network->loss;
-        storedSteps[step] = step;
-        accuracies[step] = network->accuracy;
+        // losses[step] = network->loss;
+        // storedSteps[step] = step;
+        // accuracies[step] = network->accuracy;
 
         step++;
         // Clear the gradients
@@ -214,6 +214,8 @@ void mnist_train_network(Model* model) {
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
 
     // plot_data(losses, storedSteps, learningRates, accuracies, totalEpochs);
+
+    free_network(network);
 }
 
 void mnist_plot_data(ModelData* modelData) {

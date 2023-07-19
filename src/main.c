@@ -1,42 +1,37 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "nmath/nmath.h"
-#include "neural_network/layer.h"
-#include "neural_network/nnetwork.h"
 #include <string.h>
 #include "../tests/test.h"
 #include <time.h>
 #include "../libraries/logger/log.h"
-#include "nmath/nvector.h"
-#include "example_networks/mnist.h"
+#include "example_networks/mnist/mnist.h"
+#include "example_networks/wine_dataset/wine_dataset.h"
 
 void runProgram();
 
-FILE* logFile;
-
-NNetwork* create_custom_network();
-
-void file_log(log_Event *ev) {
-  fprintf(
-    logFile, "%s %-5s %s:%d: ",
-    ev->time, log_level_string(ev->level), ev->file, ev->line);
-  vfprintf(logFile, ev->fmt, ev->ap);
-  fprintf(logFile, "\n");
-  fflush(logFile);
-}
+// #define TIME_BUFFER_SIZE 64
+// void file_log(log_Event *ev) {
+//     char time_buffer[TIME_BUFFER_SIZE];
+//     strftime(time_buffer, TIME_BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", ev->time);
+  
+//     fprintf(logFile, "%s %-5s %s:%d: ", time_buffer, log_level_string(ev->level), ev->file, ev->line);
+//     vfprintf(logFile, ev->fmt, ev->ap);
+//     fprintf(logFile, "\n");
+//     fflush(logFile);
+// }
 
 int main(int argc, char* argv[])
 {
-    logFile = fopen("log.txt", "w");
-    if (logFile == NULL) {
-        printf("Failed to open log file.\n");
-        return 0;
-    }
+    // logFile = fopen("log.txt", "w");
+    // if (logFile == NULL) {
+    //     printf("Failed to open log file.\n");
+    //     return 0;
+    // }
 
-    // Add the file_log as a callback to the logging library
-    log_add_callback(file_log, NULL, LOG_TRACE);
+    // // Add the file_log as a callback to the logging library
+    // log_add_callback(file_log, NULL, LOG_TRACE);
     
-    srand(time(NULL));
+    srand(0);
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
@@ -47,16 +42,18 @@ int main(int argc, char* argv[])
     }
 
     if (isTesting) {
-        log_info("Running tests...");
+        log_info("%s", "Running tests...");
         run_tests();
     } else {
-        log_info("Running Program!");
+        log_info("%s", "Running Program!");
         runProgram();   
     }
 }
 
 void runProgram() {
-    train_network();
+    Model* model = create_mnist_model();
+
+    model->train_network(model);
     
-    fclose(logFile);
+    free_model(model);
 }   

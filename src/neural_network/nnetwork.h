@@ -63,7 +63,8 @@ typedef struct {
 } NetworkConfig;
 
 NNetwork* create_network(const NetworkConfig* config);
-void delete_network(NNetwork* network);
+void free_network(NNetwork* network);
+void free_network_config(NetworkConfig* config);
 
 void forward_pass(NNetwork* network, Vector* input, Vector* output);
 void calculate_loss(NNetwork* network, Matrix* yValues);
@@ -83,8 +84,8 @@ void adam(NNetwork* network, double learningRate);
 
     @param lambda dictates how much of an impact the regularization penalty carries.
 */
-double calculate_l1_penalty(double lambda, Vector* vector);
-Vector* l1_derivative(double lambda, Vector* vector);
+double calculate_l1_penalty(double lambda, const Vector* vector);
+Vector* l1_derivative(double lambda, const Vector* vector);
 
 /*
     L2 regularization’s penalty is the sum of the squared weights and biases.
@@ -93,8 +94,8 @@ Vector* l1_derivative(double lambda, Vector* vector);
 
     @param lambda variable dictates how much of an impact the regularization penalty carries.
 */
-double calculate_l2_penalty(double lambda, Vector* vector);
-Vector* l2_derivative(double lambda, Vector* vector);
+double calculate_l2_penalty(double lambda, const Vector* vector);
+Vector* l2_derivative(double lambda, const Vector* vector);
 
 double accuracy(Matrix* targets, Matrix* outputs);
 #endif

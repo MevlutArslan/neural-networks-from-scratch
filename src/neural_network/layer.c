@@ -37,6 +37,9 @@ Layer* create_layer(LayerConfig* config) {
         if(config->biasLambda != 0) {
             layer->biasLambda = config->biasLambda;
         }
+    }else {
+        layer->weightLambda = 0;
+        layer->biasLambda = 0;
     }
     return layer;
 }
@@ -47,18 +50,19 @@ void free_layer(Layer* layer) {
     }
 
     // Free the resources allocated for the layer
-    free_matrix(layer->input);
+    // free_matrix(layer->input);
     free_matrix(layer->weights);
-    free_vector(layer->biases);
-    free_vector(layer->output);
-    free_vector(layer->error);
     free_matrix(layer->gradients);
+    free_matrix(layer->weightMomentums);
+    free_matrix(layer->weightCache);
+    
+    free_vector(layer->biasCache);
+    free_vector(layer->biasMomentums);
+    free_vector(layer->biases);
     free_vector(layer->biasGradients);
     free_vector(layer->dLoss_dWeightedSums);
-    free_matrix(layer->weightMomentums);
-    free_vector(layer->biasMomentums);
-    free_matrix(layer->weightCache);
-    free_vector(layer->biasCache);
+    free_vector(layer->output);
+    free_vector(layer->weightedSums);
 
     // Free the layer itself
     free(layer);

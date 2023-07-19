@@ -87,7 +87,7 @@ double categoricalCrossEntropyLoss(Matrix* targetOutputs, Matrix* outputs) {
     }
     #ifdef DEBUG
         // todo: change this back to output.rows
-        log_info("Called multiClassCrossEntropyLoss & returned: %f \n", sum / 20);
+        log_info("%s", "Called multiClassCrossEntropyLoss & returned: %f \n", sum / 20);
     #endif
     return sum / outputs->rows;
 }
