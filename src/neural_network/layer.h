@@ -47,4 +47,6 @@ Layer* create_layer(LayerConfig* config);
 void free_layer(Layer* layer);
 
 void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* weights);
+
+char* serialize_layer(const Layer* layer);
 #endif
