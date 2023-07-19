@@ -1,29 +1,40 @@
-# Neural Network Implementation From Scratch in C
+# Basic Neural Network Library in C
 
-## Description
+This project is my educational journey into the world of neural networks and machine learning. Developed from scratch in C, the project is a fundamental implementation of a neural network library. It provides the essential components required to construct and train neural network models.
 
-This project implements a basic neural network library from scratch in C. It provides the core components needed to build and train neural network models, including:
+## Features
 
-Common layers types like dense (will implement more as I learn more)
-Activation functions like ReLU, leaky RELU, softmax, sigmoid, etc.
-Loss functions such as categorical cross-entropy, mean squared error.
-Optimization algorithms including stochastic gradient descent, ADAGRAD, RMS_PROP, ADAM.
-Backpropagation algorithms to calculate gradients.
-Data pre-processing and normalization.
+- **Common layer types**: The library supports dense layers, with plans to add more as my understanding expands.
+- **Activation functions**: It includes a variety of activation functions such as ReLU, leaky ReLU, softmax, and more to come.
+- **Loss functions**: It supports different loss functions such as categorical cross-entropy and mean squared error.
+- **Optimization algorithms**: The library includes various optimization algorithms such as stochastic gradient descent, ADAGRAD, RMS_PROP, and ADAM.
+- **Backpropagation algorithms**: It comes with backpropagation algorithms for computing gradients.
+- **Data pre-processing and normalization**: It provides functionalities for data pre-processing and normalization.
 
-The goal of this library is to provide a "playground" for understanding the underlying mathematical concepts and algorithms that drive neural networks and deep learning. By building from the ground up in C, all aspects of the implementation can be learned and customized.
+## Goal
 
-The library can be used to train neural network models on both CPU and GPU via CUDA extensions (coming soon). It provides building blocks that could be used for projects across computer vision, natural language processing, and other problem domains.
+The primary aim of this library is to serve as a "playground" for understanding the underlying mathematical concepts and algorithms that drive neural networks and deep learning. By building it from the ground up in C, one can learn and customize all aspects of the implementation.
 
-While performance and production-readiness is not a priority, this library serves as an educational tool for hands-on learning. Contributions and improvements are welcome!
+## Note
 
-My latest refactoring lowered the memory leak amount from around 11 million bytes while running the Wine Recognizition data model to 70,000. The remaining memory leaks seems to originate from the logging library I use and some other stuff I am not sure about. 
+While the library's performance and production-readiness are not the main focus, it serves as an educational tool for hands-on learning. Contributions and improvements are always welcome!
 
-I have added two example models:
-   * MNIST: https://www.kaggle.com/datasets/oddrationale/mnist-in-csv
-   * Wine Recognition Data: https://archive.ics.uci.edu/dataset/109/wine
+## Memory Management
 
-Feel free to analyze them to get an idea of what is happening. 
+My recent refactoring efforts have significantly reduced memory leaks from around 11 million bytes to 70,000 bytes during the execution of the Wine Recognition data model. However, the remaining leaks seem to stem from the logging library and a few other unknown sources. Therefore, please exercise caution when using very large datasets, as they may run out of memory.
+
+## Example Models
+
+For reference, I've included two example models under 'src/example_networks':
+
+- [MNIST](https://www.kaggle.com/datasets/oddrationale/mnist-in-csv)
+- [Wine Recognition Data](https://archive.ics.uci.edu/dataset/109/wine)
+
+Please feel free to delve into these models to gain a better understanding of the project's workings.
+
+## Feedback
+
+I appreciate any feedback that could help improve my skills. Please don't hesitate to share your insights.
 
 ## Road Map
 
