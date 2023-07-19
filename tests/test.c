@@ -17,4 +17,6 @@ void run_tests() {
     test_matrix_cofactor();
     test_activation_function_relu();
     test_activation_function_sigmoid();
+    test_serialize_vector();
+    test_serialize_matrix();
 }

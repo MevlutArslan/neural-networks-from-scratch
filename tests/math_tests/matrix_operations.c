@@ -294,3 +294,28 @@ void test_matrix_cofactor() {
     free_matrix(cofactor);
     free_matrix(expected);
 }
+
+void test_serialize_vector() {
+    // Create a Vector
+    Vector* vector = create_vector(3);
+    vector->elements[0] = 1.0;
+    vector->elements[1] = 2.0;
+    vector->elements[2] = 3.0;
+
+    // Serialize the Vector to a JSON string
+    char *vectorJson = serialize_vector(vector);
+
+    // Check if the serialized string is equal to the expected string
+    char *expectedJson = "{\"size\":3,\"elements\":[1,2,3]}";
+    if (strcmp(vectorJson, expectedJson) == 0) {
+        printf("test_serializeVector passed!\n");
+    } else {
+        printf("expected print: %s\n", expectedJson);
+        printf("received print: %s\n", vectorJson);
+        printf("test_serializeVector failed!\n");
+    }
+
+    // Clean up
+    free_vector(vector);
+    free(vectorJson);
+}

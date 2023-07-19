@@ -95,3 +95,29 @@ void test_get_sub_matrix_except_column() {
         log_error("%s", "test_get_sub_matrix_except_column failed!\n");
     }
 }
+void test_serialize_matrix() {
+    // Create a Matrix
+    Matrix* matrix = create_matrix(2, 2);
+
+    // Initialize the matrix
+    for (int i = 0; i < matrix->rows; i++) {
+        for (int j = 0; j < matrix->columns; j++) {
+            matrix->data[i]->elements[j] = j + 1;
+        }
+    }
+
+    // Serialize the Matrix to a JSON string
+    char *matrixJson = serialize_matrix(matrix);
+
+    // Check if the serialized string is equal to the expected string
+    char *expectedJson = "{\"rows\":2,\"columns\":2,\"data\":[[{\"size\":2,\"elements\":[1,2]}],[{\"size\":2,\"elements\":[1,2]}]]}";
+    if (strcmp(matrixJson, expectedJson) == 0) {
+        printf("test_serializeMatrix passed!\n");
+    } else {
+        printf("test_serializeMatrix failed!\n");
+    }
+
+    // Clean up
+    free_matrix(matrix);
+    free(matrixJson);
+}

@@ -11,5 +11,5 @@ void test_matrix_transpose();
 void test_matrix_determinant();
 void test_matrix_inverse();
 void test_matrix_cofactor();
-
+void test_serialize_vector();
 #endif
