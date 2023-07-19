@@ -222,3 +222,29 @@ Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, i
 
     return newMatrix;
 }
+
+char* serialize_matrix(const Matrix* matrix) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON *data = cJSON_CreateArray();
+
+    for (int i = 0; i < matrix->rows; i++) {
+        cJSON *row = cJSON_CreateArray();
+        for (int j = 0; j < matrix->columns; j++) {
+            char *vectorString = serialize_vector(matrix->data[i]);
+            cJSON *vectorJson = cJSON_Parse(vectorString);
+            free(vectorString);
+            cJSON_AddItemToArray(row, vectorJson);
+        }
+        cJSON_AddItemToArray(data, row);
+    }
+
+    cJSON_AddItemToObject(root, "rows", cJSON_CreateNumber(matrix->rows));
+    cJSON_AddItemToObject(root, "columns", cJSON_CreateNumber(matrix->columns));
+    cJSON_AddItemToObject(root, "data", data);
+
+    char *jsonString = cJSON_Print(root);
+
+    cJSON_Delete(root);
+
+    return jsonString;
+}
