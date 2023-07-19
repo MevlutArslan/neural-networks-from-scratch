@@ -18,13 +18,13 @@ Model* create_wine_categorization_model() {
     model->plot_data = &wine_categorization_plot_data;
     model->plot_config = &wine_categorization_plot_config;
 
-    int totalEpochs = 250;
+    int totalEpochs = 500;
     model->data = (ModelData*) malloc(sizeof(ModelData));
     model->data->totalEpochs = totalEpochs;
-    model->data->losses = malloc(sizeof(double) * totalEpochs);
-    model->data->epochs = malloc(sizeof(double) * totalEpochs);
-    model->data->learningRates = malloc(sizeof(double) * totalEpochs);
-    model->data->accuracies = malloc(sizeof(double) * totalEpochs);
+    model->data->losses = calloc(totalEpochs, sizeof(double));
+    model->data->epochs = calloc(totalEpochs, sizeof(double));
+    model->data->learningRates = calloc(totalEpochs, sizeof(double));
+    model->data->accuracies = calloc(totalEpochs, sizeof(double));
 
     return model;
 }
@@ -98,7 +98,7 @@ NNetwork* wine_categorization_get_network(Model* model) {
     network->output = create_matrix(model->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
 
     free_network_config(&config);
-
+    model->plot_config();
     return network;
 }
 
@@ -170,7 +170,7 @@ void wine_categorization_train_network(Model* model) {
     log_info("Minimum loss during training: %f \n", minLoss);
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
 
-    // model->plot_data(model->data);
+    model->plot_data(model->data);
     free_network(network);
 }
 
@@ -223,11 +223,37 @@ int wine_categorization_preprocess_data(ModelData* modelData) {
 }
 
 
+gnuplot_ctrl* loss_step_plot;
+gnuplot_ctrl* accuracy_step_plot;
+gnuplot_ctrl* learning_rate_step_plot;
 void wine_categorization_plot_data(ModelData* modelData) {
-    // @todo: implement
+    gnuplot_plot_xy(loss_step_plot, modelData->epochs, modelData->losses, modelData->totalEpochs, "loss/step");
+    gnuplot_plot_xy(accuracy_step_plot, modelData->epochs, modelData->accuracies, modelData->totalEpochs, "accuracy/step");
+    gnuplot_plot_xy(learning_rate_step_plot, modelData->epochs, modelData->learningRates, modelData->totalEpochs, "learning rate/step");
+
+    printf("press Enter to close the plots!");
+    getchar();
+
+    gnuplot_close(loss_step_plot);
+    gnuplot_close(accuracy_step_plot);
+    gnuplot_close(learning_rate_step_plot);
 }
 
 void wine_categorization_plot_config() {
-    // @todo: implement
+    loss_step_plot = gnuplot_init();
+
+    gnuplot_set_xlabel(loss_step_plot, "step");
+    gnuplot_set_ylabel(loss_step_plot, "loss");
+    
+    accuracy_step_plot = gnuplot_init();
+    
+    gnuplot_set_xlabel(accuracy_step_plot, "step");
+    gnuplot_set_ylabel(accuracy_step_plot, "accuracy");
+
+    learning_rate_step_plot = gnuplot_init();
+    
+    gnuplot_set_xlabel(learning_rate_step_plot, "step");
+    gnuplot_set_ylabel(learning_rate_step_plot, "learning rate");
+
 }
 

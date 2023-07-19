@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
     // // Add the file_log as a callback to the logging library
     // log_add_callback(file_log, NULL, LOG_TRACE);
     
-    srand(0);
+    srand(time(NULL));
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
 }
 
 void runProgram() {
-    Model* model = create_mnist_model();
+    Model* model = create_wine_categorization_model();
 
     model->train_network(model);
     
