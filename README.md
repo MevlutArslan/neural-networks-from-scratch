@@ -17,6 +17,21 @@ The library can be used to train neural network models on both CPU and GPU via C
 
 While performance and production-readiness is not a priority, this library serves as an educational tool for hands-on learning. Contributions and improvements are welcome!
 
+My latest refactoring lowered the memory leak amount from around 11 million bytes while running the Wine Recognizition data model to 70,000. The remaining memory leaks seems to originate from the logging library I use and some other stuff I am not sure about. 
+
+I have added two example models:
+   * MNIST: https://www.kaggle.com/datasets/oddrationale/mnist-in-csv
+   * Wine Recognition Data: https://archive.ics.uci.edu/dataset/109/wine
+
+Feel free to analyze them to get an idea of what is happening. 
+
+## Road Map
+
+1. Add Multithreading for matrix operations.
+2. Add an example model for regression.
+3. Implement Transformers (I might be over my head here, will see as time progresses).
+4. CUDA support.
+
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
