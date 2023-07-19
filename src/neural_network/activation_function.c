@@ -1,6 +1,11 @@
 #include "activation_function.h"
 #include <stdio.h>
 #include <math.h>
+
+ActivationFunction RELU = { .activation = relu, .derivative = relu_derivative, .name = "RELU" };
+ActivationFunction LEAKY_RELU = { .activation = leakyRelu, .derivative = leakyRelu_derivative, .name = "LEAKY_RELU" };
+ActivationFunction SOFTMAX = { .activation = softmax, .name = "SOFTMAX" };
+
 // in place modification
 void relu(Vector* vector) {
     for (int i = 0; i < vector->size; i++) {
@@ -86,4 +91,8 @@ Matrix* softmax_derivative(Vector* output) {
     }
 
     return jacobian;
+}
+
+const char* get_activation_function_name(const ActivationFunction* activationFunction) {
+    return activationFunction->name;
 }

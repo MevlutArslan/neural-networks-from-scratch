@@ -7,7 +7,12 @@
 typedef struct {
     void (*activation)(Vector*);       // Pointer to the activation function
     double (*derivative)(double);       // Pointer to the derivative of the activation function
+    const char* name;
 } ActivationFunction;
+
+extern ActivationFunction SOFTMAX;
+extern ActivationFunction LEAKY_RELU;
+extern ActivationFunction RELU;
 
 void relu(Vector* inputs);
 double relu_derivative(double netInput);
@@ -21,4 +26,5 @@ double sigmoid_derivative(double netInput);
 void softmax(Vector* inputs);
 Matrix* softmax_derivative(Vector* output);
 
+const char* get_activation_function_name(const ActivationFunction* activationFunction);
 #endif

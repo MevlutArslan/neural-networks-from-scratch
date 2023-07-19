@@ -18,7 +18,7 @@ Model* create_wine_categorization_model() {
     model->plot_data = &wine_categorization_plot_data;
     model->plot_config = &wine_categorization_plot_config;
 
-    int totalEpochs = 500;
+    int totalEpochs = 250;
     model->data = (ModelData*) malloc(sizeof(ModelData));
     model->data->totalEpochs = totalEpochs;
     model->data->losses = calloc(totalEpochs, sizeof(double));
@@ -47,14 +47,54 @@ OptimizationConfig wine_categorization_create_optimizer(int optimizer) {
 }
 
 
+int wine_categorization_preprocess_data(ModelData* modelData) {
+    Data* wineData = load_csv("/Users/mevlutarslan/Downloads/datasets/wine_with_headers.csv");
+    log_debug("got here, total epochs: %d", modelData->totalEpochs);
+    
+    if(wineData == NULL) {
+        log_error("%s", "Failed to load Wine Data");
+        return -1;
+    }
+
+    shuffle_rows(wineData->data);
+    // the amount we want to divide the dataset between training and validation data
+    double divisionPercentage = 0.8;
+
+    int targetColumn = 0;
+    int trainingDataSize = wineData->rows * divisionPercentage;;
+    Matrix* trainingData = get_sub_matrix(wineData->data, 0, trainingDataSize - 1, 0, wineData->data->columns - 1);
+    modelData->trainingData = get_sub_matrix_except_column(trainingData, 0, trainingData->rows - 1, 0, trainingData->columns - 1, targetColumn);
+    
+    Vector* yValues_training = extractYValues(trainingData, targetColumn);
+    modelData->yValues_Training = oneHotEncode(yValues_training, 3);
+    
+    for(int colIndex = 0; colIndex < modelData->trainingData->columns; colIndex++) {
+        normalizeColumn_standard_deviation(modelData->trainingData, colIndex);
+    }
+    
+    Matrix* validationData = get_sub_matrix(wineData->data, modelData->trainingData->rows, wineData->rows - 1, 0, wineData->data->columns - 1);
+    modelData->validationData = get_sub_matrix_except_column(validationData, modelData->trainingData->rows, validationData->rows - 1, 0, validationData->columns - 1, targetColumn);
+    Vector* yValues_validation = extractYValues(validationData, targetColumn);
+    modelData->yValues_Testing = oneHotEncode(yValues_validation, 3);
+    for(int colIndex = 0; colIndex < modelData->validationData->columns; colIndex++) {
+        normalizeColumn_standard_deviation(modelData->validationData, colIndex);
+    }
+
+
+    free_matrix(trainingData);
+    free_matrix(validationData);
+    free_vector(yValues_training);
+    free_vector(yValues_validation);
+    free_data(wineData);
+
+    return 1;
+}
+
+
 NNetwork* wine_categorization_get_network(Model* model) {
     if(model->preprocess_data(model->data) == -1) {
         log_error("%s", "Failed to complete preprocessing of Wine Categorization data!");
     }
-
-    ActivationFunction reluFunc;
-    reluFunc.activation = leakyRelu;
-    reluFunc.derivative = leakyRelu_derivative;
 
     NetworkConfig config;
     config.numLayers = 2;
@@ -79,17 +119,17 @@ NNetwork* wine_categorization_get_network(Model* model) {
         fill_vector(config.biasLambdas, 1e-3);
     }
 
-    config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers);
+    config.activationFunctions = calloc(config.numLayers, sizeof(ActivationFunction));
     
     config.optimizationConfig = malloc(sizeof(OptimizationConfig));
     memcpy(config.optimizationConfig, &optimizationConfig, sizeof(OptimizationConfig));
     
     for (int i = 0; i < config.numLayers - 1; i++) {
-        config.activationFunctions[i] = reluFunc;
-        memcpy(&config.activationFunctions[i], &reluFunc, sizeof(ActivationFunction));
+        memcpy(&config.activationFunctions[i], &LEAKY_RELU, sizeof(ActivationFunction));
     }
 
-    config.activationFunctions[config.numLayers - 1].activation = softmax;
+    // output layer's activation
+    memcpy(&config.activationFunctions[config.numLayers - 1], &SOFTMAX, sizeof(ActivationFunction));
 
     config.lossFunction = malloc(sizeof(LossFunction));
     config.lossFunction->loss_function = categoricalCrossEntropyLoss;
@@ -99,6 +139,9 @@ NNetwork* wine_categorization_get_network(Model* model) {
 
     free_network_config(&config);
     model->plot_config();
+
+    
+
     return network;
 }
 
@@ -120,7 +163,6 @@ void wine_categorization_train_network(Model* model) {
 
     network->optimizationConfig->learningRateDecayAmount = learningRate / modelData->totalEpochs;
 
-    // model->plot_config();
     double minLoss = __DBL_MAX__;
     double maxAccuracy = 0.0;
 
@@ -167,6 +209,10 @@ void wine_categorization_train_network(Model* model) {
         }
     }
 
+    // for(int i = 0; i < network->layerCount; i++) {
+    log_debug("%s", serialize_layer(network->layers[0]));
+    // }
+
     log_info("Minimum loss during training: %f \n", minLoss);
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
 
@@ -177,51 +223,6 @@ void wine_categorization_train_network(Model* model) {
 void wine_categorization_validate_network(Model* model) {
 
 }
-
-// seems fine
-int wine_categorization_preprocess_data(ModelData* modelData) {
-    Data* wineData = load_csv("/Users/mevlutarslan/Downloads/datasets/wine_with_headers.csv");
-    log_debug("got here, total epochs: %d", modelData->totalEpochs);
-    
-    if(wineData == NULL) {
-        log_error("%s", "Failed to load Wine Data");
-        return -1;
-    }
-
-    shuffle_rows(wineData->data);
-    // the amount we want to divide the dataset between training and validation data
-    double divisionPercentage = 0.8;
-
-    int targetColumn = 0;
-    int trainingDataSize = wineData->rows * divisionPercentage;;
-    Matrix* trainingData = get_sub_matrix(wineData->data, 0, trainingDataSize - 1, 0, wineData->data->columns - 1);
-    modelData->trainingData = get_sub_matrix_except_column(trainingData, 0, trainingData->rows - 1, 0, trainingData->columns - 1, targetColumn);
-    
-    Vector* yValues_training = extractYValues(trainingData, targetColumn);
-    modelData->yValues_Training = oneHotEncode(yValues_training, 3);
-    
-    for(int colIndex = 0; colIndex < modelData->trainingData->columns; colIndex++) {
-        normalizeColumn_standard_deviation(modelData->trainingData, colIndex);
-    }
-    
-    Matrix* validationData = get_sub_matrix(wineData->data, modelData->trainingData->rows, wineData->rows - 1, 0, wineData->data->columns - 1);
-    modelData->validationData = get_sub_matrix_except_column(validationData, modelData->trainingData->rows, validationData->rows - 1, 0, validationData->columns - 1, targetColumn);
-    Vector* yValues_validation = extractYValues(validationData, targetColumn);
-    modelData->yValues_Testing = oneHotEncode(yValues_validation, 3);
-    for(int colIndex = 0; colIndex < modelData->validationData->columns; colIndex++) {
-        normalizeColumn_standard_deviation(modelData->validationData, colIndex);
-    }
-
-
-    free_matrix(trainingData);
-    free_matrix(validationData);
-    free_vector(yValues_training);
-    free_vector(yValues_validation);
-    free_data(wineData);
-
-    return 1;
-}
-
 
 gnuplot_ctrl* loss_step_plot;
 gnuplot_ctrl* accuracy_step_plot;
