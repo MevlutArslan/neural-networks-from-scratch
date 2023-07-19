@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../../libraries/logger/log.h"
+#include "../../libraries/cJson/cJSON.h"
 
 typedef struct {
     double* elements;
@@ -23,4 +24,5 @@ Vector* copy_vector(const Vector* vector);
 Vector* slice_vector(const Vector* vector, int beginIndex, int endIndex);
 Vector* array_to_vector(double* array, int length);
 
+char* serialize_vector(const Vector* vector);
 #endif

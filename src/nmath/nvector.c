@@ -77,3 +77,21 @@ Vector* array_to_vector(double* array, int length) {
 
     return vector;
 }
+
+char* serialize_vector(const Vector* vector) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON *elements = cJSON_CreateArray();
+
+    for (int i = 0; i < vector->size; i++) {
+        cJSON_AddItemToArray(elements, cJSON_CreateNumber(vector->elements[i]));
+    }
+
+    cJSON_AddItemToObject(root, "size", cJSON_CreateNumber(vector->size));
+    cJSON_AddItemToObject(root, "elements", elements);
+
+    char *jsonString = cJSON_Print(root);
+
+    cJSON_Delete(root);
+
+    return jsonString;
+}
