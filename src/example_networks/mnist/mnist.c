@@ -49,10 +49,6 @@ NNetwork* mnist_get_network(Model* model) {
         log_error("%s", "Failed to complete preprocessing of MNIST data!");
     }
 
-    ActivationFunction reluFunc;
-    reluFunc.activation = leakyRelu;
-    reluFunc.derivative = leakyRelu_derivative;
-
     NetworkConfig config;
     config.numLayers = 2;
     config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);
@@ -83,13 +79,14 @@ NNetwork* mnist_get_network(Model* model) {
 
     int i;
     for (int i = 0; i < config.numLayers - 1; i++) {
-        config.activationFunctions[i] = reluFunc;
-        memcpy(&config.activationFunctions[i], &reluFunc, sizeof(ActivationFunction));
+        memcpy(&config.activationFunctions[i], &LEAKY_RELU, sizeof(ActivationFunction));
     }
-    config.activationFunctions[config.numLayers - 1].activation = softmax;
+
+    memcpy(&config.activationFunctions[config.numLayers - 1], &SOFTMAX, sizeof(ActivationFunction));
 
     config.lossFunction = malloc(sizeof(LossFunction));
-    config.lossFunction->loss_function = categoricalCrossEntropyLoss;
+    memcpy(&config.lossFunction->loss_function, &CATEGORICAL_CROSS_ENTROPY, sizeof(LossFunction));
+
 
     NNetwork* network = create_network(&config);
     network->output = create_matrix(model->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);

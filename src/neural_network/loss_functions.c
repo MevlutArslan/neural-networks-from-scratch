@@ -1,5 +1,8 @@
 #include "loss_functions.h"
 
+LossFunction MEAN_SQUARED_ERROR = { .loss_function = meanSquaredError, .derivative = meanSquaredErrorDerivative, .name = "MEAN_SQUARED_ERROR" };
+LossFunction CATEGORICAL_CROSS_ENTROPY = { .loss_function = categoricalCrossEntropyLoss, .name = "CATEGORICAL_CROSS_ENTROPY" };
+
 double meanSquaredError(Matrix* outputs, Matrix* targets) {
     double mse = 0.0;
 
@@ -121,4 +124,8 @@ Vector* categoricalCrossEntropyLossDerivative(Vector* target, Vector* prediction
     #endif
 
     return lossGrads;
+}
+
+const char* get_loss_function_name(const LossFunction* lossFunction) {
+    return lossFunction->name;
 }

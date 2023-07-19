@@ -132,7 +132,7 @@ NNetwork* wine_categorization_get_network(Model* model) {
     memcpy(&config.activationFunctions[config.numLayers - 1], &SOFTMAX, sizeof(ActivationFunction));
 
     config.lossFunction = malloc(sizeof(LossFunction));
-    config.lossFunction->loss_function = categoricalCrossEntropyLoss;
+    memcpy(&config.lossFunction->loss_function, &CATEGORICAL_CROSS_ENTROPY, sizeof(LossFunction));
 
     NNetwork* network = create_network(&config);
     network->output = create_matrix(model->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
@@ -140,14 +140,12 @@ NNetwork* wine_categorization_get_network(Model* model) {
     free_network_config(&config);
     model->plot_config();
 
-    
-
     return network;
 }
 
 void wine_categorization_train_network(Model* model) {
     NNetwork* network = wine_categorization_get_network(model);
-    
+
     if(network == NULL) {
         log_error("%s", "Error creating network!");
         return;
@@ -209,9 +207,8 @@ void wine_categorization_train_network(Model* model) {
         }
     }
 
-    // for(int i = 0; i < network->layerCount; i++) {
-    log_debug("%s", serialize_layer(network->layers[0]));
-    // }
+    log_debug("network: %s", serialize_network(network));
+
 
     log_info("Minimum loss during training: %f \n", minLoss);
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
