@@ -229,12 +229,11 @@ char* serialize_matrix(const Matrix* matrix) {
 
     for (int i = 0; i < matrix->rows; i++) {
         cJSON *row = cJSON_CreateArray();
-        for (int j = 0; j < matrix->columns; j++) {
-            char *vectorString = serialize_vector(matrix->data[i]);
-            cJSON *vectorJson = cJSON_Parse(vectorString);
-            free(vectorString);
-            cJSON_AddItemToArray(row, vectorJson);
-        }
+        
+        char *vectorString = serialize_vector(matrix->data[i]);
+        cJSON_AddItemToArray(row, cJSON_CreateRaw(vectorString));
+        free(vectorString);
+        
         cJSON_AddItemToArray(data, row);
     }
 
@@ -242,7 +241,7 @@ char* serialize_matrix(const Matrix* matrix) {
     cJSON_AddItemToObject(root, "columns", cJSON_CreateNumber(matrix->columns));
     cJSON_AddItemToObject(root, "data", data);
 
-    char *jsonString = cJSON_Print(root);
+    char *jsonString = cJSON_PrintUnformatted(root);
 
     cJSON_Delete(root);
 

@@ -89,7 +89,7 @@ char* serialize_vector(const Vector* vector) {
     cJSON_AddItemToObject(root, "size", cJSON_CreateNumber(vector->size));
     cJSON_AddItemToObject(root, "elements", elements);
 
-    char *jsonString = cJSON_Print(root);
+    char *jsonString = cJSON_PrintUnformatted(root);
 
     cJSON_Delete(root);
 
