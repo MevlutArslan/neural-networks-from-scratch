@@ -85,32 +85,14 @@ void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* 
 char* serialize_layer(const Layer* layer) {
     cJSON *root = cJSON_CreateObject();
     cJSON_AddItemToObject(root, "neuronCount", cJSON_CreateNumber(layer->neuronCount));
-    cJSON_AddItemToObject(root, "input", cJSON_CreateRaw(serialize_vector(layer->input)));
     
     cJSON_AddItemToObject(root, "weights", cJSON_CreateRaw(serialize_matrix(layer->weights)));
     cJSON_AddItemToObject(root, "biases", cJSON_CreateRaw(serialize_vector(layer->biases)));
-    
-    cJSON_AddItemToObject(root, "weightedSums", cJSON_CreateRaw(serialize_vector(layer->weightedSums)));
-    cJSON_AddItemToObject(root, "output", cJSON_CreateRaw(serialize_vector(layer->output)));
-    
-    cJSON_AddItemToObject(root, "gradients", cJSON_CreateRaw(serialize_matrix(layer->gradients)));
-    cJSON_AddItemToObject(root, "biasGradients", cJSON_CreateRaw(serialize_vector(layer->biasGradients)));
-    
+        
     // Instead of trying to serialize the function pointers, we'll serialize a name associated with the function
     char* activationFunctionName = get_activation_function_name(layer->activationFunction);
     cJSON_AddItemToObject(root, "activationFunction", cJSON_CreateString(activationFunctionName));
-
-    cJSON_AddItemToObject(root, "dLoss_dWeightedSums", cJSON_CreateRaw(serialize_vector(layer->dLoss_dWeightedSums)));
     
-    cJSON_AddItemToObject(root, "weightMomentums", cJSON_CreateRaw(serialize_matrix(layer->weightMomentums)));
-    cJSON_AddItemToObject(root, "biasMomentums", cJSON_CreateRaw(serialize_vector(layer->biasMomentums)));
-    
-    cJSON_AddItemToObject(root, "weightCache", cJSON_CreateRaw(serialize_matrix(layer->weightCache)));
-    cJSON_AddItemToObject(root, "biasCache", cJSON_CreateRaw(serialize_vector(layer->biasCache)));
-    
-    cJSON_AddItemToObject(root, "weightLambda", cJSON_CreateNumber(layer->weightLambda));
-    cJSON_AddItemToObject(root, "biasLambda", cJSON_CreateNumber(layer->biasLambda));
-
     char *jsonString = cJSON_PrintUnformatted(root);
 
     cJSON_Delete(root);
