@@ -210,7 +210,7 @@ void mnist_train_network(Model* model) {
     log_info("Minimum loss during training: %f \n", minLoss);
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
 
-    // plot_data(losses, storedSteps, learningRates, accuracies, totalEpochs);
+    save_network("mnist_example", network);
 
     free_network(network);
 }

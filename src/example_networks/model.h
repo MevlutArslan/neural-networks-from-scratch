@@ -16,11 +16,6 @@ typedef struct {
     Matrix* validationData;
     Matrix* yValues_Training;
     Matrix* yValues_Testing;
-
-    // for plotting
-    // gnuplot_ctrl* loss_step_plot;
-    // gnuplot_ctrl*learningRate_step_plot;
-    // gnuplot_ctrl* accuracy_step_plot;
 } ModelData;
 
 

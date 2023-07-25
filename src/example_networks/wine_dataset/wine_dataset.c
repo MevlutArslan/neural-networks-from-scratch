@@ -207,11 +207,10 @@ void wine_categorization_train_network(Model* model) {
         }
     }
 
-    log_debug("network: %s", serialize_network(network));
-
-
     log_info("Minimum loss during training: %f \n", minLoss);
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
+    
+    save_network("wine_dataset_network", network);
 
     model->plot_data(model->data);
     free_network(network);
