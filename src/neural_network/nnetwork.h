@@ -9,6 +9,7 @@
 #include "loss_functions.h"
 #include "../helper/constants.h"
 #include "../../libraries/logger/log.h"
+#include <stdio.h>
 
 typedef struct {
     int shouldUseGradientClipping;
@@ -102,4 +103,5 @@ double accuracy(Matrix* targets, Matrix* outputs);
 char* serialize_network(const NNetwork* network);
 char* serialize_optimization_config(OptimizationConfig* optimizationConfig);
 
+int save_network(char* path, NNetwork* network);
 #endif

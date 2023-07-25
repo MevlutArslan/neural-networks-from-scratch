@@ -672,11 +672,6 @@ NNetwork* load_network(char* fileLocation) {
 
 }
 
-int save_network(char* fileLocation) {
-    // convert the struct to json with all the sub structs
-    // write it to a file
-}
-
 char* serialize_optimization_config(OptimizationConfig* config) {
      if (config == NULL) {
         printf("Config is NULL\n");
@@ -740,12 +735,52 @@ char* serialize_network(const NNetwork* network) {
     cJSON_AddItemToObject(root, "lossFunction", cJSON_CreateString(get_loss_function_name(network->lossFunction)));
     cJSON_AddItemToObject(root, "loss", cJSON_CreateNumber(network->loss));
     cJSON_AddItemToObject(root, "accuracy", cJSON_CreateNumber(network->accuracy));
-    cJSON_AddItemToObject(root, "currentStep", cJSON_CreateNumber(network->currentStep));
-    cJSON_AddItemToObject(root, "optimizationConfig", cJSON_CreateRaw(serialize_optimization_config(network->optimizationConfig)));
-
 
     char *jsonString = cJSON_Print(root);
     cJSON_Delete(root);
    
     return jsonString;
+}
+
+int save_network(char* path, NNetwork* network) {
+    // Serialize the network
+    char *networkJson = serialize_network(network);
+    if (networkJson == NULL) {
+        return -1;
+    }
+
+    // Check if the path has a .json extension, and add it if not
+    char *jsonPath;
+    if (strstr(path, ".json") != NULL) {
+        jsonPath = path;
+    } else {
+        jsonPath = malloc(strlen(path) + 6);  // Extra space for ".json" and null terminator
+        if (jsonPath == NULL) {
+            free(networkJson);
+            return -1;
+        }
+        sprintf(jsonPath, "%s.json", path);
+    }
+
+    // Open the file
+    FILE *file = fopen(jsonPath, "w");
+    if (file == NULL) {
+        free(networkJson);
+        if (jsonPath != path) {
+            free(jsonPath);
+        }
+        return -1;
+    }
+
+    // Write the serialized network to the file
+    fprintf(file, "%s", networkJson);
+
+    // Clean up
+    free(networkJson);
+    fclose(file);
+    if (jsonPath != path) {
+        free(jsonPath);
+    }
+
+    return 0;
 }
