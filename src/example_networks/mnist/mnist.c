@@ -24,6 +24,7 @@ Model* create_mnist_model() {
     model->data->epochs = malloc(sizeof(double) * model->data->totalEpochs);
     model->data->learningRates = malloc(sizeof(double) * model->data->totalEpochs);
     model->data->accuracies = malloc(sizeof(double) * model->data->totalEpochs);
+    model->data->path = "mnist_example_network";
 
     return model;
 }
@@ -210,7 +211,7 @@ void mnist_train_network(Model* model) {
     log_info("Minimum loss during training: %f \n", minLoss);
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
 
-    save_network("mnist_example", network);
+    save_network(modelData->path, network);
 
     free_network(network);
 }
@@ -254,5 +255,7 @@ void mnist_plot_config() {
 }
 
 void mnist_validate_network(Model* model) {
+    NNetwork* network = load_network(model->data->path);
 
+    free_network(network);
 }

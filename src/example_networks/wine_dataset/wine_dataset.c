@@ -25,6 +25,7 @@ Model* create_wine_categorization_model() {
     model->data->epochs = calloc(totalEpochs, sizeof(double));
     model->data->learningRates = calloc(totalEpochs, sizeof(double));
     model->data->accuracies = calloc(totalEpochs, sizeof(double));
+    model->data->path = "wine_dataset_network";
 
     return model;
 }
@@ -210,14 +211,16 @@ void wine_categorization_train_network(Model* model) {
     log_info("Minimum loss during training: %f \n", minLoss);
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
     
-    save_network("wine_dataset_network", network);
+    save_network(modelData->path, network);
 
     model->plot_data(model->data);
     free_network(network);
 }
 
 void wine_categorization_validate_network(Model* model) {
+    NNetwork* network = (model->data->path);
 
+    free_network(network);
 }
 
 gnuplot_ctrl* loss_step_plot;

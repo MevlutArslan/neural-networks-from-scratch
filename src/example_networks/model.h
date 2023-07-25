@@ -16,6 +16,8 @@ typedef struct {
     Matrix* validationData;
     Matrix* yValues_Training;
     Matrix* yValues_Testing;
+
+    char* path;
 } ModelData;
 
 

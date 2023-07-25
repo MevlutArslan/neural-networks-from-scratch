@@ -58,6 +58,5 @@ void runProgram() {
 
     model->train_network(model);
     
-    load_network("wine_dataset_network");
     free_model(model);
 }   
