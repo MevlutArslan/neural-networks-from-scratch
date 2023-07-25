@@ -668,9 +668,6 @@ void free_network_config(NetworkConfig* config) {
     free_vector(config->biasLambdas);
 }
 
-NNetwork* load_network(char* fileLocation) {
-
-}
 
 char* serialize_optimization_config(OptimizationConfig* config) {
      if (config == NULL) {
@@ -742,6 +739,29 @@ char* serialize_network(const NNetwork* network) {
     return jsonString;
 }
 
+NNetwork* deserialize_network(cJSON* json) {
+    NNetwork* network = malloc(sizeof(NNetwork));
+    if (network == NULL) {
+        return NULL;
+    }
+
+    network->layerCount = cJSON_GetObjectItem(json, "layerCount")->valueint;
+    network->layers = malloc(network->layerCount * sizeof(Layer));
+    
+    cJSON* json_layers = cJSON_GetObjectItem(json, "layers");
+   
+    for (int i = 0; i < network->layerCount; i++) {
+        cJSON* json_layer = cJSON_GetArrayItem(json_layers, i);
+        network->layers[i] = deserialize_layer(json_layer);
+    }
+
+    // network->lossFunction = strdup(cJSON_GetObjectItem(json, "lossFunction")->valuestring);
+    // network->loss = cJSON_GetObjectItem(json, "loss")->valuedouble;
+    // network->accuracy = cJSON_GetObjectItem(json, "accuracy")->valuedouble;
+        
+    return network;
+}
+
 int save_network(char* path, NNetwork* network) {
     // Serialize the network
     char *networkJson = serialize_network(network);
@@ -783,4 +803,69 @@ int save_network(char* path, NNetwork* network) {
     }
 
     return 0;
+}
+
+NNetwork* load_network(char* path) {
+    // Check if the path has a .json extension, and add it if not
+    char *jsonPath;
+    if (strstr(path, ".json") != NULL) {
+        jsonPath = path;
+    } else {
+        jsonPath = malloc(strlen(path) + 6);  // Extra space for ".json" and null terminator
+        if (jsonPath == NULL) {
+            return NULL;
+        }
+        sprintf(jsonPath, "%s.json", path);
+    }
+
+    // Open the file
+    FILE *file = fopen(jsonPath, "r");
+    if (file == NULL) {
+        if (jsonPath != path) {
+            free(jsonPath);
+        }
+        return NULL;
+    }
+
+    // Get the size of the file
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // Read the file into a string
+    char *json = malloc(length + 1);
+    if (json == NULL) {
+        fclose(file);
+        if (jsonPath != path) {
+            free(jsonPath);
+        }
+        return NULL;
+    }
+    fread(json, 1, length, file);
+    json[length] = '\0';
+
+    // Close the file
+    fclose(file);
+
+    // Parse the string into a cJSON object
+    cJSON *jsonObject = cJSON_Parse(json);
+    if (jsonObject == NULL) {
+        free(json);
+        if (jsonPath != path) {
+            free(jsonPath);
+        }
+        return NULL;
+    }
+
+    // Convert the cJSON object into a NNetwork object
+    NNetwork *network = deserialize_network(jsonObject);  // Assuming this function exists
+
+    // Clean up
+    cJSON_Delete(jsonObject);
+    free(json);
+    if (jsonPath != path) {
+        free(jsonPath);
+    }
+
+    return network;
 }

@@ -101,7 +101,8 @@ Vector* l2_derivative(double lambda, const Vector* vector);
 double accuracy(Matrix* targets, Matrix* outputs);
 
 char* serialize_network(const NNetwork* network);
-char* serialize_optimization_config(OptimizationConfig* optimizationConfig);
+NNetwork* deserialize_network(cJSON* json);
 
 int save_network(char* path, NNetwork* network);
+NNetwork* load_network(char* path);
 #endif
