@@ -9,29 +9,32 @@
 
 void runProgram();
 
-// #define TIME_BUFFER_SIZE 64
-// void file_log(log_Event *ev) {
-//     char time_buffer[TIME_BUFFER_SIZE];
-//     strftime(time_buffer, TIME_BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", ev->time);
+#define TIME_BUFFER_SIZE 64
+
+FILE* logFile;
+
+void file_log(log_Event *ev) {
+    char time_buffer[TIME_BUFFER_SIZE];
+    strftime(time_buffer, TIME_BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", ev->time);
   
-//     fprintf(logFile, "%s %-5s %s:%d: ", time_buffer, log_level_string(ev->level), ev->file, ev->line);
-//     vfprintf(logFile, ev->fmt, ev->ap);
-//     fprintf(logFile, "\n");
-//     fflush(logFile);
-// }
+    fprintf(logFile, "%s %-5s %s:%d: ", time_buffer, log_level_string(ev->level), ev->file, ev->line);
+    vfprintf(logFile, ev->fmt, ev->ap);
+    fprintf(logFile, "\n");
+    fflush(logFile);
+}
 
 int main(int argc, char* argv[])
 {
-    // logFile = fopen("log.txt", "w");
-    // if (logFile == NULL) {
-    //     printf("Failed to open log file.\n");
-    //     return 0;
-    // }
+    logFile = fopen("log.txt", "w");
+    if (logFile == NULL) {
+        printf("Failed to open log file.\n");
+        return 0;
+    }
 
-    // // Add the file_log as a callback to the logging library
-    // log_add_callback(file_log, NULL, LOG_TRACE);
+    // Add the file_log as a callback to the logging library
+    log_add_callback(file_log, NULL, LOG_TRACE);
     
-    srand(time(NULL));
+    srand(306);
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
