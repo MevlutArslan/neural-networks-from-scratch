@@ -46,4 +46,6 @@ Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, i
 Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, int startCol, int endCol, int columnIndex);
 
 char* serialize_matrix(const Matrix* matrix);
+Matrix* deserialize_matrix(cJSON* json);
+
 #endif

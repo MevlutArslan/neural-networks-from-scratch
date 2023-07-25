@@ -99,3 +99,21 @@ char* serialize_layer(const Layer* layer) {
 
     return jsonString;
 }
+
+Layer* deserialize_layer(cJSON* json) {
+    Layer* layer = malloc(sizeof(Layer));
+
+    layer->neuronCount = cJSON_GetObjectItem(json, "neuronCount")->valueint;
+    layer->weights = deserialize_matrix(cJSON_GetObjectItem(json, "weights"));
+    log_debug("loaded layer's weights: %s", matrix_to_string(layer->weights));
+
+    layer->biases = deserialize_vector(cJSON_GetObjectItem(json, "biases"));
+    log_debug("loaded layer's biases: %s", vector_to_string(layer->biases));
+
+    layer->activationFunction = malloc(sizeof(ActivationFunction));
+    *layer->activationFunction = get_activation_function_by_name(cJSON_GetObjectItem(json, "activationFunction")->valuestring);
+
+    log_debug("loaded layer's activation function: %s", get_activation_function_name(layer->activationFunction));
+
+    return layer;
+}

@@ -81,8 +81,6 @@ char* matrix_to_string(const Matrix* matrix) {
 }
 
 
-
-
 int is_equal(const Matrix* m1, const Matrix* m2) {
     double epsilon = 1e-6; // Adjust the epsilon value as needed
 
@@ -246,4 +244,25 @@ char* serialize_matrix(const Matrix* matrix) {
     cJSON_Delete(root);
 
     return jsonString;
+}
+
+Matrix* deserialize_matrix(cJSON* json) {
+    Matrix* matrix = malloc(sizeof(Matrix));
+    if (matrix == NULL) {
+        return NULL;
+    }
+
+    matrix->rows = cJSON_GetObjectItem(json, "rows")->valueint;
+    matrix->columns = cJSON_GetObjectItem(json, "columns")->valueint;
+    matrix->data = malloc(matrix->rows * sizeof(Vector*));
+
+    cJSON* json_data = cJSON_GetObjectItem(json, "data");
+
+    for (int i = 0; i < matrix->rows; i++) {
+        cJSON* json_row = cJSON_GetArrayItem(json_data, i);
+        cJSON* json_vector = cJSON_GetArrayItem(json_row, 0);
+        matrix->data[i] = deserialize_vector(json_vector);
+    }
+
+    return matrix;
 }

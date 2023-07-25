@@ -95,3 +95,16 @@ char* serialize_vector(const Vector* vector) {
 
     return jsonString;
 }
+
+Vector* deserialize_vector(cJSON* json) {
+    Vector* vector = malloc(sizeof(Vector));
+    vector->size = cJSON_GetObjectItem(json, "size")->valueint;
+    vector->elements = calloc(vector->size,  sizeof(double));
+
+    cJSON* array = cJSON_GetObjectItem(json, "elements");
+    for(int i = 0; i < vector->size; i++) {
+        double value = cJSON_GetArrayItem(array, i)->valuedouble;
+        vector->elements[i] = value;
+    }
+    return vector;
+}

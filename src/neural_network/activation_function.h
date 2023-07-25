@@ -27,4 +27,5 @@ void softmax(Vector* inputs);
 Matrix* softmax_derivative(Vector* output);
 
 const char* get_activation_function_name(const ActivationFunction* activationFunction);
+ActivationFunction get_activation_function_by_name(char* name);
 #endif

@@ -25,4 +25,6 @@ Vector* slice_vector(const Vector* vector, int beginIndex, int endIndex);
 Vector* array_to_vector(double* array, int length);
 
 char* serialize_vector(const Vector* vector);
+Vector* deserialize_vector(cJSON* json);
+
 #endif

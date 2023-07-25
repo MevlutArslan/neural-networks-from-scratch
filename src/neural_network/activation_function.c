@@ -96,3 +96,15 @@ Matrix* softmax_derivative(Vector* output) {
 const char* get_activation_function_name(const ActivationFunction* activationFunction) {
     return activationFunction->name;
 }
+
+ActivationFunction get_activation_function_by_name(char* name) {
+    if(strcmp(name, LEAKY_RELU.name) == 0) {
+        return LEAKY_RELU;
+    }
+    if(strcmp(name, SOFTMAX.name) == 0) {
+        return SOFTMAX;
+    }
+    
+    // I will let RELU be the default for now
+    return RELU;
+}

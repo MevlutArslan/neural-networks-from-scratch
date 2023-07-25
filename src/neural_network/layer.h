@@ -56,5 +56,5 @@ void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* 
  * so calling this function prematurely can lead to segmentation faults.
  */
 char* serialize_layer(const Layer* layer);
-
+Layer* deserialize_layer(cJSON* json);
 #endif
