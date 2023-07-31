@@ -1,5 +1,8 @@
 #include "nmath.h"
-
+#include "math_tasks.h"
+#include "nmatrix.h"
+#include "nvector.h"
+#include <pthread.h>
 
 Matrix* matrix_product(const Matrix* m1, const Matrix* m2) {
     // m1.cols has to be equal m2.rows
@@ -226,7 +229,7 @@ Vector* vector_scalar_multiplication(const Vector* v1, double scalar) {
     return v;
 }
 
-double vector_dot_product(const Vector* v1, const Vector* v2) {
+double vector_product(const Vector* v1, const Vector* v2) {
     if(v1->size != v2->size) {
         log_error("%s", "Size's of the vectors need to match to calculate dot product! \n");
         return -1;
@@ -338,3 +341,21 @@ double column_standard_deviation(Matrix* matrix, int columnIndex) {
 
     return sqrt(sum_squared_diff / matrix->rows);
 }
+
+// PARALLELIZED CODE
+
+void parallelized_dot_product(void* args) {
+    struct MatrixVectorOperation* data = (struct MatrixVectorOperation*) args;
+    assert(data->matrix != NULL && data->vector != NULL && data->output != NULL);
+    assert(data->matrix->columns == data->vector->size);
+
+    int beginIndex = data->begin_index;
+    int endIndex = data->end_index;
+
+    for(int i = beginIndex; i < endIndex; i++) {
+        for(int j = 0; j < data->matrix->columns; j++) {
+            data->output->elements[i] += data->matrix->data[i]->elements[j] * data->vector->elements[j];
+        }
+    }
+}
+

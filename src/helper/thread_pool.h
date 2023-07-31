@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "../../libraries/logger/log.h"
 
 struct TaskQueue;
 struct Task;
@@ -16,6 +17,8 @@ struct ThreadPool {
     volatile int is_active; // flag to start/stop the threads
 
     int num_pending_tasks;
+    int num_threads_exited;
+
     pthread_mutex_t lock; // lock for accessing the queue's element count.
     pthread_mutex_t capacity_lock; // lock for accesing queue's capacity.
     pthread_mutex_t pending_tasks_lock; // lock for accessing num_pending_tasks.
@@ -23,7 +26,7 @@ struct ThreadPool {
     pthread_cond_t signal; // cond for signaling there are tasks to handle.
     pthread_cond_t capacity_signal; // cond for signaling the queue has available space for new tasks.
     pthread_cond_t all_tasks_done; // cond for signaling the thread pool is done with all of its tasks.
-
+    
     void (*push_task)(struct ThreadPool*, struct Task*);
     struct Task* (*pop_task)(struct ThreadPool*);
 };
@@ -46,5 +49,7 @@ struct Task {
     void(*function)(void*); // pointer to the function the task is going to run
     void* data; // pointer to the data type the function takes
 };
+
+struct Task* create_task(void(*function)(void*), void* data);
 
 #endif
