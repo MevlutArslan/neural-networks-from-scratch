@@ -22,7 +22,7 @@ typedef struct {
     int shouldUseMomentum;
     double momentum;
 
-    int optimizer;
+    enum OPTIMIZER optimizer;
     
     double epsilon;
     double rho;

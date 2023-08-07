@@ -1,6 +1,6 @@
 #include "constants.h"
 
-const char* get_optimizer_name(int optimizer) {
+const char* get_optimizer_name(enum OPTIMIZER optimizer) {
     switch (optimizer) {
         case SGD:
             return "SGD";
