@@ -7,24 +7,24 @@
 
 typedef struct Layer{
     int neuronCount;
-    Vector* input;
+    Matrix* input; // <- not threadsafe
     
     Matrix* weights;
     Vector* biases;
 
-    Vector* weightedSums;
-    Vector* output;
+    Matrix* weightedSums; // <- not threadsafe
+    Matrix* output; // <- not threadsafe
 
     // Vector* error;
-    Matrix* gradients;
-    Vector* biasGradients;
+    Matrix* gradients; // <- not threadsafe
+    Vector* biasGradients; // <- not threadsafe
 
     ActivationFunction* activationFunction;
-    Vector* dLoss_dWeightedSums;
+    Vector* dLoss_dWeightedSums; // <- not threadsafe
 
     Matrix* weightMomentums;
     Vector* biasMomentums;
-
+    
     Matrix* weightCache;
     Vector* biasCache;
 

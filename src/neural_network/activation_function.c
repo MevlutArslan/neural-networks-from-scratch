@@ -17,6 +17,12 @@ double relu_derivative(double netInput){
     return netInput > 0 ? 1.0 : 0;
 }
 
+void leakyReluMatrix(Matrix* matrix) {
+    for (int i = 0; i < matrix->rows; i++) {
+        leakyRelu(matrix->data[i]);
+    }
+}
+
 void leakyRelu(Vector* vector) {
     for (int i = 0; i < vector->size; i++) {
         if (vector->elements[i] < 0) {
@@ -64,6 +70,12 @@ void softmax(Vector* inputs) {
     }
 
     free_vector(exponentialValues);
+}
+
+void softmax_matrix(Matrix* matrix) {
+    for(int i = 0; i < matrix->rows; i++) {
+        softmax(matrix->data[i]);
+    }
 }
 
 /*

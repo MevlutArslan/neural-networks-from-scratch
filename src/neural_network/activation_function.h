@@ -17,6 +17,7 @@ extern ActivationFunction RELU;
 void relu(Vector* inputs);
 double relu_derivative(double netInput);
 
+void leakyReluMatrix(Matrix* matrix);
 void leakyRelu(Vector* inputs);
 double leakyRelu_derivative(double netInput);
 
@@ -24,6 +25,7 @@ void sigmoid(Vector* inputs);
 double sigmoid_derivative(double netInput);
 
 void softmax(Vector* inputs);
+void softmax_matrix(Matrix* matrix);
 Matrix* softmax_derivative(Vector* output);
 
 const char* get_activation_function_name(const ActivationFunction* activationFunction);

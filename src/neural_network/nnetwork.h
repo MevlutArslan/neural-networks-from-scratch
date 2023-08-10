@@ -11,6 +11,9 @@
 #include "../../libraries/logger/log.h"
 #include <stdio.h>
 
+// struct ParallelForwardPassStruct{
+    
+// }
 typedef struct {
     int shouldUseGradientClipping;
     double gradientClippingLowerBound;
@@ -32,7 +35,6 @@ typedef struct {
     double beta2;
 } OptimizationConfig;
 
-
 typedef struct {
     int layerCount;
     Layer** layers;
@@ -46,7 +48,7 @@ typedef struct {
 
     int currentStep;
 
-    Matrix* output;
+    Matrix** output; // Stores the output matrices for each layer. It's a 2D array where each row represents a layer, and each column represents the output of that layer.
 } NNetwork;
 
 typedef struct {
@@ -67,7 +69,9 @@ NNetwork* create_network(const NetworkConfig* config);
 void free_network(NNetwork* network);
 void free_network_config(NetworkConfig* config);
 
-void forward_pass(NNetwork* network, Vector* input, Vector* output);
+void forward_pass_row_by_row(NNetwork* network, Vector* input, Vector* output);
+void forward_pass_batched(NNetwork* network, Matrix* input_matrix);
+
 void calculate_loss(NNetwork* network, Matrix* yValues);
 void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* yValues);
 

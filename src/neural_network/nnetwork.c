@@ -82,14 +82,46 @@ NNetwork* create_network(const NetworkConfig* config) {
             break;
     }
 
-
     log_info("%s", "Created Network:");
     dump_network_config(network);
 
     return network;
 }
+/*
+    This method performs the forward pass of a neural network using a batched processing approach. 
+    It processes the entire input batch in a vectorized manner, taking advantage of parallelism and optimized matrix operations.
 
-void forward_pass(NNetwork* network, Vector* input, Vector* output) {
+    Use this only if your computer can support multithreading and/or CUDA.
+*/
+void forward_pass_batched(NNetwork* network, Matrix* input_matrix) { 
+    for(int i = 0; i < network->layerCount; i++) {
+        Matrix* product;
+
+        Layer* current_layer = network->layers[i];
+        Matrix* transposed_weights = matrix_transpose(current_layer->weights);
+        
+        if(i == 0) {
+            product = matrix_product(input_matrix, transposed_weights);
+            // log_info("product result for first layer: %s", matrix_to_string(product));
+        }else{
+            product = matrix_product(network->output[i - 1], transposed_weights);
+            // log_info("product result for second layer: %s", matrix_to_string(product));
+        }
+
+        network->output[i] = matrix_vector_addition(product, current_layer->biases);
+        // log_info("Vector addition results: %s", matrix_to_string(network->output[i]));
+
+        if(i == network->layerCount - 1) {
+            softmax_matrix(network->output[i]);
+        }else {
+            leakyReluMatrix(network->output[i]);
+        }
+
+        log_info("After activation: %s", matrix_to_string(network->output[i]));
+    }
+}
+
+void forward_pass_row_by_row(NNetwork* network, Vector* input, Vector* output) {
     network->layers[0]->input = input;
     for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
@@ -154,7 +186,7 @@ void forward_pass(NNetwork* network, Vector* input, Vector* output) {
     }
     // copy out the outputs
     for(int i = 0; i < output->size; i++) {
-        output->elements[i] = network->layers[network->layerCount - 1]->output->elements[i];
+        // output->elements[i] = network->layers[network->layerCount - 1]->output->elements[i];
     }
     #ifdef DEBUG
         log_info("Completed forward pass.");
@@ -243,7 +275,7 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                 if(layerIndex == 0) {
                     dWeightedSum_dWeight= input->elements[weightIndex];
                 }else {
-                    dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
+                    // dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
                 }
 
                 double dLoss_dWeight = dLoss_dWeightedSums->elements[outputNeuronIndex] * dWeightedSum_dWeight;
@@ -361,9 +393,10 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                     log_debug("Partial derivative of Loss with respect to Output is: %f", dLoss_dOutput);
                 #endif
                 
-                double dOutput_dWeightedSum = currentLayer->activationFunction->derivative(currentLayer->weightedSums->elements[neuronIndex]);
-                double dLoss_dWeightedSum = dLoss_dOutput * dOutput_dWeightedSum;
-
+                // double dOutput_dWeightedSum = currentLayer->activationFunction->derivative(currentLayer->weightedSums->elements[neuronIndex]);
+                double dOutput_dWeightedSum = 0;
+                // double dLoss_dWeightedSum = dLoss_dOutput * dOutput_dWeightedSum;
+                double dLoss_dWeightedSum = 0;
                 #ifdef DEBUG
                     log_debug("Partial derivative of Output with respect to Net Input is: %f", dOutput_dWeightedSum);
                     log_debug("Partial derivative of Loss with respect to Net Input is: %f", dLoss_dWeightedSum);
@@ -381,7 +414,7 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                     if(layerIndex == 0) {
                         dWeightedSum_dWeight= input->elements[weightIndex];
                     }else {
-                        dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
+                        // dWeightedSum_dWeight = network->layers[layerIndex-1]->output->elements[weightIndex];
                     }
                     
                     
@@ -646,14 +679,13 @@ void free_network(NNetwork* network) {
     // Free the layers
     for (int i = 0; i < network->layerCount; i++) {
         free_layer(network->layers[i]);
+        free_matrix(network->output[i]);
     }
     free(network->layers);
 
     // Free the loss function
     free(network->lossFunction);
-    
-    // Free the output matrix
-    free_matrix(network->output);
+        
 
     free(network->optimizationConfig);
 

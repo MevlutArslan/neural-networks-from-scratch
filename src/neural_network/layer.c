@@ -18,8 +18,7 @@ Layer* create_layer(LayerConfig* config) {
     layer->biasGradients = create_vector(config->neuronCount);
 
     layer->weightedSums = create_vector(config->neuronCount);
-    layer->output = create_vector(config->neuronCount);
-
+    
     layer->activationFunction = config->activationFunction;
 
     layer->dLoss_dWeightedSums = create_vector(layer->neuronCount);
@@ -60,7 +59,6 @@ void free_layer(Layer* layer) {
     free_vector(layer->biases);
     free_vector(layer->biasGradients);
     free_vector(layer->dLoss_dWeightedSums);
-    free_vector(layer->output);
     free_vector(layer->weightedSums);
 
     // Free the layer itself
