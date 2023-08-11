@@ -19,7 +19,7 @@ void runProgram();
 
 FILE* logFile;
 void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases);
-void mock_backward_pass();
+void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix* y_hats, Matrix** weight_gradients, Vector** bias_gradients);
 
 void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output);
 Matrix** softmax_derivative_parallelized(Matrix* output);
@@ -200,7 +200,10 @@ void runProgram() {
         3. 
     */
    
-    // output layer
+    mock_backward_pass(input_matrix, layer_outputs, num_layers, y_hats, weight_gradients, bias_gradients);    
+}   
+
+void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix* y_hats, Matrix** weight_gradients, Vector** bias_gradients) {
     int layer_index = num_layers - 1;
     Matrix* output = layer_outputs[num_layers - 1];
 
@@ -245,7 +248,7 @@ void runProgram() {
     }
 
     log_info("Bias gradients for the output layer: %s", vector_to_string(bias_gradients[layer_index]));
-}   
+}
 
 Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
     Matrix** result_arr = create_matrix_arr(size);
