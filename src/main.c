@@ -17,8 +17,15 @@ void runProgram();
 
 #define TIME_BUFFER_SIZE 64
 
-void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases, int begin_index, int end_index);
 FILE* logFile;
+void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases);
+void mock_backward_pass();
+
+void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output);
+Matrix** softmax_derivative_parallelized(Matrix* output);
+
+Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size);
+Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size);
 
 void file_log(log_Event *ev) {
     char time_buffer[TIME_BUFFER_SIZE];
@@ -99,14 +106,11 @@ void runProgram() {
         [-]. run the mini batch version using the thread pool 
             [-]. verify the results
         ---------------------------------------------------------------------------
-        [ ]. implement the logic from the mock forward pass into NNetwork
-            [ ]. verify the resuls by comparing them to old version's calculations
-
+        [X]. implement the logic from the mock forward pass into NNetwork
+            [X]. verify the resuls by comparing them to old version's calculations
 
         BACKWARD PASS
-
     */
-
 
     // two layers with [4, 2] neurons each
     int num_layers = 2;
@@ -126,16 +130,42 @@ void runProgram() {
     Vector* biases_2 = create_vector(2);
     fill_vector_random(biases_2, -0.5f, 0.5f);
 
-    Matrix** weights[num_layers];
+    Matrix** weights = create_matrix_arr(num_layers);
     weights[0] = weights_1;
     weights[1] = weights_2;
 
-    Vector** biases[num_layers];
+    Vector** biases = create_vector_arr(num_layers);
     biases[0] = biases_1;
     biases[1] = biases_2;
     // input rows x output size
-    Matrix** layer_outputs =  create_matrix_arr(num_layers);
-    Matrix** row_layer_outputs;
+    Matrix** layer_outputs = create_matrix_arr(num_layers);
+    
+    Vector* target_values = create_vector(input_matrix->rows);
+    target_values->elements[0] = 1;
+    target_values->elements[1] = 2;
+
+    Matrix* y_hats = oneHotEncode(target_values, 2);
+
+    // for each input row, for each layer in that row, weight gradients
+
+    // Matrix*** weight_gradients = (Matrix***) malloc(num_layers * sizeof(Matrix**));
+    // for(int i = 0; i < weight_gradients; i++) {
+    //     weight_gradients[i] = create_matrix_arr();
+    // }
+
+    // for each layer we store its weight gradient matrix
+    Matrix** weight_gradients = create_matrix_arr(num_layers);
+    for(int i = 0; i < num_layers; i++) {
+        weight_gradients[i] = create_matrix(weights[i]->rows, weights[i]->columns);
+        fill_matrix(weight_gradients[i], 0.0f);
+    }
+
+    Vector** bias_gradients = create_vector_arr(num_layers);
+    for(int i = 0; i < num_layers; i++) {
+        bias_gradients[i] = create_vector(biases[i]->size);
+        fill_vector(bias_gradients[i], 0.0f);
+    }
+
     log_info("Before mock forward pass!");
 
     log_info("Input Matrix: %s", matrix_to_string(input_matrix));
@@ -145,31 +175,129 @@ void runProgram() {
     log_info("Biases #1: %s", vector_to_string(biases_1));
     log_info("Biases #2: %s", vector_to_string(biases_2));
 
-    mock_forward_pass(input_matrix, layer_outputs, num_layers, weights, biases, 0, input_matrix->rows);
+    log_info("Weight gradients #1: %s", matrix_to_string(weight_gradients[0]));
+    log_info("Weight gradients #2: %s", matrix_to_string(weight_gradients[1]));
+
+    log_info("Y_Hats: %s", matrix_to_string(y_hats));
+
+    mock_forward_pass(input_matrix, layer_outputs, num_layers, weights, biases);
+
+    log_info("output of the forward pass: %s", matrix_to_string(layer_outputs[num_layers - 1]));
+
+    // mock backward pass
+    // the output's pass
+    // rest of the layer's pass
+    /*
+        1. the outputs of the forward pass
+            a. categoricalCrossEntropyLossDerivative for each input
+            b. softmax_derivative for each input
+            c. dLoss_dWeightedSums for each input
+            d. calculate gradients for weights
+            e. gradient clipping logic for weights
+            f. calculate bias gradients
+            g. gradient clipping logic for biases
+        2. the target values of the dataset
+        3. 
+    */
+   
+    // output layer
+    int layer_index = num_layers - 1;
+    Matrix* output = layer_outputs[num_layers - 1];
+
+    // I can distribute the work amongst the threads in the thread pool for all three operations.
+    Matrix* loss_wrt_output = create_matrix(y_hats->rows, y_hats->columns);
+    computeCategoricalCrossEntropyLossDerivativeMatrix(y_hats, output, loss_wrt_output);
+
+    log_info("loss_wrt_output: %s", matrix_to_string(loss_wrt_output));
+
+    Matrix** jacobian_matrices = softmax_derivative_parallelized(output);
+
+    // not very sure about this.
+    Matrix* loss_wrt_weightedsum = matrix_vector_product_arr(jacobian_matrices, loss_wrt_output, output->rows);
+    log_info("Loss wrt WeightedSum matrix #%d: %s", layer_index, matrix_to_string(loss_wrt_weightedsum));
+
+    Matrix* weightedsum_wrt_weight;    
+
+    if (layer_index == 0) {
+        weightedsum_wrt_weight = input_matrix;
+    } else {
+        weightedsum_wrt_weight = layer_outputs[layer_index - 1];
+    }
+
+    // before accumulation, needs to be combined with the accumulation logic.
+    Matrix* w_gradients = matrix_product(loss_wrt_weightedsum, weightedsum_wrt_weight);
+    
+    // accumulate the gradients
+    for(int i = 0; i < w_gradients->rows; i++) {
+        for(int j = 0; j < w_gradients->columns; j++) {
+            weight_gradients[layer_index]->data[i]->elements[j] += w_gradients->data[i]->elements[j];
+        }
+    }
+    
+    log_info("Weight gradients of the output layer: %s", matrix_to_string(weight_gradients[layer_index]));
+
+    // if(useGradientClipping) clip_gradients(weight_gradients)
+
+    for(int i = 0; i < loss_wrt_weightedsum->rows; i++) {
+        for(int j = 0; j < loss_wrt_weightedsum->columns; j++) {
+            bias_gradients[layer_index]->elements[j] += loss_wrt_weightedsum->data[i]->elements[j];
+        }
+    }
+
+    log_info("Bias gradients for the output layer: %s", vector_to_string(bias_gradients[layer_index]));
 }   
 
+Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
+    Matrix** result_arr = create_matrix_arr(size);
 
-void softmax_matrix(Matrix* matrix) {
+    for(int i = 0; i < size; i++) {
+        result_arr[i] = matrix_product(matrix_arr[i], matrix);
+    }
+
+    return result_arr;
+}
+
+Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
+    Matrix* result = create_matrix(matrix->rows, matrix_arr[0]->columns);
+
     for(int i = 0; i < matrix->rows; i++) {
-        softmax(matrix->data[i]);
+        result->data[i] = dot_product(matrix_arr[i], matrix->data[i]);
+    }
+
+    return result;
+}
+
+Matrix** softmax_derivative_parallelized(Matrix* output) {
+    Matrix** jacobian_matrices = create_matrix_arr(output->rows);
+    for(int i = 0; i < output->rows; i++) {
+        jacobian_matrices[i] = softmax_derivative(output->data[i]);
+        log_info("Jacobian matrix #%d: %s", i, matrix_to_string(jacobian_matrices[i]));
+    }
+
+    return jacobian_matrices;
+}
+
+void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output) {
+    for(int i = 0; i < target->rows; i++) {
+        loss_wrt_output->data[i] = categoricalCrossEntropyLossDerivative(target->data[i], prediction->data[i]);
     }
 }
 
-void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases, int begin_index, int end_index) { 
+void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases) { 
     for(int i = 0; i < num_layers; i++) {
         Matrix* product;
         Matrix* transposed_weights = matrix_transpose(weights[i]);
         
         if(i == 0) {
             product = matrix_product(input_matrix, transposed_weights);
-            log_info("product result for first layer: %s", matrix_to_string(product));
+            // log_info("product result for first layer: %s", matrix_to_string(product));
         }else{
             product = matrix_product(layer_outputs[i - 1], transposed_weights);
-            log_info("product result for second layer: %s", matrix_to_string(product));
+            // log_info("product result for second layer: %s", matrix_to_string(product));
         }
 
         layer_outputs[i] = matrix_vector_addition(product, biases[i]);
-        log_info("Vector addition results: %s", matrix_to_string(layer_outputs[i]));
+        // log_info("Vector addition results: %s", matrix_to_string(layer_outputs[i]));
 
         if(i == num_layers - 1) {
             softmax_matrix(layer_outputs[i]);
@@ -177,6 +305,6 @@ void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_lay
             leakyReluMatrix(layer_outputs[i]);
         }
 
-        log_info("After activation: %s", matrix_to_string(layer_outputs[i]));
+        // log_info("After activation: %s", matrix_to_string(layer_outputs[i]));
     }
 }
