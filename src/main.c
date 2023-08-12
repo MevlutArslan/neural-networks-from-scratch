@@ -18,14 +18,16 @@ void runProgram();
 #define TIME_BUFFER_SIZE 64
 
 FILE* logFile;
-void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases);
-void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix* y_hats, Matrix** weight_gradients, Vector** bias_gradients);
+void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases, Matrix** layer_weighedsums);
+void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix* y_hats, Matrix** weight_gradients, Vector** bias_gradients, Matrix** weights, Matrix** layer_weighedsums);
 
 void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output);
 Matrix** softmax_derivative_parallelized(Matrix* output);
 
 Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size);
 Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size);
+
+Matrix* leakyRelu_derivative_matrix(Matrix* input);
 
 void file_log(log_Event *ev) {
     char time_buffer[TIME_BUFFER_SIZE];
@@ -115,7 +117,7 @@ void runProgram() {
     // two layers with [4, 2] neurons each
     int num_layers = 2;
 
-    Matrix* input_matrix = create_matrix(2, 4);
+    Matrix* input_matrix = create_matrix(3, 4);
     fill_matrix_random(input_matrix, -2, 5);
 
     Matrix* weights_1 = create_matrix(4, input_matrix->columns);
@@ -139,6 +141,8 @@ void runProgram() {
     biases[1] = biases_2;
     // input rows x output size
     Matrix** layer_outputs = create_matrix_arr(num_layers);
+
+    Matrix** layer_wsums = create_matrix_arr(num_layers);
     
     Vector* target_values = create_vector(input_matrix->rows);
     target_values->elements[0] = 1;
@@ -180,30 +184,28 @@ void runProgram() {
 
     log_info("Y_Hats: %s", matrix_to_string(y_hats));
 
-    mock_forward_pass(input_matrix, layer_outputs, num_layers, weights, biases);
+    mock_forward_pass(input_matrix, layer_outputs, num_layers, weights, biases, layer_wsums);
 
     log_info("output of the forward pass: %s", matrix_to_string(layer_outputs[num_layers - 1]));
 
     // mock backward pass
     // the output's pass
-    // rest of the layer's pass
     /*
-        1. the outputs of the forward pass
-            a. categoricalCrossEntropyLossDerivative for each input
-            b. softmax_derivative for each input
-            c. dLoss_dWeightedSums for each input
-            d. calculate gradients for weights
-            e. gradient clipping logic for weights
-            f. calculate bias gradients
-            g. gradient clipping logic for biases
-        2. the target values of the dataset
-        3. 
+        a. categoricalCrossEntropyLossDerivative for each input
+        b. softmax_derivative for each input
+        c. dLoss_dWeightedSums for each input
+        d. calculate gradients for weight gradients
+        e. gradient clipping logic for weights
+        f. calculate bias gradients
+        g. gradient clipping logic for biase gradients
+        h. propagate the loss_wrt_wsums of the current layer to the previous layer.
     */
    
-    mock_backward_pass(input_matrix, layer_outputs, num_layers, y_hats, weight_gradients, bias_gradients);    
+    mock_backward_pass(input_matrix, layer_outputs, num_layers, y_hats, weight_gradients, bias_gradients, weights, layer_wsums);    
 }   
 
-void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix* y_hats, Matrix** weight_gradients, Vector** bias_gradients) {
+void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix* y_hats, Matrix** weight_gradients, Vector** bias_gradients, Matrix** weights, Matrix** layer_weightedsums) {
+    // -------------OUTPUT LAYER-------------
     int layer_index = num_layers - 1;
     Matrix* output = layer_outputs[num_layers - 1];
 
@@ -216,8 +218,10 @@ void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_la
     Matrix** jacobian_matrices = softmax_derivative_parallelized(output);
 
     // not very sure about this.
-    Matrix* loss_wrt_weightedsum = matrix_vector_product_arr(jacobian_matrices, loss_wrt_output, output->rows);
-    log_info("Loss wrt WeightedSum matrix #%d: %s", layer_index, matrix_to_string(loss_wrt_weightedsum));
+    Matrix** loss_wrt_weightedsum = create_matrix_arr(num_layers);
+    loss_wrt_weightedsum[layer_index] = matrix_vector_product_arr(jacobian_matrices, loss_wrt_output, output->rows);
+    
+    log_info("Loss wrt WeightedSum matrix for layer #%d: %s", layer_index, matrix_to_string(loss_wrt_weightedsum[layer_index]));
 
     Matrix* weightedsum_wrt_weight;    
 
@@ -226,14 +230,14 @@ void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_la
     } else {
         weightedsum_wrt_weight = layer_outputs[layer_index - 1];
     }
+    log_info("weightedsum wrt weights for layer #%d: %s", layer_index, matrix_to_string(weightedsum_wrt_weight));
 
-    // before accumulation, needs to be combined with the accumulation logic.
-    Matrix* w_gradients = matrix_product(loss_wrt_weightedsum, weightedsum_wrt_weight);
-    
-    // accumulate the gradients
-    for(int i = 0; i < w_gradients->rows; i++) {
-        for(int j = 0; j < w_gradients->columns; j++) {
-            weight_gradients[layer_index]->data[i]->elements[j] += w_gradients->data[i]->elements[j];
+    // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
+    for(int input_index = 0; input_index < input_matrix->rows; input_index++) {
+        for(int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
+            for(int j = 0; j < input_matrix->columns; j++) {
+                weight_gradients[layer_index]->data[i]->elements[j] += loss_wrt_weightedsum[layer_index]->data[input_index]->elements[i] * weightedsum_wrt_weight->data[input_index]->elements[j];
+            }
         }
     }
     
@@ -241,13 +245,84 @@ void mock_backward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_la
 
     // if(useGradientClipping) clip_gradients(weight_gradients)
 
-    for(int i = 0; i < loss_wrt_weightedsum->rows; i++) {
-        for(int j = 0; j < loss_wrt_weightedsum->columns; j++) {
-            bias_gradients[layer_index]->elements[j] += loss_wrt_weightedsum->data[i]->elements[j];
+    for(int i = 0; i < loss_wrt_weightedsum[layer_index]->rows; i++) {
+        for(int j = 0; j < loss_wrt_weightedsum[layer_index]->columns; j++) {
+            bias_gradients[layer_index]->elements[j] += loss_wrt_weightedsum[layer_index]->data[i]->elements[j];
+        }
+    }
+    
+    log_info("Bias gradients for the output layer: %s", vector_to_string(bias_gradients[layer_index]));
+    // if(useGradientClipping) clip_gradients(bias_gradients)
+
+    // ------------- HIDDEN LAYERS -------------
+    // we do need to iterate over other layers
+    for (layer_index -= 1; layer_index >= 0; layer_index--) { // current layer's dimensions = (4 inputs, 4 neurons)
+        /*
+            a. we calculate loss_wrt_output for each neuron in the current layer by adding up (next layer's loss_wrt_wsum * next layer's weights)
+            b. we calculate output_wrt_wsum by using the derivative of the activation function of the current layer for the weighted sum
+            c. we calcilate loss_wrt_wsum by multiplying loss_wrt_output & output_wrt_wsum
+            d. we calculate weightedsum_wrt_weight
+            e. we calculate weight gradients of the layer
+            f. gradient clipping logic for weight gradients
+            g. we calculate bias gradients of the layer
+            h. gradient clipping logic for bias gradients
+            i. propagate the loss_wrt_wsums of the current layer to the previous layer.
+        */
+
+        // NOT SURE, DOUBLE CHECK IF THE RESULTS ARE NOT MATCHING
+        // for each input row, we store loss_wrt_output of neurons in the columns
+        // each column in each row will be summation of all of the next layer's loss_wrt_weighted sum values and next layer's weights
+        Matrix* loss_wrt_output = matrix_product(loss_wrt_weightedsum[layer_index + 1], weights[layer_index+1]);
+        log_info("loss wrt output for layer: #%d: %s", layer_index, matrix_to_string(loss_wrt_output));
+
+        Matrix* output_wrt_weightedsums = leakyRelu_derivative_matrix(layer_weightedsums[layer_index]);
+        log_info("output wrt wsum for layer #%d: %s", layer_index, matrix_to_string(output_wrt_weightedsums));
+
+        loss_wrt_weightedsum[layer_index] = matrix_multiplication(loss_wrt_output, output_wrt_weightedsums);
+        log_info("loss wrt weighted sum for layer #%d: %s", layer_index, matrix_to_string(loss_wrt_weightedsum[layer_index]));
+
+        if (layer_index == 0) {
+            weightedsum_wrt_weight = input_matrix;
+        } else {
+            weightedsum_wrt_weight = layer_outputs[layer_index - 1];
+        }
+
+        log_info("weightedsum wrt weights for layer #%d: %s", layer_index, matrix_to_string(weightedsum_wrt_weight));
+
+        // NOT SURE
+        // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
+        for(int input_index = 0; input_index < input_matrix->rows; input_index++) {
+            for(int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
+                for(int j = 0; j < input_matrix->columns; j++) {
+                    weight_gradients[layer_index]->data[i]->elements[j] += loss_wrt_weightedsum[layer_index]->data[input_index]->elements[i] * weightedsum_wrt_weight->data[input_index]->elements[j];
+                }
+            }
+        }
+        
+        log_info("Weight gradients of the layer #%d: %s", layer_index, matrix_to_string(weight_gradients[layer_index]));
+
+        // if(useGradientClipping) clip_gradients(weight_gradients)
+
+        for(int i = 0; i < loss_wrt_weightedsum[layer_index]->rows; i++) {
+            for(int j = 0; j < loss_wrt_weightedsum[layer_index]->columns; j++) {
+                bias_gradients[layer_index]->elements[j] += loss_wrt_weightedsum[layer_index]->data[i]->elements[j];
+            }
+        }
+    
+        log_info("Bias gradients of the layer #%d: %s", layer_index, vector_to_string(bias_gradients[layer_index]));
+    }
+}
+
+Matrix* leakyRelu_derivative_matrix(Matrix* input) {
+    Matrix* result = create_matrix(input->rows, input->columns);
+
+    for(int i = 0; i < result->rows; i++) {
+        for(int j = 0; j < result->columns; j++) {
+            result->data[i]->elements[j] = leakyRelu_derivative(input->data[i]->elements[j]);
         }
     }
 
-    log_info("Bias gradients for the output layer: %s", vector_to_string(bias_gradients[layer_index]));
+    return result;
 }
 
 Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
@@ -286,20 +361,20 @@ void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* 
     }
 }
 
-void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases) { 
+void mock_forward_pass(Matrix* input_matrix, Matrix** layer_outputs, int num_layers, Matrix** weights, Vector** biases, Matrix** layer_weightedsums) { 
     for(int i = 0; i < num_layers; i++) {
-        Matrix* product;
         Matrix* transposed_weights = matrix_transpose(weights[i]);
         
         if(i == 0) {
-            product = matrix_product(input_matrix, transposed_weights);
-            // log_info("product result for first layer: %s", matrix_to_string(product));
+            layer_weightedsums[i] = matrix_product(input_matrix, transposed_weights);
+            // log_info("product result for first layer: %s", matrix_to_string(layer_weightedsums[i]));
         }else{
-            product = matrix_product(layer_outputs[i - 1], transposed_weights);
-            // log_info("product result for second layer: %s", matrix_to_string(product));
+            layer_weightedsums[i] = matrix_product(layer_outputs[i - 1], transposed_weights);
+            // log_info("product result for second layer: %s", matrix_to_string(layer_weightedsums[i]));
         }
+        
 
-        layer_outputs[i] = matrix_vector_addition(product, biases[i]);
+        layer_outputs[i] = matrix_vector_addition(layer_weightedsums[i], biases[i]);
         // log_info("Vector addition results: %s", matrix_to_string(layer_outputs[i]));
 
         if(i == num_layers - 1) {
