@@ -26,8 +26,8 @@ Data* load_csv(char* fileLocation) {
     data->rows = (getRowCount(fileLocation) - 1);
     data->columns = getColumnCount(fileLocation);
 
-    Matrix* matrix = create_matrix(data->rows, data->columns);
-    if (matrix == NULL) {
+    data->data = create_matrix(data->rows, data->columns);
+    if (data->data == NULL) {
         printf("Failed to create matrix\n");
         fclose(file);
         free(data);
@@ -63,7 +63,7 @@ Data* load_csv(char* fileLocation) {
             }
             double value = atof(token);
 
-            matrix->data[rowIndex - 1]->elements[colIndex] = value;
+            data->data->data[rowIndex - 1]->elements[colIndex] = value;
 
             // log_debug("at column index: %d", colIndex);
             colIndex++;
@@ -73,8 +73,6 @@ Data* load_csv(char* fileLocation) {
     }
 
     fclose(file);
-
-    data->data = matrix;
    
     return data;
 }
@@ -111,8 +109,6 @@ int getColumnCount(char* fileLocation) {
     fclose(file);
     return columnCount;
 }
-
-
 
 int getRowCount(char* fileLocation) {
     FILE* file = fopen(fileLocation, "r");
@@ -197,6 +193,6 @@ Matrix* oneHotEncode(Vector* categories, int numberOfCategories) {
 }
 
 void free_data(Data* data) {
-    // free_matrix(data);
+    free_matrix(data->data);
     free(data);
 }
