@@ -51,12 +51,12 @@ float matrix_determinant(const Matrix* m);
 
 // VECTOR MATH OPERATIONS
 double vector_product(const Vector* v1, const Vector* v2);
-Vector* vector_addition(const Vector* v1, const Vector* v2);
-Vector* vector_subtraction(const Vector* v1, const Vector* v2);
-Vector* vector_multiplication(const Vector* v1, const Vector* v2);
+void vector_addition(const Vector* v1, const Vector* v2, Vector* output);
+void vector_subtraction(const Vector* v1, const Vector* v2, Vector* output);
+void vector_multiplication(const Vector* v1, const Vector* v2, Vector* output);
 
-Vector* vector_scalar_multiplication(const Vector* v1, double scalar);
-Vector* vector_scalar_subtraction(const Vector* v1, double scalar);
+void vector_scalar_multiplication(const Vector* v1, double scalar, Vector* output);
+void vector_scalar_subtraction(const Vector* v1, double scalar, Vector* output);
 
 double sum_vector(const Vector* vector);
 

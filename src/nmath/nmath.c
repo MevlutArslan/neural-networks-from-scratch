@@ -174,59 +174,36 @@ float matrix_determinant(const Matrix* m) {
 
 // VECTOR MATH OPERATIONS
 
-Vector* vector_addition(const Vector* v1, const Vector* v2) {
-    if(v1->size != v2->size) {
-        log_error("%s", "Size's of the vectors need to match to add two vectors!");
-        return NULL;
-    }
+void vector_addition(const Vector* v1, const Vector* v2, Vector* output) {
+    assert(v1->size == v2->size && v1->size == output->size);
 
-    Vector* v = create_vector(v1->size);
-    v->size = v1->size;
-    for(int i = 0; i < v->size; i++) {
-        v->elements[i] = v1->elements[i] + v2->elements[i];
+    for(int i = 0; i < output->size; i++) {
+        output->elements[i] = v1->elements[i] + v2->elements[i];
     }
-
-    return v;
 }
 
-Vector* vector_subtraction(const Vector* v1, const Vector* v2){
-    if(v1->size != v2->size) {
-        log_error("%s", "Size's of the vectors need to match to subtract two vectors!");
-        return NULL;
+void vector_subtraction(const Vector* v1, const Vector* v2, Vector* output){
+    assert(v1->size == v2->size && v1->size == output->size);
+
+    for(int i = 0; i < output->size; i++) {
+        output->elements[i] = v1->elements[i] - v2->elements[i];
     }
-
-    Vector* v = create_vector(v1->size);
-
-    for(int i = 0; i < v->size; i++) {
-        v->elements[i] = v1->elements[i] - v2->elements[i];
-    }
-
-    return v;
 }
 
-Vector* vector_multiplication(const Vector* v1, const Vector* v2){
-    if(v1->size != v2->size) {
-        log_error("%s", "Size's of the vectors need to match to add two vectors!");
-        return NULL;
+void vector_multiplication(const Vector* v1, const Vector* v2, Vector* output){
+    assert(v1->size == v2->size && v1->size == output->size);
+
+    for(int i = 0; i < output->size; i++) {
+        output->elements[i] = v1->elements[i] * v2->elements[i];
     }
-
-    Vector* v = create_vector(v1->size);
-
-    for(int i = 0; i < v->size; i++) {
-        v->elements[i] = v1->elements[i] * v2->elements[i];
-    }
-
-    return v;
 }
 
-Vector* vector_scalar_multiplication(const Vector* v1, double scalar) {
-    Vector* v = create_vector(v1->size);
+void vector_scalar_multiplication(const Vector* v1, double scalar, Vector* output) {
+    assert(v1->size == output->size);
 
-    for(int i = 0; i < v->size; i++) {
-        v->elements[i] = v1->elements[i] * scalar;
+    for(int i = 0; i < output->size; i++) {
+        output->elements[i] = v1->elements[i] * scalar;
     }
-
-    return v;
 }
 
 double vector_product(const Vector* v1, const Vector* v2) {
@@ -280,14 +257,12 @@ double sum_vector(const Vector* vector) {
     return sum;
 }
 
-Vector* vector_scalar_subtraction(const Vector* v1, double scalar) {
-    Vector* v = create_vector(v1->size);
+void vector_scalar_subtraction(const Vector* v1, double scalar, Vector* output) {
+    assert(v1->size == output->size);
 
-    for(int i = 0; i < v->size; i++) {
-        v->elements[i] = v1->elements[i] - scalar;
+    for(int i = 0; i < output->size; i++) {
+        output->elements[i] = v1->elements[i] - scalar;
     }
-
-    return v;
 }
 
 Vector* dot_product(Matrix* matrix, Vector* vector) {
@@ -312,7 +287,7 @@ Matrix* matrix_vector_addition(Matrix* matrix, Vector* vector) {
     Matrix* result_matrix = create_matrix(matrix->rows, matrix->columns);
 
     for(int i = 0; i < matrix->rows; i++) {
-        result_matrix->data[i] = vector_addition(matrix->data[i], vector);
+        vector_addition(matrix->data[i], vector, result_matrix->data[i]);
     }
 
     return result_matrix;
