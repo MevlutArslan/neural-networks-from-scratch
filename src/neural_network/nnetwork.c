@@ -111,8 +111,6 @@ NNetwork* create_network(const NetworkConfig* config) {
 */
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix) { 
     for(int i = 0; i < network->layerCount; i++) {
-        Matrix* product;
-
         Layer* current_layer = network->layers[i];
         Matrix* transposed_weights = matrix_transpose(current_layer->weights);
         
@@ -133,6 +131,7 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
             leakyReluMatrix(network->output[i]);
         }
 
+        free_matrix(transposed_weights);
         // log_info("After activation: %s", matrix_to_string(network->output[i]));
     }
 }
@@ -141,8 +140,9 @@ void forward_pass_row_by_row(NNetwork* network, Vector* input, Vector* output) {
     network->layers[0]->input = input;
     for (int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
         Layer* currentLayer = network->layers[layerIndex];
-       
-        Vector* dotProduct = dot_product(currentLayer->weights, currentLayer->input);
+        Vector* dotProduct = create_vector(currentLayer->weights->rows);
+
+        dot_product(currentLayer->weights, currentLayer->input, dotProduct);
         #ifdef DEBUG
             char* weightsStr = matrix_to_string(currentLayer->weights);
             char* dotProductStr = vector_to_string(dotProduct);
@@ -162,10 +162,7 @@ void forward_pass_row_by_row(NNetwork* network, Vector* input, Vector* output) {
             free(dotProductStr);
         #endif
         
-        // I initialized it during create_layer() so I have to clear it before assigning a vector 
-        // to it to prevent leaks 
-        free_vector(currentLayer->output);
-        currentLayer->output = vector_addition(dotProduct, currentLayer->biases);
+        vector_addition(dotProduct, currentLayer->biases, currentLayer->output);
         
         free_vector(dotProduct);
         #ifdef DEBUG
@@ -257,7 +254,8 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
         log_info("jacobian: %s", matrix_to_string(jacobian));
 
         // check: freed later in the code
-        Vector*  dLoss_dWeightedSums = dot_product(jacobian, dLoss_dOutputs);
+        Vector* dLoss_dWeightedSums = create_vector(jacobian->rows);
+        dot_product(jacobian, dLoss_dOutputs, dLoss_dWeightedSums);
         log_info("dloss_wrt_weightedsum: %s", vector_to_string(dLoss_dWeightedSums));
         /* These calculations are verified to be correct, but you can comment out the log statements
            to check again.
@@ -516,9 +514,10 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
 }
 
 void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_values) {
-    // -------------OUTPUT LAYER-------------
     int num_layers = network->layerCount;
+    Matrix** loss_wrt_weightedsum = create_matrix_arr(num_layers);
 
+    // -------------OUTPUT LAYER-------------
     int layer_index = num_layers - 1;
     Matrix* output = network->output[layer_index];
 
@@ -526,17 +525,27 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     Matrix* loss_wrt_output = create_matrix(y_values->rows, y_values->columns);
     computeCategoricalCrossEntropyLossDerivativeMatrix(y_values, output, loss_wrt_output);
     #ifdef DEBUG
-        log_info("loss_wrt_output: %s", matrix_to_string(loss_wrt_output));
+        char* debug_str = matrix_to_string(loss_wrt_output);
+        log_info("loss_wrt_output: %s", debug_str);
+        free(debug_str);
     #endif
 
     Matrix** jacobian_matrices = softmax_derivative_parallelized(output);
 
-    // not very sure about this.
-    Matrix** loss_wrt_weightedsum = create_matrix_arr(num_layers);
     loss_wrt_weightedsum[layer_index] = matrix_vector_product_arr(jacobian_matrices, loss_wrt_output, output->rows);
     #ifdef DEBUG
-        log_info("Loss wrt WeightedSum matrix for layer #%d: %s", layer_index, matrix_to_string(loss_wrt_weightedsum[layer_index]));
+        char* debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
+        log_info("Loss wrt WeightedSum matrix for layer #%d: %s", layer_index, debug_str);
+        free(debug_str);
     #endif
+
+    // clean memory
+    free_matrix(loss_wrt_output);
+
+    for(int i = 0; i < output->rows; i++) {
+        free_matrix(jacobian_matrices[i]);
+    }
+    free(jacobian_matrices);
 
     Matrix* weightedsum_wrt_weight;    
 
@@ -546,19 +555,23 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         weightedsum_wrt_weight = network->output[layer_index - 1];
     }
     #ifdef DEBUG
-        log_info("weightedsum wrt weights for layer #%d: %s", layer_index, matrix_to_string(weightedsum_wrt_weight));
+        char* debug_str = matrix_to_string(weightedsum_wrt_weight);
+        log_info("weightedsum wrt weights for layer #%d: %s", layer_index, debug_str);
+        free(debug_str);
     #endif
 
     // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
-    for(int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) { // 0 to 142
-        for(int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) { // 0 to 3
-            for(int j = 0; j < weightedsum_wrt_weight->columns; j++) { // 0 to 13
+    for(int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
+        for(int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
+            for(int j = 0; j < weightedsum_wrt_weight->columns; j++) {
                 network->weight_gradients[layer_index]->data[i]->elements[j] += loss_wrt_weightedsum[layer_index]->data[input_index]->elements[i] * weightedsum_wrt_weight->data[input_index]->elements[j];
             }
         }
     }
     #ifdef DEBUG
-        log_info("Weight gradients of the output layer: %s", matrix_to_string(network->weight_gradients[layer_index]));
+        char* debug_str = matrix_to_string(network->weight_gradients[layer_index]);
+        log_info("Weight gradients of the output layer: %s", debug_str);
+        free(debug_str);
     #endif
 
     // if(useGradientClipping) clip_gradients(weight_gradients)
@@ -569,10 +582,13 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         }
     }
     #ifdef DEBUG
-        log_info("Bias gradients for the output layer: %s", vector_to_string(network->bias_gradients[layer_index]));
+        char* debug_str = vector_to_string(network->bias_gradients[layer_index]);
+        log_info("Bias gradients for the output layer: %s", debug_str);
+        free(debug_str);
     #endif
     // if(useGradientClipping) clip_gradients(bias_gradients)
 
+    
     // ------------- HIDDEN LAYERS -------------
     // we do need to iterate over other layers
     for (layer_index -= 1; layer_index >= 0; layer_index--) { // current layer's dimensions = (4 inputs, 4 neurons)
@@ -593,17 +609,27 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         // each column in each row will be summation of all of the next layer's loss_wrt_weighted sum values and next layer's weights
         Matrix* loss_wrt_output = matrix_product(loss_wrt_weightedsum[layer_index + 1], network->layers[layer_index + 1]->weights);
         #ifdef DEBUG
-            log_info("loss wrt output for layer: #%d: %s", layer_index, matrix_to_string(loss_wrt_output));
+            char* debug_str = matrix_to_string(loss_wrt_output);
+            log_info("loss wrt output for layer: #%d: %s", layer_index, debug_str);
+            free(debug_str);
         #endif
 
         Matrix* output_wrt_weightedsums = leakyRelu_derivative_matrix(network->weightedsums[layer_index]);
         #ifdef DEBUG
-            log_info("output wrt wsum for layer #%d: %s", layer_index, matrix_to_string(output_wrt_weightedsums));
+            char* debug_str = matrix_to_string(output_wrt_weightedsums);
+            log_info("output wrt wsum for layer #%d: %s", layer_index, debug_str);
+            free(debug_str);
         #endif
         
         loss_wrt_weightedsum[layer_index] = matrix_multiplication(loss_wrt_output, output_wrt_weightedsums);
+        
+        free_matrix(loss_wrt_output);
+        free_matrix(output_wrt_weightedsums);
+        
         #ifdef DEBUG
-            log_info("loss wrt weighted sum for layer #%d: %s", layer_index, matrix_to_string(loss_wrt_weightedsum[layer_index]));
+            char* debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
+            log_info("loss wrt weighted sum for layer #%d: %s", layer_index, debug_str);
+            free(debug_str);
         #endif
 
         if (layer_index == 0) {
@@ -616,15 +642,17 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         
         // NOT SURE
         // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
-        for(int input_index = 0; input_index < input_matrix->rows; input_index++) {
+        for(int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
             for(int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
-                for(int j = 0; j < input_matrix->columns; j++) {
+                for(int j = 0; j < weightedsum_wrt_weight->columns; j++) {
                     network->weight_gradients[layer_index]->data[i]->elements[j] += loss_wrt_weightedsum[layer_index]->data[input_index]->elements[i] * weightedsum_wrt_weight->data[input_index]->elements[j];
                 }
             }
         }
         #ifdef DEBUG
-            log_info("Weight gradients of the layer #%d: %s", layer_index, matrix_to_string(network->weight_gradients[layer_index]));
+            char* debug_str = matrix_to_string(network->weight_gradients[layer_index]);
+            log_info("Weight gradients of the layer #%d: %s", layer_index, debug_str);
+            free(debug_str);
         #endif
         // if(useGradientClipping) clip_gradients(weight_gradients)
 
@@ -634,10 +662,18 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
             }
         }
         #ifdef DEBUG
-            log_info("Bias gradients of the layer #%d: %s", layer_index, vector_to_string(network->bias_gradients[layer_index]));
+            char* debug_str = vector_to_string(network->bias_gradients[layer_index]);
+            log_info("Bias gradients of the layer #%d: %s", layer_index, debug_str);
+            free(debug_str);
         #endif
     }
-}
+
+    for(int i = 0; i < num_layers; i++) {
+        free_matrix(loss_wrt_weightedsum[i]);
+    }
+
+    free(loss_wrt_weightedsum);
+} 
 
 double accuracy(Matrix* targets, Matrix* outputs) {
     int counter = 0;
@@ -817,14 +853,22 @@ void free_network(NNetwork* network) {
     // Free the layers
     for (int i = 0; i < network->layerCount; i++) {
         free_layer(network->layers[i]);
+
+        free_matrix(network->weight_gradients[i]);
+        free_vector(network->bias_gradients[i]);
+
+        free_matrix(network->weightedsums[i]);
         free_matrix(network->output[i]);
     }
-    free(network->layers);
 
+    free(network->weightedsums);
+    free(network->output);
+    free(network->layers);
+    free(network->weight_gradients);
+    free(network->bias_gradients);
+    
     // Free the loss function
     free(network->lossFunction);
-        
-
     free(network->optimizationConfig);
 
     // Finally, free the network itself
