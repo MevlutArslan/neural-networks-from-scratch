@@ -132,6 +132,10 @@ const char* get_loss_function_name(const LossFunction* lossFunction) {
 
 void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output) {
     for(int i = 0; i < target->rows; i++) {
-        loss_wrt_output->data[i] = categoricalCrossEntropyLossDerivative(target->data[i], prediction->data[i]);
+        Vector* derivatives = categoricalCrossEntropyLossDerivative(target->data[i], prediction->data[i]);
+        assert(loss_wrt_output->data[i]->size == derivatives->size);
+        
+        memcpy(loss_wrt_output->data[i]->elements, derivatives->elements, derivatives->size * sizeof(double));
+        free_vector(derivatives);
     }
 }
