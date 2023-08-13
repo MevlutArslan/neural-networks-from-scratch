@@ -48,7 +48,12 @@ typedef struct {
 
     int currentStep;
 
+    Matrix** weightedsums;
+
     Matrix** output; // Stores the output matrices for each layer. It's a 2D array where each row represents a layer, and each column represents the output of that layer.
+
+    Matrix** weight_gradients;
+    Vector** bias_gradients;
 } NNetwork;
 
 typedef struct {
@@ -73,7 +78,9 @@ void forward_pass_row_by_row(NNetwork* network, Vector* input, Vector* output);
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix);
 
 void calculate_loss(NNetwork* network, Matrix* yValues);
+
 void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* yValues);
+void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_values);
 
 void dump_network_config(NNetwork* network);
 

@@ -21,6 +21,7 @@ double meanSquaredErrorDerivative(double target, double predicted);
 double categoricalCrossEntropyLoss(Matrix* targetOutputs, Matrix* outputs);
 double categoricalCrossEntropyPerInput(Vector* target, Vector* output);
 Vector* categoricalCrossEntropyLossDerivative(Vector* target, Vector* predicted);
+void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output);
 
 const char* get_loss_function_name(const LossFunction* lossFunction);
 #endif

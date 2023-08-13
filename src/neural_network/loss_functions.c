@@ -129,3 +129,9 @@ Vector* categoricalCrossEntropyLossDerivative(Vector* target, Vector* prediction
 const char* get_loss_function_name(const LossFunction* lossFunction) {
     return lossFunction->name;
 }
+
+void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output) {
+    for(int i = 0; i < target->rows; i++) {
+        loss_wrt_output->data[i] = categoricalCrossEntropyLossDerivative(target->data[i], prediction->data[i]);
+    }
+}

@@ -12,7 +12,7 @@ Matrix* matrix_product(const Matrix* m1, const Matrix* m2) {
     }
     Matrix* m3 = create_matrix(m1->rows, m2->columns);
 
-    // multiple row by each column
+    // multiply each row by all columns
     //  [1, 2]   *  [1, 2, 3] => [1 * 1 + 2 * 4][1 * 2 + 2 * 5][1 * 3 + 2 * 6]
     //  [3, 4]      [4, 5, 6]    [3 * 1 + 4 * 4][3 * 2 + 4 * 5][3 * 2 + 4 * 6]
     for(int i = 0; i < m3->rows; i++){
@@ -308,6 +308,16 @@ Vector* dot_product(Matrix* matrix, Vector* vector) {
     return result;
 }
 
+Matrix* matrix_vector_addition(Matrix* matrix, Vector* vector) {
+    Matrix* result_matrix = create_matrix(matrix->rows, matrix->columns);
+
+    for(int i = 0; i < matrix->rows; i++) {
+        result_matrix->data[i] = vector_addition(matrix->data[i], vector);
+    }
+
+    return result_matrix;
+}
+
 int arg_max(Vector* output) {
     int maxIndex = 0;
     double max = __DBL_MIN__;
@@ -340,6 +350,26 @@ double column_standard_deviation(Matrix* matrix, int columnIndex) {
     }
 
     return sqrt(sum_squared_diff / matrix->rows);
+}
+
+Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
+    Matrix** result_arr = create_matrix_arr(size);
+
+    for(int i = 0; i < size; i++) {
+        result_arr[i] = matrix_product(matrix_arr[i], matrix);
+    }
+
+    return result_arr;
+}
+
+Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
+    Matrix* result = create_matrix(matrix->rows, matrix_arr[0]->columns);
+
+    for(int i = 0; i < matrix->rows; i++) {
+        result->data[i] = dot_product(matrix_arr[i], matrix->data[i]);
+    }
+
+    return result;
 }
 
 // PARALLELIZED CODE

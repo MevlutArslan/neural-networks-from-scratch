@@ -16,6 +16,13 @@ Matrix* create_matrix(const int rows, const int cols) {
     return matrix;
 }
 
+Matrix** create_matrix_arr(int size) {
+    Matrix** arr_matrix = (Matrix**) malloc(size * sizeof(Matrix*));
+    
+    return arr_matrix;
+}
+
+
 void fill_matrix_random(Matrix* matrix, double min, double max) {
     for(int row = 0; row < matrix->rows; row++) {
         for(int col = 0; col < matrix->columns; col++) {

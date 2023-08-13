@@ -14,7 +14,7 @@ typedef struct {
 } Matrix;
 
 Matrix* create_matrix(const int rows, const int cols);
-
+Matrix** create_matrix_arr(int size);
 void fill_matrix_random(Matrix* matrix, double min, double max);
 void fill_matrix(Matrix* matrix, double value);
 

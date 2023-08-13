@@ -13,6 +13,8 @@ typedef struct {
 } Vector;
 
 Vector* create_vector(int size);
+Vector** create_vector_arr(int size);
+
 void free_vector(Vector* vector);
 
 void fill_vector_random(Vector* vector, double min, double max);

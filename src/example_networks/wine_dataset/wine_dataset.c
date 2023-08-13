@@ -27,6 +27,8 @@ Model* create_wine_categorization_model() {
     model->data->accuracies = calloc(totalEpochs, sizeof(double));
     model->data->path = "wine_dataset_network";
 
+    model->thread_pool = create_thread_pool(6);
+
     return model;
 }
 
@@ -62,7 +64,10 @@ int wine_categorization_preprocess_data(ModelData* modelData) {
     double divisionPercentage = 0.8;
 
     int targetColumn = 0;
-    int trainingDataSize = wineData->rows * divisionPercentage;;
+    
+    int trainingDataSize = wineData->rows * divisionPercentage;
+
+    // TODO: OPTIMIZE
     Matrix* trainingData = get_sub_matrix(wineData->data, 0, trainingDataSize - 1, 0, wineData->data->columns - 1);
     modelData->trainingData = get_sub_matrix_except_column(trainingData, 0, trainingData->rows - 1, 0, trainingData->columns - 1, targetColumn);
     
@@ -77,10 +82,10 @@ int wine_categorization_preprocess_data(ModelData* modelData) {
     modelData->validationData = get_sub_matrix_except_column(validationData, modelData->trainingData->rows, validationData->rows - 1, 0, validationData->columns - 1, targetColumn);
     Vector* yValues_validation = extractYValues(validationData, targetColumn);
     modelData->yValues_Testing = oneHotEncode(yValues_validation, 3);
+    
     for(int colIndex = 0; colIndex < modelData->validationData->columns; colIndex++) {
         normalizeColumn_standard_deviation(modelData->validationData, colIndex);
     }
-
 
     free_matrix(trainingData);
     free_matrix(validationData);
@@ -166,54 +171,45 @@ void wine_categorization_train_network(Model* model) {
     double maxAccuracy = 0.0;
 
     log_debug("Starting training with learning rate of: %f for %d epochs.", learningRate,  modelData->totalEpochs);
-    while(step < modelData->totalEpochs) {
+    while(step < 2) {
         modelData->learningRates[step] = currentLearningRate;
-
-        for(int inputRow = 0; inputRow < modelData->trainingData->rows; inputRow++) {
-            Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
-            
-            forward_pass(network, modelData->trainingData->data[inputRow], output); 
-            backpropagation(network, modelData->trainingData->data[inputRow], output, modelData->yValues_Training->data[inputRow]);
-            free_vector(network->output->data[inputRow]);
-            network->output->data[inputRow] = copy_vector(output);
-            
-            free_vector(output);
-        }
+        forward_pass_batched(network, modelData->trainingData); 
+        backpropagation_batched(network, modelData->trainingData, modelData->yValues_Training);
+        log_info("network output for last layer:%s", matrix_to_string(network->output[network->layerCount - 1]));
+        // calculate_loss(network, modelData->yValues_Training);
         
-        calculate_loss(network, modelData->yValues_Training);
-        
-        if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
-            double decayRate = network->optimizationConfig->learningRateDecayAmount;
-            currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)step)));
-        }
-        network->currentStep = step;
-        network->optimizer(network, currentLearningRate);
+        // if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
+        //     double decayRate = network->optimizationConfig->learningRateDecayAmount;
+        //     currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)step)));
+        // }
+        // network->currentStep = step;
+        // network->optimizer(network, currentLearningRate);
 
-        if(step == 1 || step % 10 == 0){
-            log_debug("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
-        }
-        minLoss = fmin(minLoss, network->loss);
+        // if(step == 1 || step % 10 == 0){
+        //     log_debug("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
+        // }
+        // minLoss = fmin(minLoss, network->loss);
         
-        maxAccuracy = fmax(maxAccuracy, network->accuracy);
+        // maxAccuracy = fmax(maxAccuracy, network->accuracy);
 
-        modelData->losses[step] = network->loss;
-        modelData->epochs[step] = step;
-        modelData->accuracies[step] = network->accuracy;
+        // modelData->losses[step] = network->loss;
+        // modelData->epochs[step] = step;
+        // modelData->accuracies[step] = network->accuracy;
 
         step++;
-        // Clear the gradients
-        for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
-            fill_matrix(network->layers[layerIndex]->gradients, 0.0f);
-            fill_vector(network->layers[layerIndex]->biasGradients, 0.0f);
-        }
+        // // Clear the gradients
+        // for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
+        //     fill_matrix(network->layers[layerIndex]->gradients, 0.0f);
+        //     fill_vector(network->layers[layerIndex]->biasGradients, 0.0f);
+        // }
     }
 
-    log_info("Minimum loss during training: %f \n", minLoss);
-    log_info("Maximum accuracy during training: %f \n", maxAccuracy);
+    // log_info("Minimum loss during training: %f \n", minLoss);
+    // log_info("Maximum accuracy during training: %f \n", maxAccuracy);
     
-    save_network(modelData->path, network);
+    // save_network(modelData->path, network);
 
-    model->plot_data(model->data);
+    // model->plot_data(model->data);
     free_network(network);
 }
 

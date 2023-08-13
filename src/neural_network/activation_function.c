@@ -32,7 +32,20 @@ void leakyRelu(Vector* vector) {
 }
 
 double leakyRelu_derivative(double netInput) {
-    return netInput > 0 ? 1.0 : 0.01;
+    return netInput > 0.0 ? 1.0 : 0.01;
+}
+
+
+Matrix* leakyRelu_derivative_matrix(Matrix* input) {
+    Matrix* result = create_matrix(input->rows, input->columns);
+
+    for(int i = 0; i < result->rows; i++) {
+        for(int j = 0; j < result->columns; j++) {
+            result->data[i]->elements[j] = leakyRelu_derivative(input->data[i]->elements[j]);
+        }
+    }
+
+    return result;
 }
 
 void sigmoid(Vector* inputs) {
@@ -91,18 +104,31 @@ void softmax_matrix(Matrix* matrix) {
 */
 Matrix* softmax_derivative(Vector* output) {
     Matrix* jacobian = create_matrix(output->size, output->size);
-    
+    // [0.531323, 0.468677]
     for(int i = 0; i < output->size; i++) {
         for(int j = 0; j < output->size; j++) {
-            if(i == j) {
+            if(i == j) { // 0.531323 * (1 - 0.531323) = 0.24901 (i == 0) | 
                 jacobian->data[i]->elements[j] = output->elements[i] * (1 - output->elements[i]);
-            }else{
+            }else{ // (-1 * 0.531323) * 0.468677 => -0.249019
                 jacobian->data[i]->elements[j] = -1 * output->elements[i] * output->elements[j];
             }
         }
     }
 
     return jacobian;
+}
+
+
+Matrix** softmax_derivative_parallelized(Matrix* output) {
+    Matrix** jacobian_matrices = create_matrix_arr(output->rows);
+    for(int i = 0; i < output->rows; i++) {
+        jacobian_matrices[i] = softmax_derivative(output->data[i]);
+        #ifdef DEBUG
+            log_info("Jacobian matrix #%d: %s", i, matrix_to_string(jacobian_matrices[i]));
+        #endif
+    }
+
+    return jacobian_matrices;
 }
 
 const char* get_activation_function_name(const ActivationFunction* activationFunction) {

@@ -8,6 +8,12 @@ Vector* create_vector(int size) {
     return vector;
 }
 
+Vector** create_vector_arr(int size) {
+    Vector** vector = (Vector**) malloc(size * sizeof(Vector*));
+
+    return vector;
+}
+
 void free_vector(Vector* vector) {
     free(vector->elements);
     free(vector);
