@@ -51,16 +51,35 @@ float matrix_determinant(const Matrix* m);
 
 // VECTOR MATH OPERATIONS
 double vector_product(const Vector* v1, const Vector* v2);
+
+/*
+    Writes to the output vector directly instead of creating a new vector in the function.
+*/
 void vector_addition(const Vector* v1, const Vector* v2, Vector* output);
+
+/*
+    Writes to the output vector directly instead of creating a new vector in the function.
+*/
 void vector_subtraction(const Vector* v1, const Vector* v2, Vector* output);
+
+/*
+    Writes to the output vector directly instead of creating a new vector in the function.
+*/
 void vector_multiplication(const Vector* v1, const Vector* v2, Vector* output);
 
+/*
+    Writes to the output vector directly instead of creating a new vector in the function.
+*/
 void vector_scalar_multiplication(const Vector* v1, double scalar, Vector* output);
+
+/*
+    Writes to the output vector directly instead of creating a new vector in the function.
+*/
 void vector_scalar_subtraction(const Vector* v1, double scalar, Vector* output);
 
 double sum_vector(const Vector* vector);
 
-Vector* dot_product(Matrix* matrix, Vector* vector);
+void dot_product(Matrix* matrix, Vector* vector, Vector* output);
 Matrix* matrix_vector_addition(Matrix* matrix, Vector* vector);
 
 Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size);

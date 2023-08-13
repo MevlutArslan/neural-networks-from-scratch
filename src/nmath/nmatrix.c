@@ -17,8 +17,8 @@ Matrix* create_matrix(const int rows, const int cols) {
 }
 
 Matrix** create_matrix_arr(int size) {
-    Matrix** arr_matrix = (Matrix**) malloc(size * sizeof(Matrix*));
-    
+    Matrix** arr_matrix = (Matrix**) calloc(size, sizeof(Matrix*));
+
     return arr_matrix;
 }
 
@@ -40,6 +40,10 @@ void fill_matrix(Matrix* matrix, double value) {
 }
 
 void free_matrix(Matrix* matrix){
+    if(matrix == NULL) {
+        return;
+    }
+    
     for(int i = 0; i < matrix->rows; i++){
         free_vector(matrix->data[i]);
     }
