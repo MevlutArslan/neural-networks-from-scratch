@@ -115,6 +115,7 @@ int is_square(const Matrix* m){
 
     return 1;
 }
+
 void shuffle_rows(Matrix* matrix) {
     int numberOfRows = matrix->rows;
 
@@ -135,25 +136,19 @@ void shuffle_rows(Matrix* matrix) {
         permutation[j] = temp;
     }
 
-    // Create a new matrix to hold the shuffled rows
-    Matrix* shuffledMatrix = create_matrix(numberOfRows, matrix->columns);
-
-    // Copy the shuffled data directly into the new matrix
+    // Shuffle the rows directly within the original matrix
     for (int i = 0; i < numberOfRows; i++) {
-        memcpy(shuffledMatrix->data[i], matrix->data[permutation[i]], matrix->columns * sizeof(double));
+        if (i != permutation[i]) {
+            double* tempRow = matrix->data[i];
+            matrix->data[i] = matrix->data[permutation[i]];
+            matrix->data[permutation[i]] = tempRow;
+        }
     }
 
     // Clean up
     free(permutation);
-
-    // Swap the data pointers between the original and shuffled matrix
-    double** tempData = matrix->data;
-    matrix->data = shuffledMatrix->data;
-    shuffledMatrix->data = tempData;
-
-    // Free the shuffled matrix structure
-    free_matrix(shuffledMatrix); // Assumes you have a proper function to free matrix
 }
+
 
 Matrix* generate_mini_matrix(const Matrix* m, int excludeRow, int excludeColumn) {
     Matrix* miniMatrix = create_matrix(m->rows - 1, m->columns - 1);
