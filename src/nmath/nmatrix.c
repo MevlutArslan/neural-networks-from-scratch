@@ -17,8 +17,10 @@ Matrix* create_matrix(const int rows, const int cols) {
 }
 
 Matrix** create_matrix_arr(int size) {
-    Matrix** arr_matrix = (Matrix**) calloc(size, sizeof(Matrix*));
-
+    Matrix** arr_matrix = (Matrix**) malloc(size * sizeof(Matrix*));
+    for(int i = 0; i < size; i++) {
+        arr_matrix[i] = NULL;
+    }
     return arr_matrix;
 }
 
@@ -49,7 +51,6 @@ void free_matrix(Matrix* matrix){
     }
 
     free(matrix->data);
-    free(matrix);
 }
 
 
@@ -61,7 +62,7 @@ char* matrix_to_string(const Matrix* matrix) {
     char* str = (char*)malloc(size * sizeof(char));
 
     // Start of the matrix
-    strcat(str, "\t\t\t\t");
+    strcat(str, "\n\t\t\t\t");
     strcat(str, "[");
     // Loop through each row
     for (int i = 0; i < matrix->rows; i++) {
@@ -143,9 +144,9 @@ void shuffle_rows(Matrix* matrix) {
     // Shuffle the rows directly within the original matrix
     for (int i = 0; i < numberOfRows; i++) {
         if (i != permutation[i]) {
-            double* tempRow = matrix->data[i];
-            matrix->data[i] = matrix->data[permutation[i]];
-            matrix->data[permutation[i]] = tempRow;
+            double* tempRow = matrix->data[i]->elements;
+            matrix->data[i]->elements = matrix->data[permutation[i]]->elements;
+            matrix->data[permutation[i]]->elements = tempRow;
         }
     }
 
@@ -179,16 +180,34 @@ Matrix* generate_mini_matrix(const Matrix* m, int excludeRow, int excludeColumn)
     return miniMatrix;
 }
 
-
 Matrix* copy_matrix(const Matrix* source) {
+    Matrix* matrix = (Matrix*) malloc(sizeof(Matrix));
+    
+    // Copy metadata
+    memcpy(matrix, source, sizeof(Matrix));
 
-  Matrix* matrix = create_matrix(source->rows, source->columns);
-  
-  memcpy(matrix->data, source->data, 
-         sizeof(double) * source->rows * source->columns);
+    // Allocate memory for the data array
+    matrix->data = malloc(sizeof(Vector*) * source->rows);
+    if (matrix->data == NULL) {
+        // Handle memory allocation failure.
+        free_matrix(matrix);
+        return NULL;
+    }
 
-  return matrix;
+    // Allocate memory and copy the data for each row (vector)
+    for (int i = 0; i < source->rows; i++) {
+        matrix->data[i] = create_vector(source->columns);
+        if (matrix->data[i] == NULL) {
+            free_matrix(matrix);
+            return NULL;
+        }
+
+        memcpy(matrix->data[i]->elements, source->data[i]->elements, sizeof(double) * source->columns);
+    }
+
+    return matrix;
 }
+
 
 Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, int endCol) {
     Matrix* matrix = create_matrix(endRow - startRow + 1, endCol - startCol + 1); // 
@@ -210,7 +229,7 @@ Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, i
     if(columnIndex < startCol || columnIndex > endCol) {
         return get_sub_matrix(source, startRow, endRow, startCol, endCol);
     }
-
+    log_info("new matrix size: (%d, %d)", endRow - startRow + 1, (endCol - startCol + 1) - 1);
     Matrix* newMatrix = create_matrix(endRow - startRow + 1, (endCol - startCol + 1) - 1);
     for(int row = startRow; row <= endRow; row++) {
         int columnIndexDif = startCol;

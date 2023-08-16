@@ -27,6 +27,21 @@ Matrix* matrix_product(const Matrix* m1, const Matrix* m2) {
 }
 
 
+void matrix_product_inplace(const Matrix* m1, const Matrix* m2, Matrix* output) {
+    assert( m1->columns== m2->rows);
+
+    // multiply each row by all columns
+    //  [1, 2]   *  [1, 2, 3] => [1 * 1 + 2 * 4][1 * 2 + 2 * 5][1 * 3 + 2 * 6]
+    //  [3, 4]      [4, 5, 6]    [3 * 1 + 4 * 4][3 * 2 + 4 * 5][3 * 2 + 4 * 6]
+    for(int i = 0; i < output->rows; i++){
+        for(int j = 0; j < output->columns; j++) {
+            for(int k = 0; k < m1->columns; k++) {
+                output->data[i]->elements[j] += m1->data[i]->elements[k] * m2->data[k]->elements[j];
+            }
+        }
+    }
+}
+
 Matrix* matrix_addition(const Matrix* m1, const Matrix* m2) {
     if(m1->rows != m2->rows || m1->columns != m2->columns) {
         log_error("%s", "The sizes of the matrices do not match!");
@@ -280,6 +295,7 @@ void dot_product(Matrix* matrix, Vector* vector, Vector* output) {
 }
 
 Matrix* matrix_vector_addition(Matrix* matrix, Vector* vector) {
+    assert(matrix != NULL && vector != NULL);
     Matrix* result_matrix = create_matrix(matrix->rows, matrix->columns);
 
     for(int i = 0; i < matrix->rows; i++) {

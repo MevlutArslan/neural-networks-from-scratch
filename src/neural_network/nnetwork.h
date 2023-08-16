@@ -35,7 +35,7 @@ typedef struct {
     double beta2;
 } OptimizationConfig;
 
-typedef struct {
+typedef struct NNetwork{
     int layerCount;
     Layer** layers;
 

@@ -15,8 +15,10 @@ Vector** create_vector_arr(int size) {
 }
 
 void free_vector(Vector* vector) {
+    if(vector == NULL) {
+        return;
+    }
     free(vector->elements);
-    free(vector);
 }
 
 void fill_vector_random(Vector* vector, double min, double max) {

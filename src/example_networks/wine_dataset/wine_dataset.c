@@ -11,12 +11,12 @@ void wine_categorization_plot_config();
 Model* create_wine_categorization_model() {
     Model* model = malloc(sizeof(Model));
 
-    model->get_network = &wine_categorization_get_network;
-    model->train_network = &wine_categorization_train_network;
-    model->validate_network = &wine_categorization_validate_network;
-    model->preprocess_data = &wine_categorization_preprocess_data;
-    model->plot_data = &wine_categorization_plot_data;
-    model->plot_config = &wine_categorization_plot_config;
+    model->get_network = wine_categorization_get_network;
+    model->train_network = wine_categorization_train_network;
+    model->validate_network = wine_categorization_validate_network;
+    model->preprocess_data = wine_categorization_preprocess_data;
+    model->plot_data = wine_categorization_plot_data;
+    model->plot_config = wine_categorization_plot_config;
 
     int totalEpochs = 250;
     model->data = (ModelData*) malloc(sizeof(ModelData));
@@ -52,7 +52,6 @@ OptimizationConfig wine_categorization_create_optimizer(int optimizer) {
 
 int wine_categorization_preprocess_data(ModelData* modelData) {
     Data* wineData = load_csv("/Users/mevlutarslan/Downloads/datasets/wine_with_headers.csv");
-    log_debug("got here, total epochs: %d", modelData->totalEpochs);
     
     if(wineData == NULL) {
         log_error("%s", "Failed to load Wine Data");
@@ -72,14 +71,17 @@ int wine_categorization_preprocess_data(ModelData* modelData) {
     modelData->trainingData = get_sub_matrix_except_column(trainingData, 0, trainingData->rows - 1, 0, trainingData->columns - 1, targetColumn);
     
     Vector* yValues_training = extractYValues(trainingData, targetColumn);
+
     modelData->yValues_Training = oneHotEncode(yValues_training, 3);
+
     
     for(int colIndex = 0; colIndex < modelData->trainingData->columns; colIndex++) {
         normalizeColumn_standard_deviation(modelData->trainingData, colIndex);
     }
     
     Matrix* validationData = get_sub_matrix(wineData->data, modelData->trainingData->rows, wineData->rows - 1, 0, wineData->data->columns - 1);
-    modelData->validationData = get_sub_matrix_except_column(validationData, modelData->trainingData->rows, validationData->rows - 1, 0, validationData->columns - 1, targetColumn);
+    modelData->validationData = get_sub_matrix_except_column(validationData, 0, validationData->rows -1, 0, validationData->columns - 1, targetColumn);
+
     Vector* yValues_validation = extractYValues(validationData, targetColumn);
     modelData->yValues_Testing = oneHotEncode(yValues_validation, 3);
     
@@ -98,7 +100,7 @@ int wine_categorization_preprocess_data(ModelData* modelData) {
 
 
 NNetwork* wine_categorization_get_network(Model* model) {
-    if(model->preprocess_data(model->data) == -1) {
+    if(model->preprocess_data(model->data) != 1) {
         log_error("%s", "Failed to complete preprocessing of Wine Categorization data!");
     }
 
@@ -141,7 +143,6 @@ NNetwork* wine_categorization_get_network(Model* model) {
     memcpy(&config.lossFunction->loss_function, &CATEGORICAL_CROSS_ENTROPY, sizeof(LossFunction));
 
     NNetwork* network = create_network(&config);
-    network->output = create_matrix(model->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
 
     free_network_config(&config);
     model->plot_config();
@@ -171,50 +172,62 @@ void wine_categorization_train_network(Model* model) {
     double maxAccuracy = 0.0;
 
     log_debug("Starting training with learning rate of: %f for %d epochs.", learningRate,  modelData->totalEpochs);
-    while(step < 2) {
+    while(step < modelData->totalEpochs) {
         modelData->learningRates[step] = currentLearningRate;
+
         forward_pass_batched(network, modelData->trainingData); 
         backpropagation_batched(network, modelData->trainingData, modelData->yValues_Training);
-        log_info("network output for last layer:%s", matrix_to_string(network->output[network->layerCount - 1]));
-        // calculate_loss(network, modelData->yValues_Training);
         
-        // if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
-        //     double decayRate = network->optimizationConfig->learningRateDecayAmount;
-        //     currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)step)));
+        // for(int i = 0; i < network->layerCount; i++) {
+        //     char* output_str =  matrix_to_string(network->output[i]);
+        //     log_info("network output for last layer:%s", output_str);
+        //     free(output_str);
         // }
-        // network->currentStep = step;
-        // network->optimizer(network, currentLearningRate);
+        calculate_loss(network, modelData->yValues_Training);
 
-        // if(step == 1 || step % 10 == 0){
-        //     log_debug("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
-        // }
-        // minLoss = fmin(minLoss, network->loss);
+        if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
+            double decayRate = network->optimizationConfig->learningRateDecayAmount;
+            currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)step)));
+        }
+
+        network->currentStep = step;
+        network->optimizer(network, currentLearningRate);
+
+        if(step == 1 || step % 10 == 0){
+            log_debug("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
+        }
+        minLoss = fmin(minLoss, network->loss);
         
-        // maxAccuracy = fmax(maxAccuracy, network->accuracy);
+        maxAccuracy = fmax(maxAccuracy, network->accuracy);
 
         // modelData->losses[step] = network->loss;
         // modelData->epochs[step] = step;
         // modelData->accuracies[step] = network->accuracy;
-
         step++;
         // // Clear the gradients
-        // for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
-        //     fill_matrix(network->layers[layerIndex]->gradients, 0.0f);
-        //     fill_vector(network->layers[layerIndex]->biasGradients, 0.0f);
-        // }
+        for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
+            fill_matrix(network->weight_gradients[layerIndex], 0.0f);
+            fill_vector(network->bias_gradients[layerIndex], 0.0f);
+        }
     }
 
-    // log_info("Minimum loss during training: %f \n", minLoss);
-    // log_info("Maximum accuracy during training: %f \n", maxAccuracy);
+    log_info("Minimum loss during training: %f \n", minLoss);
+    log_info("Maximum accuracy during training: %f \n", maxAccuracy);
     
-    // save_network(modelData->path, network);
+    save_network(modelData->path, network);
 
     // model->plot_data(model->data);
     free_network(network);
 }
 
 void wine_categorization_validate_network(Model* model) {
-    NNetwork* network = (model->data->path);
+    NNetwork* network = load_network(model->data->path);
+
+    forward_pass_batched(network, model->data->validationData);
+    calculate_loss(network, model->data->yValues_Testing);
+
+    log_info("Validation Loss: %f", network->loss);
+    log_info("Validation Accuracy: %f", network->accuracy);
 
     free_network(network);
 }

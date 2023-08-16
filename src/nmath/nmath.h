@@ -17,6 +17,7 @@
     @returns A new Matrix.
 */
 Matrix* matrix_product(const Matrix* m1, const Matrix* m2);
+void matrix_product_inplace(const Matrix* m1, const Matrix* m2, Matrix* output);
 
 /*
     @returns NULL if m1's dimensions does not match m2's dimensions

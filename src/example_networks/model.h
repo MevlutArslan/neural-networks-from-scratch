@@ -21,7 +21,7 @@ typedef struct {
 } ModelData;
 
 
-typedef struct {
+typedef struct Model{
     NNetwork* (*get_network)(struct Model* model);
     void (*train_network)(struct Model* data);
     void (*validate_network)(struct  Model* data);
@@ -29,6 +29,8 @@ typedef struct {
     void (*plot_data)(ModelData* data);
     void (*plot_config)();
     ModelData* data;
+
+    struct ThreadPool* thread_pool;
 } Model;
 
 void free_modelData(ModelData* modelData);

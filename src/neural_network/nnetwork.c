@@ -91,7 +91,6 @@ NNetwork* create_network(const NetworkConfig* config) {
         fill_matrix(network->weight_gradients[i], 0.0f);
     }
 
-
     network->bias_gradients = create_vector_arr(network->layerCount);
     for(int i = 0; i < network->layerCount; i++) {
         network->bias_gradients[i] = create_vector(network->layers[i]->biases->size);
@@ -111,19 +110,29 @@ NNetwork* create_network(const NetworkConfig* config) {
 */
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix) { 
     for(int i = 0; i < network->layerCount; i++) {
+
+        Matrix* product_result = NULL;
+
         Layer* current_layer = network->layers[i];
         Matrix* transposed_weights = matrix_transpose(current_layer->weights);
-        
         if(i == 0) {
-            network->weightedsums[i] = matrix_product(input_matrix, transposed_weights);
+            product_result = matrix_product(input_matrix, transposed_weights);
             // log_info("product result for first layer: %s", matrix_to_string(product));
         }else{
-            network->weightedsums[i] = matrix_product(network->output[i - 1], transposed_weights);
+            product_result = matrix_product(network->output[i - 1], transposed_weights);
             // log_info("product result for second layer: %s", matrix_to_string(product));
         }
+        free_matrix(transposed_weights);
 
-        network->output[i] = matrix_vector_addition(network->weightedsums[i], current_layer->biases);
-        // log_info("Vector addition results: %s", matrix_to_string(network->output[i]));
+        free_matrix(network->weightedsums[i]);
+        free(network->weightedsums[i]);
+        network->weightedsums[i] = matrix_vector_addition(product_result, current_layer->biases);
+        free_matrix(product_result);
+        free(product_result);
+
+        free_matrix(network->output[i]);
+        free(network->output[i]);
+        network->output[i] = copy_matrix(network->weightedsums[i]);
 
         if(i == network->layerCount - 1) {
             softmax_matrix(network->output[i]);
@@ -131,8 +140,6 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
             leakyReluMatrix(network->output[i]);
         }
 
-        free_matrix(transposed_weights);
-        // log_info("After activation: %s", matrix_to_string(network->output[i]));
     }
 }
 
@@ -207,24 +214,9 @@ void forward_pass_row_by_row(NNetwork* network, Vector* input, Vector* output) {
 }
 
 void calculate_loss(NNetwork* network, Matrix* yValues) {
-    network->loss = categoricalCrossEntropyLoss(yValues, network->output);
+    network->loss = categoricalCrossEntropyLoss(yValues, network->output[network->layerCount - 1]);
 
-    for(int i = 0; i < network->layerCount; i++) {
-        Layer* layer = network->layers[i];
-        double lambda = layer->weightLambda;
-        double weightPenalty = 0.0f;
-
-        for(int row = 0; row < layer->weights->rows; row ++) {
-            weightPenalty += calculate_l1_penalty(lambda, layer->weights->data[row]);
-            weightPenalty += calculate_l2_penalty(lambda, layer->weights->data[row]);
-        }
-
-        double biasPenalty = calculate_l1_penalty(lambda, layer->biases) + calculate_l2_penalty(lambda, layer->biases);
-
-        network->loss += weightPenalty + biasPenalty;
-    }
-
-    network->accuracy = accuracy(yValues, network->output);
+    network->accuracy = accuracy(yValues, network->output[network->layerCount - 1]);
 }
 
 /**
@@ -514,6 +506,9 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
 }
 
 void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_values) {
+    #ifdef DEBUG
+        char* debug_str;
+    #endif
     int num_layers = network->layerCount;
     Matrix** loss_wrt_weightedsum = create_matrix_arr(num_layers);
 
@@ -525,7 +520,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     Matrix* loss_wrt_output = create_matrix(y_values->rows, y_values->columns);
     computeCategoricalCrossEntropyLossDerivativeMatrix(y_values, output, loss_wrt_output);
     #ifdef DEBUG
-        char* debug_str = matrix_to_string(loss_wrt_output);
+        debug_str = matrix_to_string(loss_wrt_output);
         log_info("loss_wrt_output: %s", debug_str);
         free(debug_str);
     #endif
@@ -534,7 +529,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
 
     loss_wrt_weightedsum[layer_index] = matrix_vector_product_arr(jacobian_matrices, loss_wrt_output, output->rows);
     #ifdef DEBUG
-        char* debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
+        debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
         log_info("Loss wrt WeightedSum matrix for layer #%d: %s", layer_index, debug_str);
         free(debug_str);
     #endif
@@ -547,15 +542,16 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     }
     free(jacobian_matrices);
 
-    Matrix* weightedsum_wrt_weight;    
+    Matrix* weightedsum_wrt_weight = NULL;    
 
     if(layer_index == 0) {
         weightedsum_wrt_weight = input_matrix;
     }else {
         weightedsum_wrt_weight = network->output[layer_index - 1];
     }
+    
     #ifdef DEBUG
-        char* debug_str = matrix_to_string(weightedsum_wrt_weight);
+        debug_str = matrix_to_string(weightedsum_wrt_weight);
         log_info("weightedsum wrt weights for layer #%d: %s", layer_index, debug_str);
         free(debug_str);
     #endif
@@ -568,8 +564,9 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
             }
         }
     }
+
     #ifdef DEBUG
-        char* debug_str = matrix_to_string(network->weight_gradients[layer_index]);
+        debug_str = matrix_to_string(network->weight_gradients[layer_index]);
         log_info("Weight gradients of the output layer: %s", debug_str);
         free(debug_str);
     #endif
@@ -582,7 +579,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         }
     }
     #ifdef DEBUG
-        char* debug_str = vector_to_string(network->bias_gradients[layer_index]);
+        debug_str = vector_to_string(network->bias_gradients[layer_index]);
         log_info("Bias gradients for the output layer: %s", debug_str);
         free(debug_str);
     #endif
@@ -609,10 +606,12 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         // each column in each row will be summation of all of the next layer's loss_wrt_weighted sum values and next layer's weights
         Matrix* loss_wrt_output = matrix_product(loss_wrt_weightedsum[layer_index + 1], network->layers[layer_index + 1]->weights);
         #ifdef DEBUG
-            char* debug_str = matrix_to_string(loss_wrt_output);
+            debug_str = matrix_to_string(loss_wrt_output);
             log_info("loss wrt output for layer: #%d: %s", layer_index, debug_str);
             free(debug_str);
         #endif
+
+        // log_info("weighted sums for layer 0: %s", matrix_to_string(network->weightedsums[layer_index]));
 
         Matrix* output_wrt_weightedsums = leakyRelu_derivative_matrix(network->weightedsums[layer_index]);
         #ifdef DEBUG
@@ -624,10 +623,12 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         loss_wrt_weightedsum[layer_index] = matrix_multiplication(loss_wrt_output, output_wrt_weightedsums);
         
         free_matrix(loss_wrt_output);
+
         free_matrix(output_wrt_weightedsums);
+        free(output_wrt_weightedsums);
         
         #ifdef DEBUG
-            char* debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
+            debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
             log_info("loss wrt weighted sum for layer #%d: %s", layer_index, debug_str);
             free(debug_str);
         #endif
@@ -640,17 +641,16 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
 
         // log_info("weightedsum wrt weights for layer #%d: %s", layer_index, matrix_to_string(weightedsum_wrt_weight));
         
-        // NOT SURE
         // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
         for(int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
             for(int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
                 for(int j = 0; j < weightedsum_wrt_weight->columns; j++) {
-                    network->weight_gradients[layer_index]->data[i]->elements[j] += loss_wrt_weightedsum[layer_index]->data[input_index]->elements[i] * weightedsum_wrt_weight->data[input_index]->elements[j];
+                    network->weight_gradients[layer_index]->data[i]->elements[j] += loss_wrt_weightedsum[layer_index]->data[input_index]->elements[i] * input_matrix->data[input_index]->elements[j];
                 }
             }
         }
         #ifdef DEBUG
-            char* debug_str = matrix_to_string(network->weight_gradients[layer_index]);
+            debug_str = matrix_to_string(network->weight_gradients[layer_index]);
             log_info("Weight gradients of the layer #%d: %s", layer_index, debug_str);
             free(debug_str);
         #endif
@@ -662,7 +662,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
             }
         }
         #ifdef DEBUG
-            char* debug_str = vector_to_string(network->bias_gradients[layer_index]);
+            debug_str = vector_to_string(network->bias_gradients[layer_index]);
             log_info("Bias gradients of the layer #%d: %s", layer_index, debug_str);
             free(debug_str);
         #endif
@@ -670,6 +670,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
 
     for(int i = 0; i < num_layers; i++) {
         free_matrix(loss_wrt_weightedsum[i]);
+        free(loss_wrt_weightedsum[i]);
     }
 
     free(loss_wrt_weightedsum);
@@ -855,10 +856,16 @@ void free_network(NNetwork* network) {
         free_layer(network->layers[i]);
 
         free_matrix(network->weight_gradients[i]);
+        free(network->weight_gradients[i]);
+        
         free_vector(network->bias_gradients[i]);
+        free(network->bias_gradients[i]);
 
         free_matrix(network->weightedsums[i]);
+        free(network->weightedsums[i]);
+
         free_matrix(network->output[i]);
+        free(network->output[i]);
     }
 
     free(network->weightedsums);
@@ -930,7 +937,6 @@ char* serialize_optimization_config(OptimizationConfig* config) {
 }
 
 char* serialize_network(const NNetwork* network) {
-
     cJSON *root = cJSON_CreateObject();
     cJSON *layers = cJSON_CreateArray();
 
@@ -960,7 +966,13 @@ NNetwork* deserialize_network(cJSON* json) {
 
     network->layerCount = cJSON_GetObjectItem(json, "layerCount")->valueint;
     network->layers = malloc(network->layerCount * sizeof(Layer));
-    
+    network->weightedsums = create_matrix_arr(network->layerCount);
+
+    network->weight_gradients = create_matrix_arr(network->layerCount);
+    network->bias_gradients = create_vector_arr(network->layerCount);
+
+    network->output = create_matrix_arr(network->layerCount);
+
     cJSON* json_layers = cJSON_GetObjectItem(json, "layers");
    
     for (int i = 0; i < network->layerCount; i++) {

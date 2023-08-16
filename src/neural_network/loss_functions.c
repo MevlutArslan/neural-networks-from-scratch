@@ -85,7 +85,7 @@ double categoricalCrossEntropyLoss(Matrix* targetOutputs, Matrix* outputs) {
     for(int i = 0; i < outputs->rows; i++) {
         Vector* targetVector = targetOutputs->data[i];
         Vector* outputVector = outputs->data[i];
-
+        
         sum += categoricalCrossEntropyPerInput(targetVector, outputVector);
     }
     #ifdef DEBUG
@@ -134,7 +134,6 @@ void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* 
     for(int i = 0; i < target->rows; i++) {
         Vector* derivatives = categoricalCrossEntropyLossDerivative(target->data[i], prediction->data[i]);
         assert(loss_wrt_output->data[i]->size == derivatives->size);
-        
         memcpy(loss_wrt_output->data[i]->elements, derivatives->elements, derivatives->size * sizeof(double));
         free_vector(derivatives);
     }

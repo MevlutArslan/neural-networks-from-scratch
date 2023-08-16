@@ -23,8 +23,10 @@ Data* load_csv(char* fileLocation) {
         return NULL;
     }
 
-    data->rows = (getRowCount(fileLocation) - 1);
+    data->rows = getRowCount(fileLocation) - 1;
     data->columns = getColumnCount(fileLocation);
+
+    log_info("row count: %d", data->rows);
 
     data->data = create_matrix(data->rows, data->columns);
     if (data->data == NULL) {
@@ -38,7 +40,7 @@ Data* load_csv(char* fileLocation) {
     int rowIndex = 0;
 
     // while there are lines to read
-    while (fgets(currentLine, sizeof(currentLine), file) != NULL) {
+    while (fgets(currentLine, sizeof(currentLine), file) != NULL  && rowIndex < data->rows + 1) {
 
         #ifdef DEBUG
         if (feof(file)) {
@@ -57,7 +59,7 @@ Data* load_csv(char* fileLocation) {
 
         // strtok separates a line by the delimiter and writes the remaining of the line into the address provided
         // we look a step ahead in the while loop but we assign that to the correct index of the matrix
-        while ((token = strtok_r(rest, DELIMITER, &rest)) && rowIndex < data->rows && colIndex < data->columns) {
+        while ((token = strtok_r(rest, DELIMITER, &rest)) && colIndex < data->columns) {
             if (rowIndex == 0) {
                 break;
             }
@@ -173,7 +175,7 @@ void unnormalizeVector(Vector* vector, double min, double max) {
     @param categories: the column containing the expected category
 */
 Matrix* oneHotEncode(Vector* categories, int numberOfCategories) {
-
+ 
     // Create a matrix to hold the one-hot encoded categories
     Matrix* oneHotEncoded = create_matrix(categories->size, numberOfCategories);
 
