@@ -6,15 +6,31 @@
 #include <string.h>
 #include <math.h>
 #include "nvector.h"
+#include "../helper/constants.h"
 
-typedef struct {
+#define FLAT_INDEX(ROW, COL, WIDTH) (ROW * WIDTH + COL)
+#define ROW_START(ROW, WIDTH) (ROW * WIDTH)
+#define ROW_END(START_INDEX, WIDTH) (START_INDEX + WIDTH)
+typedef struct Matrix{
     int rows;
     int columns;
-    Vector** data;
+    Vector* data;
+
+    void (*set_element)(struct Matrix* matrix, int row, int col, double value);
+    double (*get_element)(struct Matrix* matrix, int row, int col);
+
+    void (*set_row)(struct Matrix* matrix, Vector* row, int row_index);
+    Vector* (*get_row)(struct Matrix* matrix, int row_index);
 } Matrix;
 
 Matrix* create_matrix(const int rows, const int cols);
-Matrix** create_matrix_arr(int size);
+
+void set_element(struct Matrix* matrix, int row, int col, double value);
+double get_element(struct Matrix* matrix, int row, int col);
+
+Vector* get_row(struct Matrix* matrix, int row_index);
+void set_row(struct Matrix* matrix, Vector* row, int row_index);
+
 void fill_matrix_random(Matrix* matrix, double min, double max);
 void fill_matrix(Matrix* matrix, double value);
 
