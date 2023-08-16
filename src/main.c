@@ -19,7 +19,7 @@ void runProgram();
 
 int main(int argc, char* argv[])
 {
-    srand(306); // seeding with 306
+    srand(308); // seeding with 306
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {

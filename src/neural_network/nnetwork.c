@@ -969,6 +969,7 @@ NNetwork* deserialize_network(cJSON* json) {
     network->weightedsums = create_matrix_arr(network->layerCount);
 
     network->weight_gradients = create_matrix_arr(network->layerCount);
+    
     network->bias_gradients = create_vector_arr(network->layerCount);
 
     network->output = create_matrix_arr(network->layerCount);
@@ -979,6 +980,9 @@ NNetwork* deserialize_network(cJSON* json) {
         cJSON* json_layer = cJSON_GetArrayItem(json_layers, i);
         network->layers[i] = deserialize_layer(json_layer);
     }
+
+    network->lossFunction = NULL;
+    network->optimizationConfig = NULL;
 
     // network->lossFunction = strdup(cJSON_GetObjectItem(json, "lossFunction")->valuestring);
     // network->loss = cJSON_GetObjectItem(json, "loss")->valuedouble;

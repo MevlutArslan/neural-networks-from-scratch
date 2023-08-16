@@ -48,7 +48,6 @@ void free_layer(Layer* layer) {
     }
 
     // Free the resources allocated for the layer
-    // free_matrix(layer->input);
     free_matrix(layer->weights);
     free_matrix(layer->gradients);
     free_matrix(layer->weightMomentums);
@@ -103,15 +102,20 @@ Layer* deserialize_layer(cJSON* json) {
 
     layer->neuronCount = cJSON_GetObjectItem(json, "neuronCount")->valueint;
     layer->weights = deserialize_matrix(cJSON_GetObjectItem(json, "weights"));
-    log_debug("loaded layer's weights: %s", matrix_to_string(layer->weights));
 
     layer->biases = deserialize_vector(cJSON_GetObjectItem(json, "biases"));
-    log_debug("loaded layer's biases: %s", vector_to_string(layer->biases));
 
     layer->activationFunction = malloc(sizeof(ActivationFunction));
     *layer->activationFunction = get_activation_function_by_name(cJSON_GetObjectItem(json, "activationFunction")->valuestring);
+    layer->weightedSums = create_vector(layer->neuronCount);
+    
+    layer->weightCache = NULL;
+    layer->biasCache = NULL;
+    layer->weightMomentums = NULL;
+    layer->dLoss_dWeightedSums = NULL;
+    layer->biasMomentums = NULL;
 
-    log_debug("loaded layer's activation function: %s", get_activation_function_name(layer->activationFunction));
-
+    layer->gradients = NULL;
+    layer->biasGradients = NULL;
     return layer;
 }

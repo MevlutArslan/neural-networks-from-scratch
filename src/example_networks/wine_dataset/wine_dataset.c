@@ -51,7 +51,7 @@ OptimizationConfig wine_categorization_create_optimizer(int optimizer) {
 
 
 int wine_categorization_preprocess_data(ModelData* modelData) {
-    Data* wineData = load_csv("/Users/mevlutarslan/Downloads/datasets/wine_with_headers.csv");
+    Data* wineData = load_csv("/home/mvlcfr/datasets/wine_dataset/wine_with_headers.csv");
     
     if(wineData == NULL) {
         log_error("%s", "Failed to load Wine Data");
@@ -71,7 +71,6 @@ int wine_categorization_preprocess_data(ModelData* modelData) {
     modelData->trainingData = get_sub_matrix_except_column(trainingData, 0, trainingData->rows - 1, 0, trainingData->columns - 1, targetColumn);
     
     Vector* yValues_training = extractYValues(trainingData, targetColumn);
-
     modelData->yValues_Training = oneHotEncode(yValues_training, 3);
 
     
@@ -103,7 +102,6 @@ NNetwork* wine_categorization_get_network(Model* model) {
     if(model->preprocess_data(model->data) != 1) {
         log_error("%s", "Failed to complete preprocessing of Wine Categorization data!");
     }
-
     NetworkConfig config;
     config.numLayers = 2;
     config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);

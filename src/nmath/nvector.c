@@ -10,7 +10,9 @@ Vector* create_vector(int size) {
 
 Vector** create_vector_arr(int size) {
     Vector** vector = (Vector**) malloc(size * sizeof(Vector*));
-
+    for(int i = 0; i < size; i++) {
+        vector[i] = NULL;
+    }
     return vector;
 }
 

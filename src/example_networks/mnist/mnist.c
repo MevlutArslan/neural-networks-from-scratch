@@ -120,7 +120,7 @@ int mnist_preprocess_data(ModelData* modelData) {
     
     // extract validation data
     modelData->validationData = get_sub_matrix_except_column(validation_data->data, 0, validation_data->rows - 1, 0, validation_data->columns - 1, 0);
-    // log_debug("Validation Data Matrix: %s", matrix_to_string(validationData));
+    log_debug("Validation Data Matrix: %s", matrix_to_string(modelData->validationData));
 
     // extract yValues
     Vector* yValues_Training = extractYValues(training_data->data, 0);
@@ -172,13 +172,13 @@ void mnist_train_network(Model* model) {
     while(step < totalEpochs) {
         // learningRates[step] = currentLearningRate;
         
-        for(int inputRow = 0; inputRow < model->data->trainingData->rows; inputRow++) {
-            Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
-            forward_pass(network, modelData->trainingData->data[inputRow], output); 
-            backpropagation(network, modelData->trainingData->data[inputRow], output, modelData->yValues_Training->data[inputRow]);
-            network->output->data[inputRow] = copy_vector(output);
-            free_vector(output);
-        }
+        // for(int inputRow = 0; inputRow < model->data->trainingData->rows; inputRow++) {
+        //     Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
+        //     forward_pass(network, modelData->trainingData->data[inputRow], output); 
+        //     backpropagation(network, modelData->trainingData->data[inputRow], output, modelData->yValues_Training->data[inputRow]);
+        //     network->output->data[inputRow] = copy_vector(output);
+        //     free_vector(output);
+        // }
         
         calculate_loss(network, modelData->yValues_Training);
         
