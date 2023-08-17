@@ -1,6 +1,8 @@
 #include "activation_function.h"
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
+#include <sys/types.h>
 
 ActivationFunction RELU = { .activation = relu, .derivative = relu_derivative, .name = "RELU" };
 ActivationFunction LEAKY_RELU = { .activation = leakyRelu, .derivative = leakyRelu_derivative, .name = "LEAKY_RELU" };
@@ -19,7 +21,7 @@ double relu_derivative(double netInput){
 
 void leakyReluMatrix(Matrix* matrix) {
     for (int i = 0; i < matrix->rows; i++) {
-        leakyRelu(matrix->data[i]);
+        // leakyRelu(matrix->data[i]);
     }
 }
 
@@ -41,7 +43,8 @@ Matrix* leakyRelu_derivative_matrix(Matrix* input) {
 
     for(int i = 0; i < result->rows; i++) {
         for(int j = 0; j < result->columns; j++) {
-            result->data[i]->elements[j] = leakyRelu_derivative(input->data[i]->elements[j]);
+            result->set_element(result, i, j, leakyRelu_derivative(input->get_element(input, i, j)));
+            // result->data[i]->elements[j] = leakyRelu_derivative(input->get_element(input, i, j));
         }
     }
 
@@ -86,9 +89,14 @@ void softmax(Vector* inputs) {
 }
 
 void softmax_matrix(Matrix* matrix) {
+    Vector* matrix_row = create_vector(matrix->columns);
     for(int i = 0; i < matrix->rows; i++) {
-        softmax(matrix->data[i]);
+        memcpy(matrix_row->elements,  matrix->data->elements + (i * matrix->columns), matrix->columns * sizeof(double));
+        softmax(matrix_row);
+        memcpy(matrix->data->elements + (i * matrix->columns), matrix_row->elements, matrix->columns * sizeof(double));
     }
+
+    free_vector(matrix_row);
 }
 
 /*
@@ -108,9 +116,11 @@ Matrix* softmax_derivative(Vector* output) {
     for(int i = 0; i < output->size; i++) {
         for(int j = 0; j < output->size; j++) {
             if(i == j) { // 0.531323 * (1 - 0.531323) = 0.24901 (i == 0) | 
-                jacobian->data[i]->elements[j] = output->elements[i] * (1 - output->elements[i]);
+                jacobian->set_element(jacobian, i, j, output->elements[i] * (1 - output->elements[i]));
+                // jacobian->data[i]->elements[j] = output->elements[i] * (1 - output->elements[i]);
             }else{ // (-1 * 0.531323) * 0.468677 => -0.249019
-                jacobian->data[i]->elements[j] = -1 * output->elements[i] * output->elements[j];
+                jacobian->set_element(jacobian, i, j, -1 * output->elements[i] * output->elements[j]);
+                // jacobian->data[i]->elements[j] = -1 * output->elements[i] * output->elements[j];
             }
         }
     }
@@ -121,14 +131,16 @@ Matrix* softmax_derivative(Vector* output) {
 
 Matrix** softmax_derivative_parallelized(Matrix* output) {
     Matrix** jacobian_matrices = create_matrix_arr(output->rows);
+    Vector* matrix_row = create_vector(output->columns);
     for(int i = 0; i < output->rows; i++) {
-        jacobian_matrices[i] = softmax_derivative(output->data[i]);
+        memcpy(matrix_row->elements, output->data->elements + (i * output->columns), output->columns * sizeof(double));
+        jacobian_matrices[i] = softmax_derivative(matrix_row);
 
-        #ifdef DEBUG
-            log_info("Jacobian matrix #%d: %s", i, matrix_to_string(jacobian_matrices[i]));
-        #endif
+        // #ifdef DEBUG
+            printf("%s \n", matrix_to_string(jacobian_matrices[i]));
+        // #endif
     }
-
+    free_vector(matrix_row);
     return jacobian_matrices;
 }
 
