@@ -19,7 +19,7 @@ void runProgram();
 
 int main(int argc, char* argv[])
 {
-    srand(308); // seeding with 306
+    srand(306); // seeding with 306
 
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
@@ -43,11 +43,12 @@ void runProgram() {
     clock_t start = clock();
 
     model->train_network(model);
-
-    model->validate_network(model);
-    
     clock_t end = clock();
+    log_info("time it took to process wine model: %f",  (((double) (end - start)) / CLOCKS_PER_SEC) * 1000);
 
-    log_info("time it took to process mnist: %f",  (((double) (end - start)) / CLOCKS_PER_SEC) * 1000);
+    // model->validate_network(model);
+    
     free_model(model);
+
+
 }   

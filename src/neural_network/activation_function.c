@@ -136,9 +136,9 @@ Matrix** softmax_derivative_parallelized(Matrix* output) {
         memcpy(matrix_row->elements, output->data->elements + (i * output->columns), output->columns * sizeof(double));
         jacobian_matrices[i] = softmax_derivative(matrix_row);
 
-        // #ifdef DEBUG
+        #ifdef DEBUG
             printf("%s \n", matrix_to_string(jacobian_matrices[i]));
-        // #endif
+        #endif
     }
     free_vector(matrix_row);
     return jacobian_matrices;

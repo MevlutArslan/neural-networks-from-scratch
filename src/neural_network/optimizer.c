@@ -19,17 +19,20 @@ void sgd(NNetwork* network, double learningRate) {
         
         for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
-                double gradient = weight_gradients[layerIndex]->data[neuronIndex]->elements[weightIndex];
-                double valueToUpdateBy = learningRate * gradient;
+                double weight_gradient = weight_gradients[layerIndex]->get_element(weight_gradients[layerIndex], neuronIndex, weightIndex);
+                double valueToUpdateBy = learningRate * weight_gradient;
                     
                 if(network->optimizationConfig->shouldUseMomentum == 1) {
-                    double momentumUpdate = momentum * currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex];
+                    double momentumUpdate = momentum * currentLayer->weightMomentums->get_element(currentLayer->weightMomentums, neuronIndex, weightIndex);
                     valueToUpdateBy += momentumUpdate;
 
-                    currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex] = valueToUpdateBy;
+                    currentLayer->weightMomentums->set_element(currentLayer->weightMomentums, neuronIndex, weightIndex, valueToUpdateBy);
                 }
+                
+                double old_weight = currentLayer->weights->get_element(currentLayer->weights, neuronIndex, weightIndex);
+                double new_weight = old_weight - valueToUpdateBy;
 
-                currentLayer->weights->data[neuronIndex]->elements[weightIndex] -= valueToUpdateBy;
+                currentLayer->weights->set_element(currentLayer->weights, neuronIndex, weightIndex, new_weight);
             }
             double biasGradient = bias_gradients[layerIndex]->elements[neuronIndex];
             double biasValueToUpdateBy = learningRate * biasGradient;
@@ -68,13 +71,16 @@ void adagrad(NNetwork* network, double learningRate) {
             double biasGradientSquared = biasGradient * biasGradient;
             
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
-                double gradient = weight_gradients[layerIndex]->data[neuronIndex]->elements[weightIndex];
+                double weight_gradient = weight_gradients[layerIndex]->get_element(weight_gradients[layerIndex], neuronIndex, weightIndex);
                 // TODO rename valueToUpdateBy!!!!
-                double valueToUpdateBy = learningRate * gradient;
-                double gradientSquared = gradient * gradient;
+                double valueToUpdateBy = learningRate * weight_gradient;
+                double gradientSquared = weight_gradient * weight_gradient;
+                
+                currentLayer->weightCache->set_element(currentLayer->weightCache, neuronIndex, weightIndex, gradientSquared);
 
-                currentLayer->weightCache->data[neuronIndex]->elements[weightIndex] = gradientSquared;
-                currentLayer->weights->data[neuronIndex]->elements[weightIndex] -= valueToUpdateBy / (sqrt(gradientSquared) + epsilon);
+                double old_weight = currentLayer->weights->get_element(currentLayer->weights, neuronIndex, weightIndex);
+                double new_weight = old_weight - valueToUpdateBy / (sqrt(gradientSquared) + epsilon);
+                currentLayer->weights->set_element(currentLayer->weights, neuronIndex, weightIndex, new_weight);
             }
 
             currentLayer->biasCache->elements[neuronIndex] = biasGradientSquared;
@@ -111,17 +117,19 @@ void rms_prop(NNetwork* network, double learningRate) {
             double biasGradientSquared = biasGradient * biasGradient;
 
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
-                double gradient = weight_gradients[layerIndex]->data[neuronIndex]->elements[weightIndex];
+                double weight_gradient = weight_gradients[layerIndex]->get_element(weight_gradients[layerIndex], neuronIndex, weightIndex);
                 // TODO rename valueToUpdateBy!!!!
-                double valueToUpdateBy = -1 * (learningRate * gradient);
-                double gradientSquared = gradient * gradient;
+                double valueToUpdateBy = -1 * (learningRate * weight_gradient);
+                double gradientSquared = weight_gradient * weight_gradient;
 
                 // cache = rho * cache + (1 - rho) * gradient ** 2
-                double fractionOfCache = rho *  currentLayer->weightCache->data[neuronIndex]->elements[weightIndex];
+                double fractionOfCache = rho *  currentLayer->weightCache->get_element(currentLayer->weightCache, neuronIndex, weightIndex);
                 double fractionOfGradientSquarred = (1 - rho) * gradientSquared;
 
-                currentLayer->weightCache->data[neuronIndex]->elements[weightIndex] = fractionOfCache + fractionOfGradientSquarred;
-                currentLayer->weights->data[neuronIndex]->elements[weightIndex] += valueToUpdateBy / (sqrt(fractionOfCache + fractionOfGradientSquarred) + epsilon);
+                currentLayer->weightCache->set_element(currentLayer->weightCache, neuronIndex, weightIndex, fractionOfCache + fractionOfGradientSquarred);
+                double old_weight = currentLayer->weights->get_element(currentLayer->weights, neuronIndex, weightIndex);
+                double new_weight = old_weight += valueToUpdateBy / (sqrt(fractionOfCache + fractionOfGradientSquarred) + epsilon);
+                currentLayer->weights->set_element(currentLayer->weights, neuronIndex, weightIndex, new_weight);
             }
 
             //  cache = rho * cache + (1 - rho) * gradient ** 2
@@ -167,13 +175,13 @@ void adam(NNetwork* network, double learningRate) {
         fill_vector(currentLayer->biasCache, 0.0f);
         for(int neuronIndex = 0; neuronIndex < currentLayer->neuronCount; neuronIndex++) {
             for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
-                double gradient = weight_gradients[layerIndex]->data[neuronIndex]->elements[weightIndex];
+                double weight_gradient = weight_gradients[layerIndex]->get_element(weight_gradients[layerIndex], neuronIndex, weightIndex);
 
                 // m(t) = beta1 * m(t-1) + (1 – beta1) * g(t)
-                double weightMomentum = beta1 * currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex] + (1 - beta1) * gradient;
-                currentLayer->weightMomentums->data[neuronIndex]->elements[weightIndex] = weightMomentum;
+                double old_momentum =  currentLayer->weightMomentums->get_element(currentLayer->weightMomentums, neuronIndex, weightIndex);
+                double weightMomentum = beta1 * old_momentum + (1 - beta1) * weight_gradient;
+                currentLayer->weightMomentums->set_element(currentLayer->weightMomentums, neuronIndex, weightIndex, weightMomentum);
                 // mhat(t) = m(t) / (1 – beta1(t))
-                
                 double momentumCorrection = weightMomentum / (1 - pow(beta1, network->currentStep));
 
                 #ifdef DEBUG
@@ -186,8 +194,9 @@ void adam(NNetwork* network, double learningRate) {
                 #endif
 
                 // v(t) = beta2 * v(t-1) + (1 – beta2) * g(t)^2
-                double weightCache = beta2 * currentLayer->weightCache->data[neuronIndex]->elements[weightIndex] + (1 - beta2) * pow(gradient, 2);
-                currentLayer->weightCache->data[neuronIndex]->elements[weightIndex] = weightCache;
+                double old_cache = currentLayer->weightCache->get_element(currentLayer->weightCache, neuronIndex, weightIndex);
+                double weightCache = beta2 * old_cache + (1 - beta2) * pow(weight_gradient, 2);
+                currentLayer->weightCache->set_element(currentLayer->weightCache, neuronIndex, weightIndex, weightCache);
 
                 // vhat(t) = v(t) / (1 – beta2(t))
                 double cacheCorrection = weightCache / (1 - pow(beta2, network->currentStep));
@@ -201,8 +210,9 @@ void adam(NNetwork* network, double learningRate) {
                               beta1, pow(gradient, 2), network->currentStep);
                 #endif
                 // x(t) = x(t-1) – alpha * mhat(t) / (sqrt(vhat(t)) + eps)
-                double oldWeight = currentLayer->weights->data[neuronIndex]->elements[weightIndex];
-                currentLayer->weights->data[neuronIndex]->elements[weightIndex] -= (learningRate * momentumCorrection) / (sqrt(cacheCorrection) + epsilon);
+                double oldWeight = currentLayer->weights->get_element(currentLayer->weights, neuronIndex, weightIndex);
+                double newWeight = oldWeight - (learningRate * momentumCorrection) / (sqrt(cacheCorrection) + epsilon);
+                currentLayer->weights->set_element(currentLayer->weights, neuronIndex, weightIndex, newWeight);
                 #ifdef DEBUG
                     log_debug("Old Weight: %f \n"
                               "\t\t\t\tNew Weight %f \n",                     
