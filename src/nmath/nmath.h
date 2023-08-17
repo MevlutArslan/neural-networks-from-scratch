@@ -62,7 +62,7 @@ double sum_vector(Vector* vector);
 
 Vector* dot_product(Matrix* matrix, Vector* vector);
 void matrix_vector_addition(Matrix* m, Vector* v, Matrix* output);
-Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Vector* vector, int array_length);
+Matrix* batch_matrix_vector_product(Matrix** matrix_arr, Matrix* matrix, int array_length);
 
 int arg_max_vector(Vector* output);
 int arg_max_matrix_row(Matrix* matrix, int row_index);

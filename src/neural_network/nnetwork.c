@@ -156,6 +156,8 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     // I can distribute the work amongst the threads in the thread pool for all three operations.
     Matrix* loss_wrt_output = create_matrix(y_values->rows, y_values->columns);
     computeCategoricalCrossEntropyLossDerivativeMatrix(y_values, output, loss_wrt_output);
+
+    // printf("%s \n", matrix_to_string(loss_wrt_output));
     #ifdef DEBUG
         debug_str = matrix_to_string(loss_wrt_output);
         log_info("loss_wrt_output: %s", debug_str);
@@ -163,21 +165,12 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     #endif
 
     Matrix** jacobian_matrices = softmax_derivative_parallelized(output);
-
-    loss_wrt_weightedsum[layer_index] = matrix_vector_product_arr(jacobian_matrices, loss_wrt_output, output->rows);
+    loss_wrt_weightedsum[layer_index] = batch_matrix_vector_product(jacobian_matrices, loss_wrt_output, output->rows);
     #ifdef DEBUG
         debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
         log_info("Loss wrt WeightedSum matrix for layer #%d: %s", layer_index, debug_str);
         free(debug_str);
     #endif
-
-    // clean memory
-    free_matrix(loss_wrt_output);
-
-    for(int i = 0; i < output->rows; i++) {
-        free_matrix(jacobian_matrices[i]);
-    }
-    free(jacobian_matrices);
 
     Matrix* weightedsum_wrt_weight = NULL;    
 
@@ -228,6 +221,13 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     #endif
     // if(useGradientClipping) clip_gradients(bias_gradients)
 
+    // clean memory
+    free_matrix(loss_wrt_output);
+    
+    for(int i = 0; i < output->rows; i++) {
+        free_matrix(jacobian_matrices[i]);
+    }
+    free(jacobian_matrices);
     
     // ------------- HIDDEN LAYERS -------------
     // we do need to iterate over other layers
@@ -235,9 +235,9 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
 
         Matrix* loss_wrt_output = matrix_product(loss_wrt_weightedsum[layer_index + 1], network->layers[layer_index + 1]->weights);
         #ifdef DEBUG
-            debug_str = matrix_to_string(loss_wrt_output);
-            log_info("loss wrt output for layer: #%d: %s", layer_index, debug_str);
-            free(debug_str);
+            char* log_wrt_output_str = matrix_to_string(loss_wrt_output);
+            log_info("loss wrt output for layer: #%d: %s", layer_index, log_wrt_output_str);
+            free(log_wrt_output_str);
         #endif
 
 
@@ -248,12 +248,12 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
             free(debug_str);
         #endif
         
+        loss_wrt_weightedsum[layer_index] = create_matrix(loss_wrt_output->rows, loss_wrt_output->columns);
         matrix_multiplication(loss_wrt_output, output_wrt_weightedsums, loss_wrt_weightedsum[layer_index]);
         
         free_matrix(loss_wrt_output);
 
         free_matrix(output_wrt_weightedsums);
-        free(output_wrt_weightedsums);
         
         #ifdef DEBUG
             debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
@@ -303,7 +303,6 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
 
     for(int i = 0; i < num_layers; i++) {
         free_matrix(loss_wrt_weightedsum[i]);
-        free(loss_wrt_weightedsum[i]);
     }
 
     free(loss_wrt_weightedsum);

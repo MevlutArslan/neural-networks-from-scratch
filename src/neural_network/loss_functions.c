@@ -1,4 +1,5 @@
 #include "loss_functions.h"
+#include <string.h>
 
 LossFunction MEAN_SQUARED_ERROR = { .loss_function = meanSquaredError, .derivative = meanSquaredErrorDerivative, .name = "MEAN_SQUARED_ERROR" };
 LossFunction CATEGORICAL_CROSS_ENTROPY = { .loss_function = categoricalCrossEntropyLoss, .name = "CATEGORICAL_CROSS_ENTROPY" };
@@ -7,28 +8,22 @@ double meanSquaredError(Matrix* outputs, Matrix* targets) {
     double mse = 0.0;
 
     for (int i = 0; i < outputs->rows; i++) {
-        Vector* output = outputs->data[i];
-        Vector* target = targets->data[i];
+        double output = outputs->get_element(outputs, i, 0); // assuming both matrices have 1 column
+        double target = targets->get_element(targets, i, 0);
 
-        double difference = target->elements[0] - output->elements[0]; // assuming both vectors have size 1
+        double difference = target - output;
         mse += (difference * difference) / 2;
 
         #ifdef DEBUG
-            char* outputVectorStr = vector_to_string(output);
-            char* targetVectorStr = vector_to_string(target);
-            
             log_debug(
                 "MSE Input & Intermediate Output: \n"
-                "Output Vector: %s \n"
-                "Target Vector: %s \n"
+                "Output Value: %f \n"
+                "Target Value: %f \n"
                 "Squared Difference: %f \n", 
-                outputVectorStr, 
-                targetVectorStr, 
+                output, 
+                target, 
                 difference * difference / 2
             );
-            
-            free(outputVectorStr);
-            free(targetVectorStr);
         #endif
     }
 
@@ -41,7 +36,6 @@ double meanSquaredError(Matrix* outputs, Matrix* targets) {
     return mse;
 }
 
-
 double meanSquaredErrorDerivative(double target, double predicted) {
     return -1 * (target - predicted);
 }
@@ -51,31 +45,29 @@ double meanSquaredErrorDerivative(double target, double predicted) {
     The formula for Categorical Cross Entropy simplifies to: 
         -1 * log(prediction_vector[index of the target category in the target vector])
 */
-double categoricalCrossEntropyPerInput(Vector* target, Vector* output) {
+double categoricalCrossEntropyPerInput(Matrix* target, int target_row, Matrix* output, int output_row) {
     // natural log
-    double loss = -1 * target->elements[arg_max(target)] * log(output->elements[arg_max(output)]);
+    int target_arg_max = arg_max_matrix_row(target, target_row);
+    int output_arg_max = arg_max_matrix_row(output, output_row);
+
+    double loss = -1 * target->get_element(target, target_row, target_arg_max) * log(output->get_element(output, output_row, output_arg_max));
 
     #ifdef DEBUG
-        char* targetVectorStr = vector_to_string(target);
-        char* outputVectorStr = vector_to_string(output);
-
         // log the inputs and the output
         log_debug(
             "Cross Entropy Inputs & Output: \n"
-            "\t\t\t\tTarget Vector: %s \n"
-            "\t\t\t\tOutput Vector: %s \n"
+            "\t\t\t\tTarget max element index: %d \n"
+            "\t\t\t\tOutput max element index: %d \n"
             "\t\t\t\tCross Entropy: %f \n", 
-            targetVectorStr, 
-            outputVectorStr, 
+            target_arg_max, 
+            output_arg_max, 
             loss
         );
-
-        free(targetVectorStr);
-        free(outputVectorStr);
     #endif
     // we don't care about the cases where target_i is 0 as 0 * log(output_i) will return 0 nonetheless
     return loss;
 }
+
 
 /* 
     * The categorical cross-entropy loss is exclusively used in multi-class classification tasks.
@@ -83,10 +75,7 @@ double categoricalCrossEntropyPerInput(Vector* target, Vector* output) {
 double categoricalCrossEntropyLoss(Matrix* targetOutputs, Matrix* outputs) {
     double sum = 0.0f;
     for(int i = 0; i < outputs->rows; i++) {
-        Vector* targetVector = targetOutputs->data[i];
-        Vector* outputVector = outputs->data[i];
-        
-        sum += categoricalCrossEntropyPerInput(targetVector, outputVector);
+        sum += categoricalCrossEntropyPerInput(targetOutputs, i, outputs, i);
     }
     #ifdef DEBUG
         // todo: change this back to output.rows
@@ -126,15 +115,25 @@ Vector* categoricalCrossEntropyLossDerivative(Vector* target, Vector* prediction
     return lossGrads;
 }
 
-const char* get_loss_function_name(const LossFunction* lossFunction) {
-    return lossFunction->name;
-}
-
 void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output) {
+    Vector* target_row = create_vector(target->columns);
+    Vector* prediction_row = create_vector(prediction->columns);
+
     for(int i = 0; i < target->rows; i++) {
-        Vector* derivatives = categoricalCrossEntropyLossDerivative(target->data[i], prediction->data[i]);
-        assert(loss_wrt_output->data[i]->size == derivatives->size);
-        memcpy(loss_wrt_output->data[i]->elements, derivatives->elements, derivatives->size * sizeof(double));
+        memcpy(target_row->elements, target->data->elements + (i * target->columns), target->columns * sizeof(double));
+        memcpy(prediction_row->elements, prediction->data->elements + (i * prediction->columns), prediction->columns * sizeof(double));
+        
+        Vector* derivatives = categoricalCrossEntropyLossDerivative(target_row, prediction_row);
+        assert(loss_wrt_output->columns == derivatives->size);
+        
+        memcpy(loss_wrt_output->data->elements + (i * loss_wrt_output->columns), derivatives->elements, derivatives->size * sizeof(double));
         free_vector(derivatives);
     }
+
+    free_vector(target_row);
+    free_vector(prediction_row);
+}
+
+const char* get_loss_function_name(const LossFunction* lossFunction) {
+    return lossFunction->name;
 }

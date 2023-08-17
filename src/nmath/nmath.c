@@ -273,10 +273,8 @@ Vector* vector_scalar_subtraction(const Vector* v1, double scalar) {
 }
 
 Vector* dot_product(Matrix* matrix, Vector* vector) {
-    if(matrix->columns != vector->size) {
-        log_error("%s", "Matrix's column size needs to be equal to the length of the vector to be able to calculate dot product! \n");
-        return NULL;
-    }
+    assert(matrix->columns == vector->size);
+
     Vector* result = create_vector(matrix->rows);
     //each column by each row
     for(int matrixRow = 0; matrixRow < matrix->rows; matrixRow++) {
@@ -289,6 +287,8 @@ Vector* dot_product(Matrix* matrix, Vector* vector) {
 
     return result;
 }
+
+// void dot_product_into(Matrix)
 
 // @TODO: I need a subrange struct to handle rows efficiently, as get row is too slow.
 void matrix_vector_addition(Matrix* m, Vector* v, Matrix* output) {
@@ -314,8 +314,21 @@ void matrix_vector_addition(Matrix* m, Vector* v, Matrix* output) {
     free_vector(result);
 }
 
-Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Vector* vector, int array_length) {
-    return NULL;
+Matrix* batch_matrix_vector_product(Matrix** matrix_arr, Matrix* matrix, int array_length) {
+    Matrix* result = create_matrix(matrix->rows, matrix_arr[0]->columns);
+
+    Vector* matrix_row = create_vector(matrix->columns);
+    
+    for(int i = 0; i < matrix->rows; i++) {
+        memcpy(matrix_row->elements, matrix->data->elements + (i * matrix->columns), matrix->columns * sizeof(double));
+
+        Vector* result_row = dot_product(matrix_arr[i], matrix_row);
+
+        memcpy(result->data->elements + (i * result->columns), result_row->elements, result_row->size * sizeof(double));
+        free_vector(result_row);
+    }
+
+    return result;
 }
 
 
