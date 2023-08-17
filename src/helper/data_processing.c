@@ -16,23 +16,23 @@ Data* load_csv(char* fileLocation) {
         return NULL;
     }
 
-    Data* data = malloc(sizeof(Data));
-    if (data == NULL) {
+    Data* csv_data = malloc(sizeof(Data));
+    if (csv_data == NULL) {
         printf("Failed to allocate memory for Data\n");
         fclose(file);
         return NULL;
     }
 
-    data->rows = getRowCount(fileLocation) - 1;
-    data->columns = getColumnCount(fileLocation);
+    csv_data->rows = getRowCount(fileLocation) - 1;
+    csv_data->columns = getColumnCount(fileLocation);
 
-    log_info("row count: %d", data->rows);
+    log_info("row count: %d", csv_data->rows);
 
-    data->data = create_matrix(data->rows, data->columns);
-    if (data->data == NULL) {
+    csv_data->data = create_matrix(csv_data->rows, csv_data->columns);
+    if (csv_data->data == NULL) {
         printf("Failed to create matrix\n");
         fclose(file);
-        free(data);
+        free(csv_data);
         return NULL;
     }
 
@@ -40,7 +40,7 @@ Data* load_csv(char* fileLocation) {
     int rowIndex = 0;
 
     // while there are lines to read
-    while (fgets(currentLine, sizeof(currentLine), file) != NULL  && rowIndex < data->rows + 1) {
+    while (fgets(currentLine, sizeof(currentLine), file) != NULL  && rowIndex < csv_data->rows + 1) {
 
         #ifdef DEBUG
         if (feof(file)) {
@@ -59,13 +59,12 @@ Data* load_csv(char* fileLocation) {
 
         // strtok separates a line by the delimiter and writes the remaining of the line into the address provided
         // we look a step ahead in the while loop but we assign that to the correct index of the matrix
-        while ((token = strtok_r(rest, DELIMITER, &rest)) && colIndex < data->columns) {
+        while ((token = strtok_r(rest, DELIMITER, &rest)) && colIndex < csv_data->columns) {
             if (rowIndex == 0) {
                 break;
             }
             double value = atof(token);
-
-            data->data->data[rowIndex - 1]->elements[colIndex] = value;
+            csv_data->data->set_element(csv_data->data, rowIndex - 1, colIndex, value);
 
             // log_debug("at column index: %d", colIndex);
             colIndex++;
@@ -76,15 +75,15 @@ Data* load_csv(char* fileLocation) {
 
     fclose(file);
    
-    return data;
+    return csv_data;
 }
 
 Vector* extractYValues(Matrix* matrix, int columnIndex) {
     Vector* yValues = create_vector(matrix->rows);
 
     for(int i = 0; i < yValues->size; i++) {
-        yValues->elements[i] = matrix->data[i]->elements[columnIndex];
-        matrix->data[i]->elements[columnIndex] = 0.0f;
+        yValues->elements[i] = matrix->get_element(matrix, i, columnIndex);
+        matrix->set_element(matrix, i, columnIndex, 0.0f);
     }
 
     return yValues;
@@ -139,13 +138,16 @@ void normalizeColumn_standard_deviation(Matrix* matrix, int columnIndex) {
     double standard_deviation = column_standard_deviation(matrix, columnIndex);
 
     for(int row = 0; row < matrix->rows; row++) {
-        matrix->data[row]->elements[columnIndex] = (matrix->data[row]->elements[columnIndex] - mean) / standard_deviation;
+        double value = (matrix->get_element(matrix, row, columnIndex) - mean) / standard_deviation;
+        matrix->set_element(matrix, row, columnIndex, value);
     }
 }
 
 void normalizeColumn_division(Matrix* matrix, int columnIndex, double toDivideBy) {
     for(int row = 0; row < matrix->rows; row++) {
-        matrix->data[row]->elements[columnIndex] = matrix->data[row]->elements[columnIndex] / toDivideBy;
+        double value = matrix->get_element(matrix, row, columnIndex) / toDivideBy;
+        matrix->set_element(matrix, row, columnIndex, value);
+        // matrix->data[row]->elements[columnIndex] = matrix->data[row]->elements[columnIndex] / toDivideBy;
     }
 }
 
@@ -185,9 +187,11 @@ Matrix* oneHotEncode(Vector* categories, int numberOfCategories) {
 
         for (int j = 0; j < numberOfCategories; j++) {
             if (j == category) {
-                oneHotEncoded->data[i]->elements[j] = 1.0;
+                oneHotEncoded->set_element(oneHotEncoded, i, j, 1.0f);
+                // oneHotEncoded->data[i]->elements[j] = 1.0;
             } else {
-                oneHotEncoded->data[i]->elements[j] = 0.0;  
+                oneHotEncoded->set_element(oneHotEncoded, i, j, 0.0f);
+                // oneHotEncoded->data[i]->elements[j] = 0.0;  
             }
         }
     }

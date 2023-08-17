@@ -11,6 +11,13 @@
 #define FLAT_INDEX(ROW, COL, WIDTH) (ROW * WIDTH + COL)
 #define ROW_START(ROW, WIDTH) (ROW * WIDTH)
 #define ROW_END(START_INDEX, WIDTH) (START_INDEX + WIDTH)
+
+typedef struct MatrixSubrange {
+    Vector* data;
+    int begin_index;
+    int end_index;
+} MatrixSubrange;
+
 typedef struct Matrix{
     int rows;
     int columns;
@@ -24,6 +31,7 @@ typedef struct Matrix{
 } Matrix;
 
 Matrix* create_matrix(const int rows, const int cols);
+Matrix** create_matrix_arr(int length);
 
 void set_element(struct Matrix* matrix, int row, int col, double value);
 double get_element(struct Matrix* matrix, int row, int col);
@@ -44,7 +52,7 @@ int is_square(const Matrix* m);
 void shuffle_rows(Matrix* matrix);
 
 Matrix* copy_matrix(const Matrix* source);
-
+void copy_matrix_into(const Matrix* source, Matrix* target);
 // not sure what to call this.
 // in the formulas for calculating determinants there is the step of working 
 // on a part of the matrix which is obtatined by excluding current row and current column

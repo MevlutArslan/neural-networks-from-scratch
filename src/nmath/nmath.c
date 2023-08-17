@@ -1,112 +1,97 @@
 #include "nmath.h"
-#include "math_tasks.h"
 #include "nmatrix.h"
 #include "nvector.h"
-#include <pthread.h>
+#include <string.h>
 
-Matrix* matrix_product(const Matrix* m1, const Matrix* m2) {
-    // m1.cols has to be equal m2.rows
-    if( m1->columns != m2->rows) {
-        log_error("%s", "Cannot Multiply M1 and M2. M1's column count \n does not match M2's row count! \n");
-        return NULL;
-    }
-    Matrix* m3 = create_matrix(m1->rows, m2->columns);
+Matrix* matrix_product(Matrix* m1, Matrix* m2) {
+    assert(m1->columns == m2->rows);
 
-    // multiply each row by all columns
-    //  [1, 2]   *  [1, 2, 3] => [1 * 1 + 2 * 4][1 * 2 + 2 * 5][1 * 3 + 2 * 6]
-    //  [3, 4]      [4, 5, 6]    [3 * 1 + 4 * 4][3 * 2 + 4 * 5][3 * 2 + 4 * 6]
-    for(int i = 0; i < m3->rows; i++){
-        for(int j = 0; j < m3->columns; j++) {
+    Matrix* output = create_matrix(m1->rows, m2->columns);
+
+    for(int i = 0; i < output->rows; i++){
+        for(int j = 0; j < output->columns; j++) {
             for(int k = 0; k < m1->columns; k++) {
-                m3->data[i]->elements[j] += m1->data[i]->elements[k] * m2->data[k]->elements[j];
+                double result = m1->get_element(m1, i, k) * m2->get_element(m2, k, j);
+                output->set_element(output, i, j, output->get_element(output, i, j) + result);
             }
         }
     }
 
-    return m3;
+    return output;
 }
 
+void matrix_product_into(Matrix* m1, Matrix* m2, Matrix* output) {
+    // m1.cols has to be equal m2.rows
+    assert(output != NULL);
+    assert( m1->columns == m2->rows);
 
-void matrix_product_inplace(const Matrix* m1, const Matrix* m2, Matrix* output) {
-    assert( m1->columns== m2->rows);
-
-    // multiply each row by all columns
+    // multiple row by each column
     //  [1, 2]   *  [1, 2, 3] => [1 * 1 + 2 * 4][1 * 2 + 2 * 5][1 * 3 + 2 * 6]
     //  [3, 4]      [4, 5, 6]    [3 * 1 + 4 * 4][3 * 2 + 4 * 5][3 * 2 + 4 * 6]
     for(int i = 0; i < output->rows; i++){
         for(int j = 0; j < output->columns; j++) {
             for(int k = 0; k < m1->columns; k++) {
-                output->data[i]->elements[j] += m1->data[i]->elements[k] * m2->data[k]->elements[j];
+                double result = m1->get_element(m1, i, k) * m2->get_element(m2, k, j);
+                output->set_element(output, i, j, output->get_element(output, i, j) + result);
             }
         }
     }
 }
 
-Matrix* matrix_addition(const Matrix* m1, const Matrix* m2) {
-    if(m1->rows != m2->rows || m1->columns != m2->columns) {
-        log_error("%s", "The sizes of the matrices do not match!");
-        return NULL;
-    }
 
-    Matrix* m3 = create_matrix(m1->rows, m1->columns);
-    for(int i = 0; i < m3->rows; i++){
-        for(int j = 0; j < m3->columns; j++) {
-            m3->data[i]->elements[j] = m1->data[i]->elements[j] + m2->data[i]->elements[j];
+void matrix_addition(Matrix* m1, Matrix* m2, Matrix* output) {
+    assert(output != NULL);
+    assert(m1->rows == m2->rows && m1->columns == m2->columns);
+
+    for(int i = 0; i < output->rows; i++){
+        for(int j = 0; j < output->columns; j++) {
+            double result = m1->get_element(m1, i, j) + m2->get_element(m2, i, j);
+            output->set_element(output, i, j, result);
         }
     }
-
-    return m3;
 }
 
-Matrix* matrix_subtraction(const Matrix* m1, const Matrix* m2) {
-    if(m1->rows != m2->rows || m1->columns != m2->columns) {
-        log_error("%s", "The sizes of the matrices do not match!");
-        return NULL;
-    }
+void matrix_subtraction(Matrix* m1, Matrix* m2, Matrix* output) {
+    assert(output != NULL);
+    assert(m1->rows == m2->rows && m1->columns == m2->columns);
 
-    Matrix* m3 = create_matrix(m1->rows, m1->columns);
-    for(int i = 0; i < m3->rows; i++){
-        for(int j = 0; j < m3->columns; j++) {
-            m3->data[i]->elements[j] = m1->data[i]->elements[j] - m2->data[i]->elements[j];
+    for(int i = 0; i < output->rows; i++){
+        for(int j = 0; j < output->columns; j++) {
+            double result = m1->get_element(m1, i, j) - m2->get_element(m2, i, j);
+            output->set_element(output, i, j, result);
         }
     }
-
-    return m3;
 }
 
-Matrix* matrix_multiplication(const Matrix* m1, const Matrix* m2){
-    if(m1->rows != m2->rows || m1->columns != m2->columns) {
-        log_error("%s", "The sizes of the matrices do not match!");
-        return NULL;
-    }
+void matrix_multiplication(Matrix* m1, Matrix* m2, Matrix* output){
+    assert(output != NULL);
+    assert(m1->rows == m2->rows && m1->columns == m2->columns);
 
-    Matrix* m3 = create_matrix(m1->rows, m1->columns);
-    for(int i = 0; i < m3->rows; i++){
-        for(int j = 0; j < m3->columns; j++) {
-            m3->data[i]->elements[j] = m1->data[i]->elements[j] * m2->data[i]->elements[j];
+    for(int i = 0; i < output->rows; i++){
+        for(int j = 0; j < output->columns; j++) {
+            double result = m1->get_element(m1, i, j) * m2->get_element(m2, i, j);
+            output->set_element(output, i, j, result);
         }
     }
-
-    return m3;
 }
 
-Matrix* matrix_transpose(const Matrix* m) {
+Matrix* matrix_transpose(Matrix* m) {
     // switch dimensions
     Matrix* m3 = create_matrix(m->columns, m->rows);
 
     for(int i = 0; i < m3->rows; i++){
         for(int j = 0; j < m3->columns; j++) {
-            m3->data[i]->elements[j] = m->data[j]->elements[i];
+            m3->set_element(m3, i, j, m->get_element(m, j, i));
         }
     }
 
     return m3;
 }
 
-Matrix* matrix_inverse(const Matrix* m) {
+Matrix* matrix_inverse(Matrix* m) {
     // M * inverse(M) = I
-    // inverse(M) = 1 / det(M) * (adjucate(M))
-    // adjucate(M) = C^T
+    // inverse(M) = 1 / det(M) * (adjugate(M))
+    // adjugate(M) = C^T
     // Cij = -1^i+j * MMij
 
     double det = matrix_determinant(m);
@@ -116,47 +101,47 @@ Matrix* matrix_inverse(const Matrix* m) {
         return NULL;
     }
 
-    Matrix* adjucateMatrix = matrix_adjucate(m);
+    Matrix* adjugateMatrix = matrix_adjugate(m);
 
-    Matrix* inverse = matrix_scalar_multiply(adjucateMatrix, 1.0 / det);
+    Matrix* inverse = matrix_scalar_multiply(adjugateMatrix, 1.0 / det);
 
-    free_matrix(adjucateMatrix);
+    free_matrix(adjugateMatrix);
 
     return inverse;
 }
 
-Matrix* matrix_adjucate(const Matrix* m) {
-    // adjucate = C^T
+Matrix* matrix_adjugate(Matrix* m) {
+    // adjugate = C^T
     return matrix_transpose(matrix_cofactor(m));
 }
 
 
-Matrix* matrix_cofactor(const Matrix* m){ 
+Matrix* matrix_cofactor(Matrix* m){ 
     // Cij = -1^i+j * MMij
     Matrix* c = create_matrix(m->rows, m->columns);
 
     for(int i = 0; i < c->rows; i++) {
         for(int j = 0; j < c->columns; j++){
-            c->data[i]->elements[j] = pow(-1, i+j) * matrix_determinant(generate_mini_matrix(m, i, j));
+            c->set_element(c, i, j, pow(-1, i+j) * matrix_determinant(generate_mini_matrix(m, i, j)));
         }
     }
 
     return c;
 }
 
-Matrix* matrix_scalar_multiply(const Matrix* m, const double scalar){
+Matrix* matrix_scalar_multiply(Matrix* m, double scalar){
     Matrix* result = create_matrix(m->rows, m->columns);
 
     for(int i = 0; i < result->rows; i++) {
         for(int j = 0; j < result->columns; j++) {
-            result->data[i]->elements[j] = m->data[i]->elements[j] * scalar;
+            result->set_element(result, i, j, m->get_element(m, i, j) * scalar);
         }
     }
 
     return result;
 }
 
-float matrix_determinant(const Matrix* m) {
+float matrix_determinant(Matrix* m) {
     if(is_square(m) == 0) {
         log_error("%s", "Cannot calculate the determinant of a non-square Matrix!");
         return 0;
@@ -164,11 +149,11 @@ float matrix_determinant(const Matrix* m) {
 
     // base cases
     if(m->rows == 1 && m->columns == 1) {
-        return m->data[0]->elements[0];
+        return m->get_element(m, 0, 0);
     }
 
     if(m->rows == 2 && m->columns == 2) {
-        return (m->data[0]->elements[0] * m->data[1]->elements[1]) - (m->data[0]->elements[1] * m->data[1]->elements[0]);
+        return (m->get_element(m, 0, 0) * m->get_element(m, 1, 1)) - (m->get_element(m, 0, 1) * m->get_element(m, 1, 0));
     }
     // det(M) = Sum(j = 1, n) -1^i+j * Mij * det(matrix excluding ith row and jth col)
     // j => random column
@@ -179,7 +164,7 @@ float matrix_determinant(const Matrix* m) {
     // Generate mini matrix
         Matrix* miniMatrix = generate_mini_matrix(m, i, j);
 
-        det += pow(-1, i + j) * m->data[i]->elements[j] * matrix_determinant(miniMatrix);
+        det += pow(-1, i + j) * m->get_element(m, i, j) * matrix_determinant(miniMatrix);
 
         free_matrix(miniMatrix);
     }
@@ -189,39 +174,70 @@ float matrix_determinant(const Matrix* m) {
 
 // VECTOR MATH OPERATIONS
 
-void vector_addition(const Vector* v1, const Vector* v2, Vector* output) {
-    assert(v1->size == v2->size && v1->size == output->size);
+Vector* vector_addition(const Vector* v1, const Vector* v2) {
+    if(v1->size != v2->size) {
+        log_error("%s", "Size's of the vectors need to match to add two vectors!");
+        return NULL;
+    }
 
+    Vector* v = create_vector(v1->size);
+    v->size = v1->size;
+    for(int i = 0; i < v->size; i++) {
+        v->elements[i] = v1->elements[i] + v2->elements[i];
+    }
+
+    return v;
+}
+
+void vector_addition_into(const Vector* v1, const Vector* v2, Vector* output) {
+    assert(output != NULL);
+    assert(v1->size == v2->size);
     for(int i = 0; i < output->size; i++) {
         output->elements[i] = v1->elements[i] + v2->elements[i];
     }
 }
 
-void vector_subtraction(const Vector* v1, const Vector* v2, Vector* output){
-    assert(v1->size == v2->size && v1->size == output->size);
-
-    for(int i = 0; i < output->size; i++) {
-        output->elements[i] = v1->elements[i] - v2->elements[i];
+Vector* vector_subtraction(const Vector* v1, const Vector* v2){
+    if(v1->size != v2->size) {
+        log_error("%s", "Size's of the vectors need to match to subtract two vectors!");
+        return NULL;
     }
+
+    Vector* v = create_vector(v1->size);
+
+    for(int i = 0; i < v->size; i++) {
+        v->elements[i] = v1->elements[i] - v2->elements[i];
+    }
+
+    return v;
 }
 
-void vector_multiplication(const Vector* v1, const Vector* v2, Vector* output){
-    assert(v1->size == v2->size && v1->size == output->size);
-
-    for(int i = 0; i < output->size; i++) {
-        output->elements[i] = v1->elements[i] * v2->elements[i];
+Vector* vector_multiplication(const Vector* v1, const Vector* v2){
+    if(v1->size != v2->size) {
+        log_error("%s", "Size's of the vectors need to match to add two vectors!");
+        return NULL;
     }
+
+    Vector* v = create_vector(v1->size);
+
+    for(int i = 0; i < v->size; i++) {
+        v->elements[i] = v1->elements[i] * v2->elements[i];
+    }
+
+    return v;
 }
 
-void vector_scalar_multiplication(const Vector* v1, double scalar, Vector* output) {
-    assert(v1->size == output->size);
+Vector* vector_scalar_multiplication(const Vector* v1, double scalar) {
+    Vector* v = create_vector(v1->size);
 
-    for(int i = 0; i < output->size; i++) {
-        output->elements[i] = v1->elements[i] * scalar;
+    for(int i = 0; i < v->size; i++) {
+        v->elements[i] = v1->elements[i] * scalar;
     }
+
+    return v;
 }
 
-double vector_product(const Vector* v1, const Vector* v2) {
+double vector_dot_product(const Vector* v1, const Vector* v2) {
     if(v1->size != v2->size) {
         log_error("%s", "Size's of the vectors need to match to calculate dot product! \n");
         return -1;
@@ -236,33 +252,7 @@ double vector_product(const Vector* v1, const Vector* v2) {
     return dot_product;
 }
 
-Matrix* vector_to_matrix(const Vector* vector) {
-    Matrix* matrix = create_matrix(vector->size, 1);
-    
-    for (int i = 0; i < vector->size; i++) {
-        matrix->data[i]->elements[0] = vector->elements[i];
-    }
-    
-    return matrix;
-}
-
-
-Vector* matrix_to_vector(Matrix* matrix) {
-    Vector* vector = create_vector(matrix->rows * matrix->columns);
-   
-    int vectorIndex = 0;
-
-    for (int row = 0; row < matrix->rows; row++) {
-        for (int col = 0; col < matrix->columns; col++) {
-            vector->elements[vectorIndex] = matrix->data[row]->elements[col];
-            vectorIndex++;
-        }
-    }
-
-    return vector;
-}
-
-double sum_vector(const Vector* vector) {
+double sum_vector(Vector* vector) {
     double sum = 0;
 
     for(int i = 0; i < vector->size; i++) {
@@ -272,40 +262,64 @@ double sum_vector(const Vector* vector) {
     return sum;
 }
 
-void vector_scalar_subtraction(const Vector* v1, double scalar, Vector* output) {
-    assert(v1->size == output->size);
+Vector* vector_scalar_subtraction(const Vector* v1, double scalar) {
+    Vector* v = create_vector(v1->size);
 
-    for(int i = 0; i < output->size; i++) {
-        output->elements[i] = v1->elements[i] - scalar;
+    for(int i = 0; i < v->size; i++) {
+        v->elements[i] = v1->elements[i] - scalar;
     }
+
+    return v;
 }
 
-void dot_product(Matrix* matrix, Vector* vector, Vector* output) {
-    assert(matrix->columns == vector->size);
-    
+Vector* dot_product(Matrix* matrix, Vector* vector) {
+    if(matrix->columns != vector->size) {
+        log_error("%s", "Matrix's column size needs to be equal to the length of the vector to be able to calculate dot product! \n");
+        return NULL;
+    }
+    Vector* result = create_vector(matrix->rows);
     //each column by each row
     for(int matrixRow = 0; matrixRow < matrix->rows; matrixRow++) {
         double sum = 0.0;
         for(int matrixColumn = 0; matrixColumn < matrix->columns; matrixColumn++) {
-            sum += matrix->data[matrixRow]->elements[matrixColumn] * vector->elements[matrixColumn];
+            sum += matrix->get_element(matrix, matrixRow, matrixColumn) * vector->elements[matrixColumn];
         }
-        output->elements[matrixRow] = sum;
+        result->elements[matrixRow] = sum;
     }
 
+    return result;
 }
 
-Matrix* matrix_vector_addition(Matrix* matrix, Vector* vector) {
-    assert(matrix != NULL && vector != NULL);
-    Matrix* result_matrix = create_matrix(matrix->rows, matrix->columns);
+// @TODO: I need a subrange struct to handle rows efficiently, as get row is too slow.
+void matrix_vector_addition(Matrix* m, Vector* v, Matrix* output) {
+    assert(output != NULL);
+    assert(m->columns == v->size);
 
-    for(int i = 0; i < matrix->rows; i++) {
-        vector_addition(matrix->data[i], vector, result_matrix->data[i]);
+    Vector* row_data = create_vector(m->columns);
+    Vector* result = create_vector(m->columns);
+
+    for (int i = 0; i < m->rows; i++) {
+        // Copy into row_data
+        memcpy(row_data->elements, m->data->elements + (i * m->columns), m->columns * sizeof(double));
+
+        // Perform vector addition
+        vector_addition_into(row_data, v, result);
+
+        // Copy result into output
+        memcpy(output->data->elements + i * m->columns, result->elements, output->columns * sizeof(double));
     }
 
-    return result_matrix;
+    // Clean up
+    free_vector(row_data);
+    free_vector(result);
 }
 
-int arg_max(Vector* output) {
+Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Vector* vector, int array_length) {
+    return NULL;
+}
+
+
+int arg_max_vector(Vector* output) {
     int maxIndex = 0;
     double max = __DBL_MIN__;
     for(int i = 0; i < output->size; i++) {
@@ -318,11 +332,30 @@ int arg_max(Vector* output) {
     return maxIndex;
 }
 
+int arg_max_matrix_row(Matrix* matrix, int row_index) {
+    // Calculate starting index for the row in the flattened matrix.
+    int row_start_index = ROW_START(row_index, matrix->columns);
+
+    // Calculate the ending index for the row, which is starting index plus the total columns.
+    int row_end_index = ROW_END(row_start_index, matrix->columns);
+
+    int maxIndex = 0;
+    double max = __DBL_MIN__;
+    for(int i = row_start_index; i < row_end_index; i++) {
+        if(matrix->data->elements[i] > max) {
+            max = matrix->data->elements[i];
+            maxIndex = i - row_start_index;
+        }
+    }
+    
+    return maxIndex;
+}
+
 double column_mean(Matrix* matrix, int columnIndex) {
     double sum = 0.0f;
 
     for(int row = 0; row < matrix->rows; row++) {
-        sum += matrix->data[row]->elements[columnIndex];
+        sum += matrix->get_element(matrix, row, columnIndex);
     }
 
     return sum / matrix->rows;
@@ -333,46 +366,8 @@ double column_standard_deviation(Matrix* matrix, int columnIndex) {
     double sum_squared_diff = 0.0;
 
     for(int row = 0; row < matrix->rows; row++) {
-        sum_squared_diff += pow(matrix->data[row]->elements[columnIndex] - mean, 2);
+        sum_squared_diff += pow(matrix->get_element(matrix, row, columnIndex) - mean, 2);
     }
 
     return sqrt(sum_squared_diff / matrix->rows);
 }
-
-Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
-    Matrix** result_arr = create_matrix_arr(size);
-
-    for(int i = 0; i < size; i++) {
-        result_arr[i] = matrix_product(matrix_arr[i], matrix);
-    }
-
-    return result_arr;
-}
-
-Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
-    Matrix* result = create_matrix(matrix->rows, matrix_arr[0]->columns);
-
-    for(int i = 0; i < matrix->rows; i++) {
-        dot_product(matrix_arr[i], matrix->data[i], result->data[i]);
-    }
-
-    return result;
-}
-
-// PARALLELIZED CODE
-
-void parallelized_dot_product(void* args) {
-    struct MatrixVectorOperation* data = (struct MatrixVectorOperation*) args;
-    assert(data->matrix != NULL && data->vector != NULL && data->output != NULL);
-    assert(data->matrix->columns == data->vector->size);
-
-    int beginIndex = data->begin_index;
-    int endIndex = data->end_index;
-
-    for(int i = beginIndex; i < endIndex; i++) {
-        for(int j = 0; j < data->matrix->columns; j++) {
-            data->output->elements[i] += data->matrix->data[i]->elements[j] * data->vector->elements[j];
-        }
-    }
-}
-

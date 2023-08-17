@@ -8,19 +8,19 @@ Vector* create_vector(int size) {
     return vector;
 }
 
-Vector** create_vector_arr(int size) {
-    Vector** vector = (Vector**) malloc(size * sizeof(Vector*));
-    for(int i = 0; i < size; i++) {
-        vector[i] = NULL;
+Vector** create_vector_arr(int length) {
+    Vector** array = (Vector**) malloc(length * sizeof(Vector*));
+
+    for(int i = 0; i < length; i++) {
+        array[i] = NULL;
     }
-    return vector;
+
+    return array;
 }
 
 void free_vector(Vector* vector) {
-    if(vector == NULL) {
-        return;
-    }
     free(vector->elements);
+    free(vector);
 }
 
 void fill_vector_random(Vector* vector, double min, double max) {
@@ -68,10 +68,15 @@ Vector* copy_vector(const Vector* vector) {
 }
 
 Vector* slice_vector(const Vector* vector, int beginIndex, int endIndex) {
-    int newSize = endIndex - beginIndex ;
+    if(endIndex > vector->size) {
+        log_error("End index #%d is out of bounds!", endIndex);
+        return NULL;
+    }
+
+    int newSize = endIndex - beginIndex;
     Vector* newVector = create_vector(newSize);
 
-    for (int i = beginIndex, j = 0; i <= endIndex; i++, j++) {
+    for (int i = beginIndex, j = 0; i < endIndex; i++, j++) {
         newVector->elements[j] = vector->elements[i];
     }
 

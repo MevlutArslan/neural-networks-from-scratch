@@ -1,6 +1,8 @@
 #include "nmatrix.h"
 #include "../../libraries/logger/log.h"
 #include "nvector.h"
+#include <assert.h>
+#include <string.h>
 
 Matrix* create_matrix(const int rows, const int cols) {
     Matrix* matrix = malloc(sizeof(Matrix));
@@ -17,6 +19,14 @@ Matrix* create_matrix(const int rows, const int cols) {
     matrix->data = create_vector(rows * cols);
 
     return matrix;
+}
+
+Matrix** create_matrix_arr(int length) {
+    Matrix** array = (Matrix**) malloc(length * sizeof(Matrix*));
+    for(int i = 0; i < length; i++) {
+        array[i] = NULL;
+    }
+    return array;
 }
 
 void set_element(struct Matrix* matrix, int row, int col, double value) {
@@ -78,6 +88,8 @@ void fill_matrix(Matrix* matrix, double value) {
 }
 
 void free_matrix(Matrix* matrix){
+    if(matrix == NULL) return;
+    
     free_vector(matrix->data);
     free(matrix);
 }
@@ -93,6 +105,10 @@ char* matrix_to_string(const Matrix* matrix) {
     // Start of the matrix
     strcat(str, "\t\t\t\t");
     strcat(str, "[");
+    
+    // Initialize the string with a null-terminated character to ensure we start with an empty string
+    str[0] = '\0';
+
     // Loop through each row
     for (int i = 0; i < matrix->rows; i++) {
         if (i > 0) {
@@ -152,10 +168,9 @@ int is_square(const Matrix* m){
 
 void shuffle_rows(Matrix* matrix) {
     int numberOfRows = matrix->rows;
-    int numberOfCols = matrix->columns;
 
     // Step 1: Initialize the permutation array with the original order
-    int* permutation = (int*)malloc(numberOfRows * sizeof(int));
+    int* permutation = malloc(numberOfRows * sizeof(int));
     for (int i = 0; i < numberOfRows; i++) {
         permutation[i] = i;
     }
@@ -171,27 +186,23 @@ void shuffle_rows(Matrix* matrix) {
         permutation[j] = temp;
     }
 
-    // Create a new matrix to hold the shuffled rows
-    Matrix* shuffledMatrix = create_matrix(numberOfRows, numberOfCols);
-
-    // Fill the new matrix with rows in the order specified by the permutation
+    // Shuffle the rows directly within the original matrix
     for (int i = 0; i < numberOfRows; i++) {
-        for (int j = 0; j < numberOfCols; j++) {
-            double value = matrix->get_element(matrix, permutation[i], j);
-            shuffledMatrix->set_element(shuffledMatrix, i, j, value);
+        if (i != permutation[i]) {
+            double* tempRow = malloc(sizeof(double) * matrix->columns);
+            memcpy(tempRow, matrix->data->elements + (i * matrix->columns), matrix->columns * sizeof(double));
+
+            // matrix->data[i]->elements = matrix->data[permutation[i]]->elements;
+            memcpy( matrix->data->elements + (i * matrix->columns), matrix->data->elements + (permutation[i] * matrix->columns), matrix->columns * sizeof(double));
+
+            // matrix->data[permutation[i]]->elements = tempRow;
+            memcpy(matrix->data->elements + (permutation[i] * matrix->columns), tempRow, matrix->columns * sizeof(double));
+
+            free(tempRow);
         }
     }
 
-    // Replace the old matrix data with the shuffled data
-    for (int i = 0; i < numberOfRows; i++) {
-        for (int j = 0; j < numberOfCols; j++) {
-            double value = shuffledMatrix->get_element(shuffledMatrix, i, j);
-            matrix->set_element(matrix, i, j, value);
-        }
-    }
-
-    // Clean up
-    free_matrix(shuffledMatrix);
+    // // Clean up
     free(permutation);
 }
 
@@ -224,12 +235,21 @@ Matrix* generate_mini_matrix(const Matrix* m, int excludeRow, int excludeColumn)
 
 Matrix* copy_matrix(const Matrix* source) {
 
-  Matrix* matrix = create_matrix(source->rows, source->columns);
+  Matrix* matrix = malloc(sizeof(Matrix));
   
+  memcpy(matrix, source, sizeof(Matrix));
+  
+  matrix->data = create_vector(source->rows * source->columns);
   memcpy(matrix->data, source->data, 
          sizeof(double) * source->rows * source->columns);
 
   return matrix;
+}
+
+void copy_matrix_into(const Matrix* source, Matrix* target) {
+    assert(source->rows == target->rows && source->columns == target->columns);
+
+    memcpy(target->data->elements, source->data->elements, source->rows * source->columns * sizeof(double));
 }
 
 Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, int endCol) {

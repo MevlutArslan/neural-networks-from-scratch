@@ -74,7 +74,7 @@ void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* 
             // Generate a random number between -limit and limit
             double rand_num = (double)rand() / RAND_MAX; // This generates a random number between 0 and 1
             rand_num = rand_num * 2 * limit - limit; // This shifts the range to [-limit, limit]
-            weights->data[i]->elements[j] = rand_num;
+            weights->set_element(weights, i, j, rand_num);
         }
     }
 }

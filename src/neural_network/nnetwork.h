@@ -62,7 +62,9 @@ typedef struct {
     ActivationFunction* activationFunctions;  // Array of activation functions for each layer
     double learningRate;         // Learning rate for training the network
     LossFunction* lossFunction;
-    int inputSize;
+
+    int num_features;
+    int num_rows;
 
     OptimizationConfig* optimizationConfig;
 
