@@ -23,6 +23,24 @@ While the library's performance and production-readiness are not the main focus,
 
 My recent refactoring efforts have significantly reduced memory leaks from around 11 million bytes to 70,000 bytes during the execution of the Wine Recognition data model. However, the remaining leaks seem to stem from the logging library and a few other unknown sources. Therefore, please exercise caution when using very large datasets, as they may run out of memory.
 
+
+## Performance
+The version on the main branch does not come with any performance optimizations, its priority was/is readability and understandability. If you want a more performant version or want to see how neural networks can be optimized take a look at the branch 'optimized-branch'.
+
+* It only supports batch processing.
+
+It has the following optimizations:
+1. Optimized Memory access
+2. Refactored Matrix struct to allow for easier integration of CUDA.
+3. A thread pool for utilizing POSIX threads and reducing the overhead that comes with thread creation.
+4. CUDA support (Currently working on it).
+
+Here is the average time it takes to run wine-categorization model on different versions:
+1. Non-optimized sequential version: 39ms.
+2. Non-optimized batched version: 85ms.
+3. Optimized but not parallelized version: 56ms.
+4. Optimized and parallelized version: xx (working on it).
+
 ## Example Models
 
 For reference, I've included two example models under 'src/example_networks':
