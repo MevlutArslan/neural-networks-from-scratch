@@ -15,14 +15,14 @@
     
 // }
 typedef struct {
-    int shouldUseGradientClipping;
-    double gradientClippingLowerBound;
-    double gradientClippingUpperBound;
+    int use_gradient_clipping;
+    double gradient_clip_lower_bound;
+    double gradient_clip_upper_bound;
 
-    int shouldUseLearningRateDecay;
-    double learningRateDecayAmount;
+    int use_learning_rate_decay;
+    double learning_rate_decay_amount;
 
-    int shouldUseMomentum;
+    int use_momentum;
     double momentum;
 
     enum OPTIMIZER optimizer;
@@ -31,26 +31,25 @@ typedef struct {
     double rho;
 
     // ADAM
-    double beta1;
-    double beta2;
+    double adam_beta1;
+    double adam_beta2;
 } OptimizationConfig;
 
 typedef struct NNetwork{
-    int layerCount;
+    int num_layers;
     Layer** layers;
 
-    LossFunction* lossFunction;
+    LossFunction* loss_fn;
     double loss;
     double accuracy;
     
-    void (*optimizer)(struct NNetwork*, double);
-    OptimizationConfig* optimizationConfig;
+    void (*optimization_algorithm)(struct NNetwork*, double);
+    OptimizationConfig* optimization_config;
+    int training_epoch;
 
-    int currentStep;
+    Matrix** weighted_sums;
 
-    Matrix** weightedsums;
-
-    Matrix** output; // Stores the output matrices for each layer. It's a 2D array where each row represents a layer, and each column represents the output of that layer.
+    Matrix** layer_outputs; // Stores the output matrices for each layer. It's a 2D array where each row represents a layer, and each column represents the output of that layer.
 
     Matrix** weight_gradients;
     Vector** bias_gradients;
@@ -58,30 +57,31 @@ typedef struct NNetwork{
 
 typedef struct {
     int numLayers;               // Number of layers in the network
-    int* neuronsPerLayer;        // Array of number of neurons per layer
-    ActivationFunction* activationFunctions;  // Array of activation functions for each layer
-    double learningRate;         // Learning rate for training the network
-    LossFunction* lossFunction;
+    int* neurons_per_layer;        // Array of number of neurons per layer
+    ActivationFunction* activation_fns;  // Array of activation functions for each layer
+    double learning_rate;         // Learning rate for training the network
+    LossFunction* loss_fn;
 
     int num_features;
     int num_rows;
 
-    OptimizationConfig* optimizationConfig;
+    OptimizationConfig* optimization_config;
 
-    Vector* weightLambdas;
-    Vector* biasLambdas;
+    // For l1 & l2 regularization
+    Vector* weight_lambdas;
+    Vector* bias_lambdas;
 } NetworkConfig;
 
 NNetwork* create_network(const NetworkConfig* config);
+void init_network_memory(NNetwork* network, int num_rows);
+
 void free_network(NNetwork* network);
 void free_network_config(NetworkConfig* config);
 
-void forward_pass_row_by_row(NNetwork* network, Vector* input, Vector* output);
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix);
 
 void calculate_loss(NNetwork* network, Matrix* yValues);
 
-void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* yValues);
 void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_values);
 
 void dump_network_config(NNetwork* network);

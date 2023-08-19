@@ -25,80 +25,83 @@
 */
 NNetwork* create_network(const NetworkConfig* config) {
     NNetwork* network = malloc(sizeof(NNetwork));
-    network->layerCount = config->numLayers;
-    network->layers = malloc(network->layerCount * sizeof(Layer));
+    network->num_layers = config->numLayers;
+    network->layers = malloc(network->num_layers * sizeof(Layer));
 
    for (int i = 0; i < config->numLayers; i++) {
         LayerConfig layerConfig;
-        layerConfig.inputSize = i == 0 ? config->num_features : network->layers[i - 1]->neuronCount;
-        layerConfig.neuronCount = config->neuronsPerLayer[i];
-        layerConfig.activationFunction = &config->activationFunctions[i];
+        layerConfig.num_inputs = i == 0 ? config->num_features : network->layers[i - 1]->num_neurons;
+        layerConfig.num_neurons = config->neurons_per_layer[i];
+        layerConfig.activation_fn = &config->activation_fns[i];
 
         if(i < config->numLayers - 1){
             int use_regularization = 0;
 
-            if(config->weightLambdas != NULL && config->weightLambdas->size > 0){
+            if(config->weight_lambdas != NULL && config->weight_lambdas->size > 0){
                 use_regularization = 1;
-                layerConfig.weightLambda = config->weightLambdas->elements[i]; 
+                layerConfig.weight_lambda = config->weight_lambdas->elements[i]; 
             }else {
-                layerConfig.weightLambda = 0;
+                layerConfig.weight_lambda = 0;
             }
 
-            if(config->biasLambdas != NULL && config->biasLambdas->size > 0) {
+            if(config->bias_lambdas != NULL && config->bias_lambdas->size > 0) {
                 use_regularization = 1;
-                layerConfig.biasLambda = config->biasLambdas->elements[i];
+                layerConfig.bias_lambda = config->bias_lambdas->elements[i];
             }else {
-                layerConfig.biasLambda = 0;
+                layerConfig.bias_lambda = 0;
             }
 
-            log_debug("should use regularization? %d", use_regularization);
-            layerConfig.shouldUseRegularization = use_regularization;
+            layerConfig.use_regularization = use_regularization;
         }
         Layer* layer = create_layer(&layerConfig);
         network->layers[i] = layer;
     }
     
 
-    network->lossFunction = config->lossFunction;
+    network->loss_fn = config->loss_fn;
 
-    network->optimizationConfig = config->optimizationConfig;
+    network->optimization_config = config->optimization_config;
 
     network->loss = 0.0f;
     network->accuracy = 0.0f;
     
-    switch (network->optimizationConfig->optimizer) {
+    switch (network->optimization_config->optimizer) {
         case SGD:
-            network->optimizer = sgd;
+            network->optimization_algorithm = sgd;
             break;
         case ADAGRAD:
-            network->optimizer = adagrad;
+            network->optimization_algorithm = adagrad;
             break;
         case RMS_PROP:
-            network->optimizer = rms_prop;
+            network->optimization_algorithm = rms_prop;
             break;
         case ADAM:
-            network->optimizer = adam;
+            network->optimization_algorithm = adam;
             break;
         default:
             break;
     }
-    network->output = create_matrix_arr(network->layerCount);
-    network->weightedsums = create_matrix_arr(network->layerCount);
-    network->weight_gradients = create_matrix_arr(network->layerCount);
-    network->bias_gradients = create_vector_arr(network->layerCount);
-
-    for(int i = 0; i < network->layerCount; i++) {
-        // I allocate memory for vectors using calloc so they are already initialized to zeroes!
-        network->output[i] = create_matrix(config->num_rows, network->layers[i]->neuronCount);
-        network->weightedsums[i] = create_matrix(config->num_rows, network->layers[i]->neuronCount);
-        network->weight_gradients[i] = create_matrix(network->layers[i]->weights->rows, network->layers[i]->weights->columns);
-        network->bias_gradients[i] = create_vector(network->layers[i]->biases->size);
-    }
-
+    init_network_memory(network, config->num_rows);
+    
     log_info("%s", "Created Network:");
     dump_network_config(network);
 
     return network;
+}
+
+void init_network_memory(NNetwork *network, int num_rows) {
+    network->layer_outputs = create_matrix_arr(network->num_layers);
+    network->weighted_sums = create_matrix_arr(network->num_layers);
+    network->weight_gradients = create_matrix_arr(network->num_layers);
+    network->bias_gradients = create_vector_arr(network->num_layers);
+
+    for(int i = 0; i < network->num_layers; i++) {
+        // I allocate memory for vectors using calloc so they are already initialized to zeroes!
+        network->layer_outputs[i] = create_matrix(num_rows, network->layers[i]->num_neurons);
+        network->weighted_sums[i] = create_matrix(num_rows, network->layers[i]->num_neurons);
+        network->weight_gradients[i] = create_matrix(network->layers[i]->weights->rows, network->layers[i]->weights->columns);
+        network->bias_gradients[i] = create_vector(network->layers[i]->biases->size);
+    }
 }
 /*
     This method performs the forward pass of a neural network using a batched processing approach. 
@@ -107,28 +110,31 @@ NNetwork* create_network(const NetworkConfig* config) {
     Use this only if your computer can support multithreading and/or CUDA.
 */
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix) { 
-    for(int i = 0; i < network->layerCount; i++) {
+    for(int layer_index = 0; layer_index < network->num_layers; layer_index++) {
 
-        Layer* current_layer = network->layers[i];
+        Layer* current_layer = network->layers[layer_index];
         Matrix* transposed_weights = matrix_transpose(current_layer->weights);
         
         // do not free this, it points to the original input matrix for the first layer!
-        Matrix* layer_input = i == 0 ? input_matrix : network->output[i - 1];
+        Matrix* layer_input = layer_index == 0 ? input_matrix : network->layer_outputs[layer_index - 1];
 
         Matrix* product_result = matrix_product(layer_input, transposed_weights);
         // log_info("product result for first layer: %s", matrix_to_string(product));
         
-        matrix_vector_addition(product_result, current_layer->biases, network->weightedsums[i]);
+        matrix_vector_addition(product_result, current_layer->biases, network->weighted_sums[layer_index]);
         // log_info("weighted sums: %s", matrix_to_string(network->weightedsums[i]));
 
 
-        copy_matrix_into(network->weightedsums[i], network->output[i]);
+        copy_matrix_into(network->weighted_sums[layer_index], network->layer_outputs[layer_index]);
         // log_info("output: %s", matrix_to_string(network->output[i]));
 
-        if(i == network->layerCount - 1) {
-            softmax_matrix(network->output[i]);
+        // @TODO
+        // current_layer->activationFunction->activation()
+
+        if(layer_index == network->num_layers - 1) {
+            softmax_matrix(network->layer_outputs[layer_index]);
         }else {
-            leakyRelu(network->output[i]->data);
+            leakyRelu(network->layer_outputs[layer_index]->data);
         }
 
         free_matrix(product_result);
@@ -137,21 +143,21 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
 }
 
 void calculate_loss(NNetwork* network, Matrix* yValues) {
-    network->loss = categoricalCrossEntropyLoss(yValues, network->output[network->layerCount - 1]);
+    network->loss = categoricalCrossEntropyLoss(yValues, network->layer_outputs[network->num_layers - 1]);
 
-    network->accuracy = accuracy(yValues, network->output[network->layerCount - 1]);
+    network->accuracy = accuracy(yValues, network->layer_outputs[network->num_layers - 1]);
 }
 
 void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_values) {
     #ifdef DEBUG
         char* debug_str;
     #endif
-    int num_layers = network->layerCount;
+    int num_layers = network->num_layers;
     Matrix** loss_wrt_weightedsum = create_matrix_arr(num_layers);
 
     // -------------OUTPUT LAYER-------------
     int layer_index = num_layers - 1;
-    Matrix* output = network->output[layer_index];
+    Matrix* output = network->layer_outputs[layer_index];
 
     // I can distribute the work amongst the threads in the thread pool for all three operations.
     Matrix* loss_wrt_output = create_matrix(y_values->rows, y_values->columns);
@@ -177,7 +183,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     if(layer_index == 0) {
         weightedsum_wrt_weight = input_matrix;
     }else {
-        weightedsum_wrt_weight = network->output[layer_index - 1];
+        weightedsum_wrt_weight = network->layer_outputs[layer_index - 1];
     }
     
     #ifdef DEBUG
@@ -241,7 +247,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         #endif
 
 
-        Matrix* output_wrt_weightedsums = leakyRelu_derivative_matrix(network->weightedsums[layer_index]);
+        Matrix* output_wrt_weightedsums = leakyRelu_derivative_matrix(network->weighted_sums[layer_index]);
         #ifdef DEBUG
             char* debug_str = matrix_to_string(output_wrt_weightedsums);
             log_info("output wrt wsum for layer #%d: %s", layer_index, debug_str);
@@ -264,7 +270,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         if (layer_index == 0) {
             weightedsum_wrt_weight = input_matrix;
         } else {
-            weightedsum_wrt_weight = network->output[layer_index - 1];
+            weightedsum_wrt_weight = network->layer_outputs[layer_index - 1];
         }
 
         // log_info("weightedsum wrt weights for layer #%d: %s", layer_index, matrix_to_string(weightedsum_wrt_weight));
@@ -362,7 +368,7 @@ void dump_network_config(NNetwork* network) {
         "cross_entropy" // TODO: Turn into const values
     );
 
-    for(int i = 0; i < network->layerCount; i++) {
+    for(int i = 0; i < network->num_layers; i++) {
         Layer* layer = network->layers[i];
         sprintf(
             json_output + strlen(json_output), // add to the end of the current string
@@ -374,9 +380,9 @@ void dump_network_config(NNetwork* network) {
             "\t\t\t\t\"Biases in Range\": [%f, %f]\n"
             "\t\t\t\t\"Activation Function\": %s \n" // TODO: Actually read this from the layer struct
             "\t\t\t}\n%s", // add comma for all but last layer
-            i, layer->neuronCount, layer->weights->columns, "he initializer", -.5, .5, 
-            i < network->layerCount - 1 ? "leaky relu" : "softmax",
-            (i == network->layerCount - 1) ? "" : ",\n"
+            i, layer->num_neurons, layer->weights->columns, "he initializer", -.5, .5, 
+            i < network->num_layers - 1 ? "leaky relu" : "softmax",
+            (i == network->num_layers - 1) ? "" : ",\n"
         );
     }
 
@@ -385,36 +391,36 @@ void dump_network_config(NNetwork* network) {
         "\t}\n"
     );
 
-    OptimizationConfig* opt_config = network->optimizationConfig/* get your OptimizationConfig object here */;
+    OptimizationConfig* opt_config = network->optimization_config/* get your OptimizationConfig object here */;
 
     sprintf(
         json_output + strlen(json_output),
         "\t\t\"Optimizer Config\": {\n"
-        "\t\t\t\"shouldUseGradientClipping\": %d,\n"
-        "\t\t\t\"gradientClippingLowerBound\": %f,\n"
-        "\t\t\t\"gradientClippingUpperBound\": %f,\n"
-        "\t\t\t\"shouldUseLearningRateDecay\": %d,\n"
-        "\t\t\t\"learningRateDecayAmount\": %f,\n"
-        "\t\t\t\"shouldUseMomentum\": %d,\n"
+        "\t\t\t\"use_gradient_clipping\": %d,\n"
+        "\t\t\t\"gradient_clip_lower_bound\": %f,\n"
+        "\t\t\t\"gradient_clip_upper_bound\": %f,\n"
+        "\t\t\t\"use_learning_rate_decay\": %d,\n"
+        "\t\t\t\"learning_rate_decay_amount\": %f,\n"
+        "\t\t\t\"use_momentum\": %d,\n"
         "\t\t\t\"momentum\": %f,\n"
         "\t\t\t\"optimizer\": %s,\n"
         "\t\t\t\"epsilon\": %f,\n"
         "\t\t\t\"rho\": %f,\n"
-        "\t\t\t\"beta1\": %f,\n"
-        "\t\t\t\"beta2\": %f\n"
+        "\t\t\t\"adam_beta1\": %f,\n"
+        "\t\t\t\"adam_beta2\": %f\n"
         "\t\t}\n", // add a comma as this might not be the last item in its parent object
-        opt_config->shouldUseGradientClipping,
-        opt_config->shouldUseGradientClipping == 1 ? opt_config->gradientClippingLowerBound : 0,
-        opt_config->shouldUseGradientClipping == 1 ? opt_config->gradientClippingUpperBound : 0,
-        opt_config->shouldUseLearningRateDecay,
-        opt_config->learningRateDecayAmount,
-        opt_config->shouldUseMomentum,
+        opt_config->use_gradient_clipping,
+        opt_config->use_gradient_clipping == 1 ? opt_config->gradient_clip_lower_bound : 0,
+        opt_config->use_gradient_clipping == 1 ? opt_config->gradient_clip_upper_bound : 0,
+        opt_config->use_learning_rate_decay,
+        opt_config->learning_rate_decay_amount,
+        opt_config->use_momentum,
         opt_config->momentum,
         get_optimizer_name(opt_config->optimizer),
         opt_config->epsilon,
         opt_config->rho,
-        opt_config->beta1,
-        opt_config->beta2
+        opt_config->adam_beta1,
+        opt_config->adam_beta2
     );
 
     log_info("%s", json_output);
@@ -484,37 +490,37 @@ void free_network(NNetwork* network) {
     }
 
     // Free the layers
-    for (int i = 0; i < network->layerCount; i++) {
+    for (int i = 0; i < network->num_layers; i++) {
         free_layer(network->layers[i]);
 
         free_matrix(network->weight_gradients[i]);
         
         free_vector(network->bias_gradients[i]);
 
-        free_matrix(network->weightedsums[i]);
+        free_matrix(network->weighted_sums[i]);
 
-        free_matrix(network->output[i]);
+        free_matrix(network->layer_outputs[i]);
     }
 
-    free(network->weightedsums);
-    free(network->output);
+    free(network->weighted_sums);
+    free(network->layer_outputs);
     free(network->layers);
     free(network->weight_gradients);
     free(network->bias_gradients);
     
     // Free the loss function
-    free(network->lossFunction);
-    free(network->optimizationConfig);
+    free(network->loss_fn);
+    free(network->optimization_config);
 
     // Finally, free the network itself
     free(network);
 }
 
 void free_network_config(NetworkConfig* config) { 
-    free(config->neuronsPerLayer);
+    free(config->neurons_per_layer);
 
-    free_vector(config->weightLambdas);
-    free_vector(config->biasLambdas);
+    free_vector(config->weight_lambdas);
+    free_vector(config->bias_lambdas);
 }
 
 char* serialize_optimization_config(OptimizationConfig* config) {
@@ -523,13 +529,13 @@ char* serialize_optimization_config(OptimizationConfig* config) {
         return NULL;
     }
 
-    if(config->shouldUseGradientClipping == 0) {
-        config->gradientClippingLowerBound = 0.0f;
-        config->gradientClippingUpperBound = 0.0f;
+    if(config->use_gradient_clipping == 0) {
+        config->gradient_clip_lower_bound = 0.0f;
+        config->gradient_clip_upper_bound = 0.0f;
     }
 
     if(config->optimizer != SGD){
-        config->shouldUseMomentum = 0;
+        config->use_momentum = 0;
         config->momentum = 0.0f;
     }
     
@@ -538,24 +544,24 @@ char* serialize_optimization_config(OptimizationConfig* config) {
     }
 
     if(config->optimizer != ADAM) {
-        config->beta1 = 0.0f;
-        config->beta2 = 0.0f;
+        config->adam_beta1 = 0.0f;
+        config->adam_beta2 = 0.0f;
     }
     cJSON *root = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(root, "shouldUseGradientClipping", cJSON_CreateNumber(config->shouldUseGradientClipping));
+    cJSON_AddItemToObject(root, "use_gradient_clipping", cJSON_CreateNumber(config->use_gradient_clipping));
     
-    cJSON_AddItemToObject(root, "gradientClippingLowerBound", cJSON_CreateNumber(config->gradientClippingLowerBound));
-    cJSON_AddItemToObject(root, "gradientClippingUpperBound", cJSON_CreateNumber(config->gradientClippingUpperBound));
-    cJSON_AddItemToObject(root, "shouldUseLearningRateDecay", cJSON_CreateNumber(config->shouldUseLearningRateDecay));
-    cJSON_AddItemToObject(root, "learningRateDecayAmount", cJSON_CreateNumber(config->learningRateDecayAmount));
-    cJSON_AddItemToObject(root, "shouldUseMomentum", cJSON_CreateNumber(config->shouldUseMomentum));
+    cJSON_AddItemToObject(root, "gradient_clip_lower_bound", cJSON_CreateNumber(config->gradient_clip_lower_bound));
+    cJSON_AddItemToObject(root, "gradient_clip_upper_bound", cJSON_CreateNumber(config->gradient_clip_upper_bound));
+    cJSON_AddItemToObject(root, "use_learning_rate_decay", cJSON_CreateNumber(config->use_learning_rate_decay));
+    cJSON_AddItemToObject(root, "learning_rate_decay_amount", cJSON_CreateNumber(config->learning_rate_decay_amount));
+    cJSON_AddItemToObject(root, "use_momentum", cJSON_CreateNumber(config->use_momentum));
     cJSON_AddItemToObject(root, "momentum", cJSON_CreateNumber(config->momentum));
     cJSON_AddItemToObject(root, "optimizer", cJSON_CreateNumber(config->optimizer));
     cJSON_AddItemToObject(root, "epsilon", cJSON_CreateNumber(config->epsilon));
     cJSON_AddItemToObject(root, "rho", cJSON_CreateNumber(config->rho));
-    cJSON_AddItemToObject(root, "beta1", cJSON_CreateNumber(config->beta1));
-    cJSON_AddItemToObject(root, "beta2", cJSON_CreateNumber(config->beta2));
+    cJSON_AddItemToObject(root, "adam_beta1", cJSON_CreateNumber(config->adam_beta1));
+    cJSON_AddItemToObject(root, "adam_beta2", cJSON_CreateNumber(config->adam_beta2));
 
     char *jsonString = cJSON_PrintUnformatted(root);
 
@@ -568,15 +574,15 @@ char* serialize_network(const NNetwork* network) {
     cJSON *root = cJSON_CreateObject();
     cJSON *layers = cJSON_CreateArray();
 
-    for (int i = 0; i < network->layerCount; i++) {
+    for (int i = 0; i < network->num_layers; i++) {
         char *layerString = serialize_layer(network->layers[i]);
         cJSON_AddItemToArray(layers, cJSON_CreateRaw(layerString));
         free(layerString);
     }
 
-    cJSON_AddItemToObject(root, "layerCount", cJSON_CreateNumber(network->layerCount));
+    cJSON_AddItemToObject(root, "layerCount", cJSON_CreateNumber(network->num_layers));
     cJSON_AddItemToObject(root, "layers", layers);
-    cJSON_AddItemToObject(root, "lossFunction", cJSON_CreateString(get_loss_function_name(network->lossFunction)));
+    cJSON_AddItemToObject(root, "lossFunction", cJSON_CreateString(get_loss_function_name(network->loss_fn)));
     cJSON_AddItemToObject(root, "loss", cJSON_CreateNumber(network->loss));
     cJSON_AddItemToObject(root, "accuracy", cJSON_CreateNumber(network->accuracy));
 
@@ -592,25 +598,18 @@ NNetwork* deserialize_network(cJSON* json) {
         return NULL;
     }
 
-    network->layerCount = cJSON_GetObjectItem(json, "layerCount")->valueint;
-    network->layers = malloc(network->layerCount * sizeof(Layer));
-    network->weightedsums = create_matrix_arr(network->layerCount);
-
-    network->weight_gradients = create_matrix_arr(network->layerCount);
+    network->num_layers = cJSON_GetObjectItem(json, "layerCount")->valueint;
+    network->layers = malloc(network->num_layers * sizeof(Layer));
     
-    network->bias_gradients = create_vector_arr(network->layerCount);
-
-    network->output = create_matrix_arr(network->layerCount);
-
     cJSON* json_layers = cJSON_GetObjectItem(json, "layers");
    
-    for (int i = 0; i < network->layerCount; i++) {
+    for (int i = 0; i < network->num_layers; i++) {
         cJSON* json_layer = cJSON_GetArrayItem(json_layers, i);
         network->layers[i] = deserialize_layer(json_layer);
     }
 
-    network->lossFunction = NULL;
-    network->optimizationConfig = NULL;
+    network->loss_fn = NULL;
+    network->optimization_config = NULL;
 
     // network->lossFunction = strdup(cJSON_GetObjectItem(json, "lossFunction")->valuestring);
     // network->loss = cJSON_GetObjectItem(json, "loss")->valuedouble;

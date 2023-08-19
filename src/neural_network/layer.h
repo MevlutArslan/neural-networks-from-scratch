@@ -6,41 +6,32 @@
 #include "../helper/constants.h"
 
 typedef struct Layer{
-    int neuronCount;
-    Matrix* input; // <- not threadsafe
-    
+    int num_neurons;
+
     Matrix* weights;
     Vector* biases;
 
-    Matrix* weightedSums; // <- not threadsafe
-    Matrix* output; // <- not threadsafe
+    ActivationFunction* activation_fn;
 
-    // Vector* error;
-    Matrix* gradients; // <- not threadsafe
-    Vector* biasGradients; // <- not threadsafe
-
-    ActivationFunction* activationFunction;
-    Vector* dLoss_dWeightedSums; // <- not threadsafe
-
-    Matrix* weightMomentums;
-    Vector* biasMomentums;
+    Matrix* weight_momentums;
+    Vector* bias_momentums;
     
-    Matrix* weightCache;
-    Vector* biasCache;
+    Matrix* weight_cache;
+    Vector* bias_cache;
 
     // lambda dictates how much of an impact the regularization penalty carries.
-    double weightLambda;
-    double biasLambda;
+    double weight_lambda;
+    double bias_lambda;
 } Layer;
 
 typedef struct {
-    int neuronCount;
-    int inputSize;
-    ActivationFunction* activationFunction;
+    int num_neurons;
+    int num_inputs;
+    ActivationFunction* activation_fn;
     
-    int shouldUseRegularization;
-    double weightLambda;
-    double biasLambda;
+    int use_regularization;
+    double weight_lambda;
+    double bias_lambda;
 } LayerConfig;
 
 Layer* create_layer(LayerConfig* config);
