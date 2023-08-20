@@ -7,15 +7,23 @@
 #include "../../libraries/logger/log.h"
 #include "../helper/constants.h"
 #include <assert.h>
+
 // MATRIX MATH OPERATIONS
 
 /*
     @returns NULL if m1.cols does not match m2.rows
     @returns A new Matrix.
 */
-void matrix_product_into(Matrix* m1, Matrix* m2, Matrix* output);
 Matrix* matrix_product(Matrix* m1, Matrix* m2);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    void matrix_product_cuda(Matrix* m1, Matrix* m2, Matrix* output);
+
+#ifdef __cplusplus
+}
+#endif
 /*
     @returns NULL if m1's dimensions does not match m2's dimensions
     @returns A new Matrix.
