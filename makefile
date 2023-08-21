@@ -1,7 +1,12 @@
 CC = gcc
 NVCC = nvcc
 
-CFLAGS = -g
+CFLAGS = -g -Wall
+
+ifdef CUDA_ENABLED
+CFLAGS += -DCUDA_ENABLED
+endif
+
 NVCCFLAGS = -G -g
 # tests/*.c tests/**/*.c
 C_FILES = $(wildcard src/*.c src/example_networks/**/*.c src/**/*.c libraries/**/*.c )

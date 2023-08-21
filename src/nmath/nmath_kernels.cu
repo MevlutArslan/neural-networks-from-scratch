@@ -1,54 +1,43 @@
 #include "nmath.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
+#include <__clang_cuda_builtin_vars.h>
 
-/* ANALYZING
-    m = a.rows
-    n = a.cols
-    k = c.cols
-    __global__ void gpu_matrix_mult(int *a,int *b, int *c, int m, int n, int k)
-    { 
-        int row = blockIdx.y * blockDim.y + threadIdx.y; <- (row_index * rows width(aka num_cols in per row) + column_index)
-        int col = blockIdx.x * blockDim.x + threadIdx.x; <- (col_index * col height(aka num_rows in the matrix) + row_index)
-        int sum = 0;
-        if( col < k && row < m)  // if our row and col indices are in range of the output matrix
-        {
-            for(int i = 0; i < n; i++)  // iterate over all columns in this row and sum up the values at a and b.
-            {
-                sum += a[row * n + i] * b[i * k + col]; 
-            }
-            c[row * k + col] = sum; // write the result at the output matrices index for this thread
-        }
-    } 
+/*
+    Each row of m1 is assigned to a block.
+    Each thread represents a column in that row.
+
 */
-
 __global__ void matrix_product_kernel(double* m1, double* m2, double* m3, int m1_cols, int output_cols) {
     // Calculate the global row and column indices in the output matrix
     int global_row = blockIdx.x;
     int global_col = threadIdx.x;
 
-    double sum = 0.0;
-    for (int i = 0; i < m1_cols; i++) {
-        // Calculate the indices in the input matrices
-        int index_m1 = global_row * m1_cols + i;
-        int index_m2 = i * output_cols + global_col;
+    if(global_row < blockDim.x && global_col < output_cols) {
+        double sum = 0.0;
+        for (int i = 0; i < m1_cols; i++) {
+            // Calculate the indices in the input matrices
+            int index_m1 = global_row * m1_cols + i;
+            int index_m2 = i * output_cols + global_col;
 
-        sum += m1[index_m1] * m2[index_m2];
+            sum += m1[index_m1] * m2[index_m2];
+        }
+
+        // Store the result in the output matrix
+        int output_index = global_row * output_cols + global_col;
+        m3[output_index] = sum;
     }
-
-    // Store the result in the output matrix
-    int output_index = global_row * output_cols + global_col;
-    m3[output_index] = sum;
 }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void matrix_product_cuda(Matrix* m1, Matrix* m2, Matrix* output) {
+Matrix* matrix_product_cuda(Matrix* m1, Matrix* m2) {
     // m1.cols has to be equal m2.rows && output should be NULL
     assert(m1->columns == m2->rows);
-    assert(output != NULL);
+    
+    Matrix* output = create_matrix(m1->rows, m2->columns);
 
     // allocate on gpu
     double* m1_gpu;
@@ -70,7 +59,7 @@ void matrix_product_cuda(Matrix* m1, Matrix* m2, Matrix* output) {
 
     int threads_per_block = m2->columns;
     // set dimensions for distributing the work
-    dim3 grid_dims(m1->rows + threads_per_block - 1 / threads_per_block);
+    dim3 grid_dims((m1->rows + threads_per_block - 1) / threads_per_block);
     dim3 block_dims(threads_per_block);
     
     // run kernel
@@ -88,6 +77,8 @@ void matrix_product_cuda(Matrix* m1, Matrix* m2, Matrix* output) {
     cudaFree(m1_gpu);
     cudaFree(m2_gpu);
     cudaFree(output_gpu);
+
+    return output;
 }
 
 #ifdef __cplusplus
