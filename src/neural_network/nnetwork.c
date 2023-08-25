@@ -29,11 +29,7 @@ NNetwork* create_network(const NetworkConfig* config) {
     network->num_layers = config->numLayers;
     network->layers = malloc(network->num_layers * sizeof(Layer));
 
-    for(int i = 0; i < config->numLayers; i++) {
-    log_info("activation function for layer #%d: %s", i, get_activation_function_name(config->activation_fns[i]));
-    }
-
-   for (int i = 0; i < config->numLayers; i++) {
+    for (int i = 0; i < config->numLayers; i++) {
         LayerConfig layerConfig;
         layerConfig.num_inputs = i == 0 ? config->num_features : network->layers[i - 1]->num_neurons;
         layerConfig.num_neurons = config->neurons_per_layer[i];
@@ -158,7 +154,17 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
 }
 
 void calculate_loss(NNetwork* network, Matrix* yValues) {
-    network->loss = categoricalCrossEntropyLoss(yValues, network->layer_outputs[network->num_layers - 1]);
+    switch(network->loss_fn) {
+        case MEAN_SQUARED_ERROR:
+            // network->loss = meanSquaredError(Matrix *outputs, Matrix *targets)
+            break;
+        case CATEGORICAL_CROSS_ENTROPY:
+            network->loss = categoricalCrossEntropyLoss(yValues, network->layer_outputs[network->num_layers - 1]);
+            break;
+        case UNRECOGNIZED_LFN:
+            log_error("Unrecognized Loss Function!");
+            return;
+    }
 
     network->accuracy = accuracy(yValues, network->layer_outputs[network->num_layers - 1]);
 }
