@@ -28,11 +28,15 @@ NNetwork* create_network(const NetworkConfig* config) {
     network->num_layers = config->numLayers;
     network->layers = malloc(network->num_layers * sizeof(Layer));
 
+    for(int i = 0; i < config->numLayers; i++) {
+        log_info("activation function for layer #%d: %s", i, get_activation_function_name(config->activation_fns[i]));
+    }
+
    for (int i = 0; i < config->numLayers; i++) {
         LayerConfig layerConfig;
         layerConfig.num_inputs = i == 0 ? config->num_features : network->layers[i - 1]->num_neurons;
         layerConfig.num_neurons = config->neurons_per_layer[i];
-        layerConfig.activation_fn = &config->activation_fns[i];
+        layerConfig.activation_fn = config->activation_fns[i];
 
         if(i < config->numLayers - 1){
             int use_regularization = 0;
@@ -113,28 +117,38 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
     for(int layer_index = 0; layer_index < network->num_layers; layer_index++) {
 
         Layer* current_layer = network->layers[layer_index];
+
         Matrix* transposed_weights = matrix_transpose(current_layer->weights);
         
         // do not free this, it points to the original input matrix for the first layer!
         Matrix* layer_input = layer_index == 0 ? input_matrix : network->layer_outputs[layer_index - 1];
 
-        Matrix* product_result = matrix_product(layer_input, transposed_weights);
-        // log_info("product result for first layer: %s", matrix_to_string(product));
-        
-        matrix_vector_addition(product_result, current_layer->biases, network->weighted_sums[layer_index]);
-        // log_info("weighted sums: %s", matrix_to_string(network->weightedsums[i]));
+        #ifdef CUDA_ENABLED
+            Matrix* product_result = matrix_product_cuda(layer_input, transposed_weights);
 
+            matrix_vector_addition_cuda(product_result, current_layer->biases, network->weighted_sums[layer_index]);
 
-        copy_matrix_into(network->weighted_sums[layer_index], network->layer_outputs[layer_index]);
-        // log_info("output: %s", matrix_to_string(network->output[i]));
+            copy_matrix_cuda(network->weighted_sums[layer_index], network->layer_outputs[layer_index]);
+        #else
+            Matrix* product_result = matrix_product(layer_input, transposed_weights);
 
-        // @TODO
-        // current_layer->activationFunction->activation()
+            matrix_vector_addition(product_result, current_layer->biases, network->weighted_sums[layer_index]);
+            
+            copy_matrix_into(network->weighted_sums[layer_index], network->layer_outputs[layer_index]);
+        #endif
 
-        if(layer_index == network->num_layers - 1) {
-            softmax_matrix(network->layer_outputs[layer_index]);
-        }else {
-            leakyRelu(network->layer_outputs[layer_index]->data);
+        // log_info("output: %s", matrix_to_string(network->layer_outputs[layer_index]));
+
+        switch(current_layer->activation_fn) {
+            case LEAKY_RELU:
+                leakyRelu(network->layer_outputs[layer_index]->data);
+                break;
+            case SOFTMAX:
+                softmax_matrix(network->layer_outputs[layer_index], network->thread_pool);
+                break;
+            default:
+                log_error("Unknown Activation Function: %s! \n be sure to register it to the workflow.", get_activation_function_name(current_layer->activation_fn));
+                break;
         }
 
         free_matrix(product_result);
@@ -254,8 +268,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
             free(debug_str);
         #endif
         
-        loss_wrt_weightedsum[layer_index] = create_matrix(loss_wrt_output->rows, loss_wrt_output->columns);
-        matrix_multiplication(loss_wrt_output, output_wrt_weightedsums, loss_wrt_weightedsum[layer_index]);
+        loss_wrt_weightedsum[layer_index] = matrix_multiplication(loss_wrt_output, output_wrt_weightedsums);
         
         free_matrix(loss_wrt_output);
 
@@ -585,6 +598,7 @@ char* serialize_network(const NNetwork* network) {
     cJSON_AddItemToObject(root, "lossFunction", cJSON_CreateString(get_loss_function_name(network->loss_fn)));
     cJSON_AddItemToObject(root, "loss", cJSON_CreateNumber(network->loss));
     cJSON_AddItemToObject(root, "accuracy", cJSON_CreateNumber(network->accuracy));
+    cJSON_AddItemToObject(root, "num_threads", cJSON_CreateNumber(network->thread_pool->num_threads));
 
     char *jsonString = cJSON_Print(root);
     cJSON_Delete(root);
@@ -614,6 +628,8 @@ NNetwork* deserialize_network(cJSON* json) {
     // network->lossFunction = strdup(cJSON_GetObjectItem(json, "lossFunction")->valuestring);
     // network->loss = cJSON_GetObjectItem(json, "loss")->valuedouble;
     // network->accuracy = cJSON_GetObjectItem(json, "accuracy")->valuedouble;
+    int thread_count = cJSON_GetObjectItem(json, "num_threads")->valueint;
+    network->thread_pool = create_thread_pool(thread_count);
         
     return network;
 }

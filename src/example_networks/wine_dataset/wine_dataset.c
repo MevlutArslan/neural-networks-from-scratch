@@ -27,7 +27,8 @@ Model* create_wine_categorization_model() {
     model->data->accuracy_history = calloc(model->data->total_epochs, sizeof(double));
     model->data->path = "wine_dataset_network";
 
-    // model->thread_pool = create_thread_pool(6);
+    // Modify this based on what your cpu can support
+    model->thread_pool = create_thread_pool(6);
 
     return model;
 }
@@ -124,25 +125,27 @@ NNetwork* wine_categorization_get_network(Model* model) {
 
     if(config.bias_lambdas->size > 0 ){
         fill_vector(config.bias_lambdas, 1e-3);
-    }
+    }   
 
-    config.activation_fns = calloc(config.numLayers, sizeof(ActivationFunction));
+    config.activation_fns = calloc(config.numLayers, sizeof(enum ActivationFunction));
     
     config.optimization_config = malloc(sizeof(OptimizationConfig));
     memcpy(config.optimization_config, &optimizationConfig, sizeof(OptimizationConfig));
     
     for (int i = 0; i < config.numLayers - 1; i++) {
-        memcpy(&config.activation_fns[i], &LEAKY_RELU, sizeof(ActivationFunction));
+        config.activation_fns[i] = LEAKY_RELU;
     }
 
     // output layer's activation
-    memcpy(&config.activation_fns[config.numLayers - 1], &SOFTMAX, sizeof(ActivationFunction));
+    config.activation_fns[config.numLayers - 1] = SOFTMAX;
+    
 
     config.loss_fn = malloc(sizeof(LossFunction));
     memcpy(&config.loss_fn->loss_function, &CATEGORICAL_CROSS_ENTROPY, sizeof(LossFunction));
 
     NNetwork* network = create_network(&config);
-
+    network->thread_pool = model->thread_pool;
+    
     free_network_config(&config);
     model->plot_config();
 
@@ -171,7 +174,7 @@ void wine_categorization_train_network(Model* model) {
     double maxAccuracy = 0.0;
 
     log_debug("Starting training with learning rate of: %f for %d epochs.", learningRate,  model_data->total_epochs);
-    while(epoch < model_data->total_epochs) {
+    while(epoch < model->data->total_epochs) {
         model_data->learning_rate_history[epoch] = currentLearningRate;
 
         forward_pass_batched(network, model_data->training_data); 
