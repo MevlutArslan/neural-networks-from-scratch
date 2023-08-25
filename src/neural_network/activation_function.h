@@ -10,7 +10,7 @@
 #define SOFTMAX_STR "softmax"
 
 typedef enum ActivationFunction {
-    RELU, LEAKY_RELU, SOFTMAX
+    RELU, LEAKY_RELU, SOFTMAX, UNRECOGNIZED_AFN
 } ActivationFunction;
 
 void relu(Vector* inputs);

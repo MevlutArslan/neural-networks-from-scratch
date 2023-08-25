@@ -191,21 +191,19 @@ const char* get_activation_function_name(const ActivationFunction activation_fun
         case SOFTMAX:
             return SOFTMAX_STR;
         default:
-            return "";
+            return "unrecognized_afn";
     }
 }
 
 ActivationFunction get_activation_function_by_name(char* name) {
     if(strcmp(name, RELU_STR) == 0) {
         return RELU;
-    }
-    if(strcmp(name, LEAKY_RELU_STR) == 0) {
+    }else if(strcmp(name, LEAKY_RELU_STR) == 0) {
         return LEAKY_RELU;
-    }
-    if(strcmp(name, SOFTMAX_STR) == 0) {
+    }else if(strcmp(name, SOFTMAX_STR) == 0) {
         return SOFTMAX;
+    }else {
+        log_error("Unrecognized activation function name: %s", name);
+        return UNRECOGNIZED_AFN;
     }
-    
-    // I will let RELU be the default for now
-    return RELU;
 }
