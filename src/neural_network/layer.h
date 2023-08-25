@@ -11,7 +11,7 @@ typedef struct Layer{
     Matrix* weights;
     Vector* biases;
 
-    ActivationFunction* activation_fn;
+    ActivationFunction activation_fn;
 
     Matrix* weight_momentums;
     Vector* bias_momentums;
@@ -27,7 +27,7 @@ typedef struct Layer{
 typedef struct {
     int num_neurons;
     int num_inputs;
-    ActivationFunction* activation_fn;
+    ActivationFunction activation_fn;
     
     int use_regularization;
     double weight_lambda;

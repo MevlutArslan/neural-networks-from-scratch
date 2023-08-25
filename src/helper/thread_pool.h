@@ -23,7 +23,7 @@ struct ThreadPool {
     pthread_mutex_t capacity_lock; // lock for accesing queue's capacity.
     pthread_mutex_t pending_tasks_lock; // lock for accessing num_pending_tasks.
 
-    pthread_cond_t signal; // cond for signaling there are tasks to handle.
+    pthread_cond_t task_available_cond; // cond for signaling there are tasks to handle.
     pthread_cond_t capacity_signal; // cond for signaling the queue has available space for new tasks.
     pthread_cond_t all_tasks_done; // cond for signaling the thread pool is done with all of its tasks.
     

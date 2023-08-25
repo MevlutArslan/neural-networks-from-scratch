@@ -19,6 +19,9 @@ Vector** create_vector_arr(int length) {
 }
 
 void free_vector(Vector* vector) {
+    if(vector == NULL) {
+        return;
+    }
     free(vector->elements);
     free(vector);
 }
@@ -30,7 +33,9 @@ void fill_vector_random(Vector* vector, double min, double max) {
 }
 
 void fill_vector(Vector* vector, double value) {
-    memset(vector->elements, value, vector->size * sizeof(double));
+    for(int i = 0; i < vector->size; i++) {
+        vector->elements[i] = value;
+    }
 }
 
 char* vector_to_string(const Vector* vector) {

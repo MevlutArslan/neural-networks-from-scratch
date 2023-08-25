@@ -8,6 +8,10 @@
 #include "../helper/constants.h"
 #include <assert.h>
 
+typedef enum ElementWiseMatrixOperation {
+    ADD, SUBTRACT, MULTIPLY
+} ElementWiseMatrixOperation;
+
 // MATRIX MATH OPERATIONS
 
 /*
@@ -19,8 +23,12 @@ Matrix* matrix_product(Matrix* m1, Matrix* m2);
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void matrix_product_cuda(Matrix* m1, Matrix* m2, Matrix* output);
+    // Multiplication for 2 matrices with different dimensions.
+    Matrix* matrix_product_cuda(Matrix* m1, Matrix* m2);
+    void matrix_vector_addition_cuda(Matrix* matrix, Vector* vector, Matrix* output);
+    
 
+    Matrix* matrix_element_wise_operation_cuda(Matrix* m1, Matrix* m2, ElementWiseMatrixOperation operation);
 #ifdef __cplusplus
 }
 #endif
@@ -40,7 +48,8 @@ void matrix_subtraction(Matrix* m1, Matrix* m2, Matrix* output);
     @returns NULL if m1's dimensions does not match m2's dimensions
     @returns A new Matrix.
 */
-void matrix_multiplication(Matrix* m1, Matrix* m2, Matrix* output);
+Matrix* matrix_multiplication(Matrix* m1, Matrix* m2);
+void matrix_multiplication_inplace(Matrix* m1, Matrix* m2, Matrix* output);
 
 Matrix* matrix_transpose(Matrix* m);
 Matrix* matrix_inverse(Matrix* m);
@@ -56,7 +65,7 @@ float matrix_determinant(Matrix* m);
 
 // VECTOR MATH OPERATIONS
 Vector* vector_addition(const Vector* v1, const Vector* v2);
-void vector_addition_into(const Vector* v1, const Vector* v2, Vector* output);
+void vector_addition_parallel(const Vector* v1, const Vector* v2, Vector* output);
 
 Vector* vector_subtraction(const Vector* v1, const Vector* v2);
 double vector_dot_product(const Vector* v1, const Vector* v2);

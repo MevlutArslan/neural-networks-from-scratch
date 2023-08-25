@@ -11,7 +11,6 @@
 #define FLAT_INDEX(ROW, COL, WIDTH) (ROW * WIDTH + COL)
 #define ROW_START(ROW, WIDTH) (ROW * WIDTH)
 #define ROW_END(START_INDEX, WIDTH) (START_INDEX + WIDTH)
-
 typedef struct MatrixSubrange {
     Vector* data;
     int begin_index;
@@ -71,5 +70,13 @@ Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, i
 
 char* serialize_matrix(const Matrix* matrix);
 Matrix* deserialize_matrix(cJSON* json);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    void copy_matrix_cuda(Matrix* source, Matrix* destination);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
