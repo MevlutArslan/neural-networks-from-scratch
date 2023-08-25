@@ -10,6 +10,7 @@
 #include "../helper/constants.h"
 #include "../../libraries/logger/log.h"
 #include <stdio.h>
+#include "../helper/thread_pool.h"
 
 // struct ParallelForwardPassStruct{
     
@@ -39,7 +40,7 @@ typedef struct NNetwork{
     int num_layers;
     Layer** layers;
 
-    LossFunction* loss_fn;
+    LossFunction loss_fn;
     double loss;
     double accuracy;
     
@@ -53,6 +54,8 @@ typedef struct NNetwork{
 
     Matrix** weight_gradients;
     Vector** bias_gradients;
+
+    struct ThreadPool* thread_pool;
 } NNetwork;
 
 typedef struct {
@@ -60,7 +63,7 @@ typedef struct {
     int* neurons_per_layer;        // Array of number of neurons per layer
     ActivationFunction* activation_fns;  // Array of activation functions for each layer
     double learning_rate;         // Learning rate for training the network
-    LossFunction* loss_fn;
+    LossFunction loss_fn;
 
     int num_features;
     int num_rows;

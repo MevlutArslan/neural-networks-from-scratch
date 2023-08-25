@@ -1,9 +1,6 @@
 #include "loss_functions.h"
 #include <string.h>
 
-LossFunction MEAN_SQUARED_ERROR = { .loss_function = meanSquaredError, .derivative = meanSquaredErrorDerivative, .name = "MEAN_SQUARED_ERROR" };
-LossFunction CATEGORICAL_CROSS_ENTROPY = { .loss_function = categoricalCrossEntropyLoss, .name = "CATEGORICAL_CROSS_ENTROPY" };
-
 double meanSquaredError(Matrix* outputs, Matrix* targets) {
     double mse = 0.0;
 
@@ -134,6 +131,25 @@ void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* 
     free_vector(prediction_row);
 }
 
-const char* get_loss_function_name(const LossFunction* lossFunction) {
-    return lossFunction->name;
+LossFunction get_loss_fn_by_name(char* name) {
+    if(strcmp(name, MEAN_SQUARED_ERROR_STR) == 0) {
+        return MEAN_SQUARED_ERROR;
+    }else if(strcmp(name, CATEGORICAL_CROSS_ENTROPY_STR) == 0) {
+        return CATEGORICAL_CROSS_ENTROPY;
+    }else {
+        log_error("Unrecognized loss function name: %s", name);
+        return UNRECOGNIZED_LFN;
+    }
+}
+
+const char* loss_fn_to_string(const LossFunction lossFunction) {
+    switch (lossFunction) {
+        case MEAN_SQUARED_ERROR:
+            return MEAN_SQUARED_ERROR_STR;
+        case CATEGORICAL_CROSS_ENTROPY:
+            return CATEGORICAL_CROSS_ENTROPY_STR;
+        default:
+            return "unrecognized_lfn";
+    }
+    
 }

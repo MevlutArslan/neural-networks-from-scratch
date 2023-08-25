@@ -1,5 +1,6 @@
 #include "nnetwork.h"
 #include "activation_function.h"
+#include "loss_functions.h"
 
 /*
     create_network works by getting the config and the inputs.
@@ -29,7 +30,7 @@ NNetwork* create_network(const NetworkConfig* config) {
     network->layers = malloc(network->num_layers * sizeof(Layer));
 
     for(int i = 0; i < config->numLayers; i++) {
-        log_info("activation function for layer #%d: %s", i, get_activation_function_name(config->activation_fns[i]));
+    log_info("activation function for layer #%d: %s", i, get_activation_function_name(config->activation_fns[i]));
     }
 
    for (int i = 0; i < config->numLayers; i++) {
@@ -522,7 +523,6 @@ void free_network(NNetwork* network) {
     free(network->bias_gradients);
     
     // Free the loss function
-    free(network->loss_fn);
     free(network->optimization_config);
 
     // Finally, free the network itself
@@ -593,9 +593,9 @@ char* serialize_network(const NNetwork* network) {
         free(layerString);
     }
 
-    cJSON_AddItemToObject(root, "layerCount", cJSON_CreateNumber(network->num_layers));
+    cJSON_AddItemToObject(root, "num_layers", cJSON_CreateNumber(network->num_layers));
     cJSON_AddItemToObject(root, "layers", layers);
-    cJSON_AddItemToObject(root, "lossFunction", cJSON_CreateString(get_loss_function_name(network->loss_fn)));
+    cJSON_AddItemToObject(root, "loss_function", cJSON_CreateString(loss_fn_to_string(network->loss_fn)));
     cJSON_AddItemToObject(root, "loss", cJSON_CreateNumber(network->loss));
     cJSON_AddItemToObject(root, "accuracy", cJSON_CreateNumber(network->accuracy));
     cJSON_AddItemToObject(root, "num_threads", cJSON_CreateNumber(network->thread_pool->num_threads));
@@ -612,7 +612,7 @@ NNetwork* deserialize_network(cJSON* json) {
         return NULL;
     }
 
-    network->num_layers = cJSON_GetObjectItem(json, "layerCount")->valueint;
+    network->num_layers = cJSON_GetObjectItem(json, "num_layers")->valueint;
     network->layers = malloc(network->num_layers * sizeof(Layer));
     
     cJSON* json_layers = cJSON_GetObjectItem(json, "layers");
@@ -622,10 +622,9 @@ NNetwork* deserialize_network(cJSON* json) {
         network->layers[i] = deserialize_layer(json_layer);
     }
 
-    network->loss_fn = NULL;
     network->optimization_config = NULL;
 
-    // network->lossFunction = strdup(cJSON_GetObjectItem(json, "lossFunction")->valuestring);
+    network->loss_fn = get_loss_fn_by_name(cJSON_GetObjectItem(json, "loss_function")->valuestring);
     // network->loss = cJSON_GetObjectItem(json, "loss")->valuedouble;
     // network->accuracy = cJSON_GetObjectItem(json, "accuracy")->valuedouble;
     int thread_count = cJSON_GetObjectItem(json, "num_threads")->valueint;
