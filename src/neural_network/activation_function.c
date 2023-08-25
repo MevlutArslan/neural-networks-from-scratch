@@ -4,9 +4,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-ActivationFunction RELU = { .activation = relu, .derivative = relu_derivative, .name = "RELU" };
-ActivationFunction LEAKY_RELU = { .activation = leakyRelu, .derivative = leakyRelu_derivative, .name = "LEAKY_RELU" };
-ActivationFunction SOFTMAX = { .activation = softmax, .name = "SOFTMAX" };
+
 
 // in place modification
 void relu(Vector* vector) {
@@ -88,15 +86,55 @@ void softmax(Vector* inputs) {
     free_vector(exponentialValues);
 }
 
-void softmax_matrix(Matrix* matrix) {
-    Vector* matrix_row = create_vector(matrix->columns);
-    for(int i = 0; i < matrix->rows; i++) {
-        memcpy(matrix_row->elements,  matrix->data->elements + (i * matrix->columns), matrix->columns * sizeof(double));
-        softmax(matrix_row);
-        memcpy(matrix->data->elements + (i * matrix->columns), matrix_row->elements, matrix->columns * sizeof(double));
+
+void softmax_thread_pool(void* args) {
+    Vector* inputs = (Vector*) args;
+    int size = inputs->size;
+
+    double max_value = inputs->elements[0];
+    for (int i = 1; i < size; i++) {
+        max_value = fmax(max_value, inputs->elements[i]);
+    }
+    double sum = 0.0;
+    Vector* exponentialValues = create_vector(inputs->size);
+    for (int i = 0; i < size; i++) {
+        exponentialValues->elements[i] = exp(inputs->elements[i] - max_value);
+        sum += exponentialValues->elements[i];
     }
 
-    free_vector(matrix_row);
+    for (int i = 0; i < size; i++) {
+        inputs->elements[i] = exponentialValues->elements[i] / sum;
+    }
+
+    free_vector(exponentialValues);
+}
+
+
+
+void softmax_matrix(Matrix* matrix, struct ThreadPool* thread_pool) {
+    Vector** matrix_rows = create_vector_arr(matrix->rows);
+    struct Task** tasks = (struct Task**) malloc(matrix->rows * sizeof(struct Task*));
+    for(int i = 0; i < matrix->rows; i++) {
+        matrix_rows[i] = create_vector(matrix->columns);
+        memcpy(matrix_rows[i]->elements,  matrix->data->elements + (i * matrix->columns), matrix->columns * sizeof(double));
+
+        tasks[i] = create_task(softmax_thread_pool, matrix_rows[i]);
+        thread_pool->push_task(thread_pool, tasks[i]);
+
+        // softmax(matrix_rows[i]);
+    }
+
+    wait_for_all_tasks(thread_pool);
+
+    for(int i = 0; i < matrix->rows; i++) {
+        memcpy(matrix->data->elements + (i * matrix->columns), matrix_rows[i]->elements, matrix->columns * sizeof(double));
+        
+        free_vector(matrix_rows[i]);
+        free(tasks[i]);
+    }
+
+    free(matrix_rows);
+    free(tasks);
 }
 
 /*
@@ -144,15 +182,27 @@ Matrix** softmax_derivative_parallelized(Matrix* output) {
     return jacobian_matrices;
 }
 
-const char* get_activation_function_name(const ActivationFunction* activationFunction) {
-    return activationFunction->name;
+const char* get_activation_function_name(const ActivationFunction activation_function) {
+    switch (activation_function) {
+        case RELU:
+            return RELU_STR;
+        case LEAKY_RELU:
+            return LEAKY_RELU_STR;
+        case SOFTMAX:
+            return SOFTMAX_STR;
+        default:
+            return "";
+    }
 }
 
 ActivationFunction get_activation_function_by_name(char* name) {
-    if(strcmp(name, LEAKY_RELU.name) == 0) {
+    if(strcmp(name, RELU_STR) == 0) {
+        return RELU;
+    }
+    if(strcmp(name, LEAKY_RELU_STR) == 0) {
         return LEAKY_RELU;
     }
-    if(strcmp(name, SOFTMAX.name) == 0) {
+    if(strcmp(name, SOFTMAX_STR) == 0) {
         return SOFTMAX;
     }
     

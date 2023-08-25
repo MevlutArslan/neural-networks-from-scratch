@@ -3,16 +3,15 @@
 
 #include <math.h>
 #include "../nmath/nmath.h"
+#include "../helper/thread_pool.h"
 
-typedef struct {
-    void (*activation)(Vector*);       // Pointer to the activation function
-    double (*derivative)(double);       // Pointer to the derivative of the activation function
-    const char* name;
+#define RELU_STR "relu"
+#define LEAKY_RELU_STR "leaky_relu"
+#define SOFTMAX_STR "softmax"
+
+typedef enum ActivationFunction {
+    RELU, LEAKY_RELU, SOFTMAX
 } ActivationFunction;
-
-extern ActivationFunction SOFTMAX;
-extern ActivationFunction LEAKY_RELU;
-extern ActivationFunction RELU;
 
 void relu(Vector* inputs);
 double relu_derivative(double netInput);
@@ -26,10 +25,10 @@ void sigmoid(Vector* inputs);
 double sigmoid_derivative(double netInput);
 
 void softmax(Vector* inputs);
-void softmax_matrix(Matrix* matrix);
+void softmax_matrix(Matrix* matrix, struct ThreadPool* thread_pool);
 Matrix* softmax_derivative(Vector* output);
 Matrix** softmax_derivative_parallelized(Matrix* output);
 
-const char* get_activation_function_name(const ActivationFunction* activationFunction);
+const char* get_activation_function_name(const ActivationFunction activationFunction);
 ActivationFunction get_activation_function_by_name(char* name);
 #endif
