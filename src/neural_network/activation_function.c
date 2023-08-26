@@ -86,55 +86,15 @@ void softmax(Vector* inputs) {
     free_vector(exponentialValues);
 }
 
-
-void softmax_thread_pool(void* args) {
-    Vector* inputs = (Vector*) args;
-    int size = inputs->size;
-
-    double max_value = inputs->elements[0];
-    for (int i = 1; i < size; i++) {
-        max_value = fmax(max_value, inputs->elements[i]);
-    }
-    double sum = 0.0;
-    Vector* exponentialValues = create_vector(inputs->size);
-    for (int i = 0; i < size; i++) {
-        exponentialValues->elements[i] = exp(inputs->elements[i] - max_value);
-        sum += exponentialValues->elements[i];
-    }
-
-    for (int i = 0; i < size; i++) {
-        inputs->elements[i] = exponentialValues->elements[i] / sum;
-    }
-
-    free_vector(exponentialValues);
-}
-
-
-
-void softmax_matrix(Matrix* matrix, struct ThreadPool* thread_pool) {
-    Vector** matrix_rows = create_vector_arr(matrix->rows);
-    struct Task** tasks = (struct Task**) malloc(matrix->rows * sizeof(struct Task*));
+void softmax_matrix(Matrix* matrix) {
+    Vector* matrix_row = create_vector(matrix->columns);
     for(int i = 0; i < matrix->rows; i++) {
-        matrix_rows[i] = create_vector(matrix->columns);
-        memcpy(matrix_rows[i]->elements,  matrix->data->elements + (i * matrix->columns), matrix->columns * sizeof(double));
-
-        tasks[i] = create_task(softmax_thread_pool, matrix_rows[i]);
-        thread_pool->push_task(thread_pool, tasks[i]);
-
-        // softmax(matrix_rows[i]);
+        memcpy(matrix_row->elements,  matrix->data->elements + (i * matrix->columns), matrix->columns * sizeof(double));
+        softmax(matrix_row);
+        memcpy(matrix->data->elements + (i * matrix->columns), matrix_row->elements, matrix->columns * sizeof(double));
     }
 
-    wait_for_all_tasks(thread_pool);
-
-    for(int i = 0; i < matrix->rows; i++) {
-        memcpy(matrix->data->elements + (i * matrix->columns), matrix_rows[i]->elements, matrix->columns * sizeof(double));
-        
-        free_vector(matrix_rows[i]);
-        free(tasks[i]);
-    }
-
-    free(matrix_rows);
-    free(tasks);
+    free_vector(matrix_row);
 }
 
 /*
@@ -166,19 +126,55 @@ Matrix* softmax_derivative(Vector* output) {
     return jacobian;
 }
 
+void softmax_derivative_parallelized(void* args) {
+    SoftmaxDerivativeArgs* softmax_args = (SoftmaxDerivativeArgs*) args;
+    Vector* output = softmax_args->output_row;
+    Matrix* jacobian = softmax_args->jacobian_matrix;
 
-Matrix** softmax_derivative_parallelized(Matrix* output) {
+    for(int i = 0; i < output->size; i++) {
+        for(int j = 0; j < output->size; j++) {
+            if(i == j) { // 0.531323 * (1 - 0.531323) = 0.24901 (i == 0) | 
+                jacobian->set_element(jacobian, i, j, output->elements[i] * (1 - output->elements[i]));
+                // jacobian->data[i]->elements[j] = output->elements[i] * (1 - output->elements[i]);
+            }else{ // (-1 * 0.531323) * 0.468677 => -0.249019
+                jacobian->set_element(jacobian, i, j, -1 * output->elements[i] * output->elements[j]);
+                // jacobian->data[i]->elements[j] = -1 * output->elements[i] * output->elements[j];
+            }
+        }
+    }
+}
+
+Matrix** softmax_derivative_batched(Matrix* output, struct ThreadPool* thread_pool) {
     Matrix** jacobian_matrices = create_matrix_arr(output->rows);
-    Vector* matrix_row = create_vector(output->columns);
-    for(int i = 0; i < output->rows; i++) {
-        memcpy(matrix_row->elements, output->data->elements + (i * output->columns), output->columns * sizeof(double));
-        jacobian_matrices[i] = softmax_derivative(matrix_row);
 
+    Vector** matrix_rows = create_vector_arr(output->rows);
+    struct Task** tasks = (struct Task**) calloc(output->rows, sizeof(struct Task*));
+    SoftmaxDerivativeArgs args[output->rows];
+
+    for(int i = 0; i < output->rows; i++) {
+        jacobian_matrices[i] = create_matrix(output->columns, output->columns);
+        matrix_rows[i] = create_vector(output->columns);
+        memcpy(matrix_rows[i]->elements, output->data->elements + (i * output->columns), output->columns * sizeof(double));
+        
+        args[i].jacobian_matrix = jacobian_matrices[i];
+        args[i].output_row = matrix_rows[i];
+
+        tasks[i] = create_task(softmax_derivative_parallelized, &args[i]);
+        thread_pool->push_task(thread_pool, tasks[i]);
         #ifdef DEBUG
             printf("%s \n", matrix_to_string(jacobian_matrices[i]));
         #endif
     }
-    free_vector(matrix_row);
+    wait_for_all_tasks(thread_pool);
+
+    for(int i = 0; i < output->rows; i++) {
+        free(tasks[i]);
+        free(matrix_rows[i]);
+    }
+    
+    free(matrix_rows);
+    free(tasks);
+
     return jacobian_matrices;
 }
 

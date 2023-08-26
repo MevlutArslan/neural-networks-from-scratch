@@ -25,9 +25,19 @@ void sigmoid(Vector* inputs);
 double sigmoid_derivative(double netInput);
 
 void softmax(Vector* inputs);
-void softmax_matrix(Matrix* matrix, struct ThreadPool* thread_pool);
+void softmax_matrix(Matrix* matrix);
+
 Matrix* softmax_derivative(Vector* output);
-Matrix** softmax_derivative_parallelized(Matrix* output);
+Matrix** softmax_derivative_batched(Matrix* output, struct ThreadPool* thread_pool);
+
+typedef struct SoftmaxDerivativeArgs {
+    Matrix* jacobian_matrix;
+    Vector* output_row;
+}   SoftmaxDerivativeArgs;
+/*
+    @param args will attempt to cast to softmax_derivative_args struct.
+*/
+void softmax_derivative_parallelized(void* args);
 
 const char* get_activation_function_name(const ActivationFunction activationFunction);
 ActivationFunction get_activation_function_by_name(char* name);

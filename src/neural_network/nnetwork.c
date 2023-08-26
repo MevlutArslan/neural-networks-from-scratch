@@ -141,7 +141,7 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
                 leakyRelu(network->layer_outputs[layer_index]->data);
                 break;
             case SOFTMAX:
-                softmax_matrix(network->layer_outputs[layer_index], network->thread_pool);
+                softmax_matrix(network->layer_outputs[layer_index]);
                 break;
             default:
                 log_error("Unknown Activation Function: %s! \n be sure to register it to the workflow.", get_activation_function_name(current_layer->activation_fn));
@@ -191,7 +191,8 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         free(debug_str);
     #endif
 
-    Matrix** jacobian_matrices = softmax_derivative_parallelized(output);
+    Matrix** jacobian_matrices = softmax_derivative_batched(output, network->thread_pool);
+    
     loss_wrt_weightedsum[layer_index] = batch_matrix_vector_product(jacobian_matrices, loss_wrt_output, output->rows);
     #ifdef DEBUG
         debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
@@ -259,24 +260,49 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     // ------------- HIDDEN LAYERS -------------
     // we do need to iterate over other layers
     for (layer_index -= 1; layer_index >= 0; layer_index--) { // current layer's dimensions = (4 inputs, 4 neurons)
-
-        Matrix* loss_wrt_output = matrix_product(loss_wrt_weightedsum[layer_index + 1], network->layers[layer_index + 1]->weights);
+        #ifdef CUDA_ENABLED
+            Matrix* loss_wrt_output = matrix_product_cuda(loss_wrt_weightedsum[layer_index + 1], network->layers[layer_index + 1]->weights);
+        #else
+            Matrix* loss_wrt_output = matrix_product(loss_wrt_weightedsum[layer_index + 1], network->layers[layer_index + 1]->weights);
+        #endif
+        
         #ifdef DEBUG
             char* log_wrt_output_str = matrix_to_string(loss_wrt_output);
             log_info("loss wrt output for layer: #%d: %s", layer_index, log_wrt_output_str);
             free(log_wrt_output_str);
         #endif
+        Matrix* output_wrt_weightedsums = NULL;
 
+        switch(network->layers[layer_index]->activation_fn) {
+            case RELU:
+                log_info("not implemented yet!");
+                break;
+            case LEAKY_RELU:
+                output_wrt_weightedsums = leakyRelu_derivative_matrix(network->weighted_sums[layer_index]);
+                break;
+            case SOFTMAX: // 
+                log_error("cannot/shouldn't be softmax in the hidden layers.");
+                break;
+            case UNRECOGNIZED_AFN:
+                log_error("Unrecognized activation function!");
+                return;
+        }
 
-        Matrix* output_wrt_weightedsums = leakyRelu_derivative_matrix(network->weighted_sums[layer_index]);
+        if(output_wrt_weightedsums == NULL) {
+            log_error("Failed to calculate output_wrt_weightedsums, please check previous logs!");
+        }
+
         #ifdef DEBUG
             char* debug_str = matrix_to_string(output_wrt_weightedsums);
             log_info("output wrt wsum for layer #%d: %s", layer_index, debug_str);
             free(debug_str);
         #endif
         
-        loss_wrt_weightedsum[layer_index] = matrix_multiplication(loss_wrt_output, output_wrt_weightedsums);
-        
+        #ifdef CUDA_ENABLED
+            loss_wrt_weightedsum[layer_index] = matrix_element_wise_operation_cuda(loss_wrt_output, output_wrt_weightedsums, MULTIPLY);
+        #else
+            loss_wrt_weightedsum[layer_index] = matrix_multiplication(loss_wrt_output, output_wrt_weightedsums);
+        #endif        
         free_matrix(loss_wrt_output);
 
         free_matrix(output_wrt_weightedsums);
