@@ -1,6 +1,8 @@
 #include "nnetwork.h"
 #include "activation_function.h"
 #include "loss_functions.h"
+#include <string.h>
+#include <time.h>
 
 /*
     create_network works by getting the config and the inputs.
@@ -159,7 +161,7 @@ void calculate_loss(NNetwork* network, Matrix* yValues) {
             // network->loss = meanSquaredError(Matrix *outputs, Matrix *targets)
             break;
         case CATEGORICAL_CROSS_ENTROPY:
-            network->loss = categoricalCrossEntropyLoss(yValues, network->layer_outputs[network->num_layers - 1]);
+            network->loss = calculateCategoricalCrossEntropyLoss(yValues, network->layer_outputs[network->num_layers - 1]);
             break;
         case UNRECOGNIZED_LFN:
             log_error("Unrecognized Loss Function!");
@@ -191,8 +193,10 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         free(debug_str);
     #endif
 
+    // TODO: ABSTRACT THIS OUT TO WORK WITH ANY ACTIVATION FUNCTION
+    // jacobian_matrices AKA output_wrt_weightedsum
     Matrix** jacobian_matrices = softmax_derivative_batched(output, network->thread_pool);
-    
+
     loss_wrt_weightedsum[layer_index] = batch_matrix_vector_product(jacobian_matrices, loss_wrt_output, output->rows);
     #ifdef DEBUG
         debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
@@ -214,20 +218,27 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         free(debug_str);
     #endif
 
+    // clock_t start_wgradients = clock();
     // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
-    for(int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
-        for(int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
-            for(int j = 0; j < weightedsum_wrt_weight->columns; j++) {
+    for (int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
+        double scalar = 0.0; // Initialize scalar to zero
+        
+        for (int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
+            // Get the scalar once
+            scalar= loss_wrt_weightedsum[layer_index]->get_element(loss_wrt_weightedsum[layer_index], input_index, i);
+            
+            for (int j = 0; j < weightedsum_wrt_weight->columns; j++) {
+                double product_result = scalar * weightedsum_wrt_weight->get_element(weightedsum_wrt_weight, input_index, j);
                 
-                double product_result = loss_wrt_weightedsum[layer_index]->get_element(loss_wrt_weightedsum[layer_index], input_index, i) 
-                                        * weightedsum_wrt_weight->get_element(weightedsum_wrt_weight, input_index, j);
-
-                double value = network->weight_gradients[layer_index]->get_element(network->weight_gradients[layer_index], i, j) + product_result;
-                network->weight_gradients[layer_index]->set_element(network->weight_gradients[layer_index], i, j, value);
-                // network->weight_gradients[layer_index]->data[i]->elements[j] += loss_wrt_weightedsum[layer_index]->data[input_index]->elements[i] * weightedsum_wrt_weight->data[input_index]->elements[j];
+                // Update the gradients directly without creating additional vectors
+                double new_gradient = network->weight_gradients[layer_index]->get_element(network->weight_gradients[layer_index], i, j) + product_result;
+                network->weight_gradients[layer_index]->set_element(network->weight_gradients[layer_index], i, j, new_gradient);
             }
         }
     }
+    // clock_t end_wgradients = clock();
+    // double wgradients_time_elapsed = ((double)(end_wgradients - start_wgradients) / CLOCKS_PER_SEC) * 1000;
+    // log_info("weight gradient calculations elapsed time: %f", wgradients_time_elapsed);
 
     #ifdef DEBUG
         debug_str = matrix_to_string(network->weight_gradients[layer_index]);
@@ -321,16 +332,22 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
 
         // log_info("weightedsum wrt weights for layer #%d: %s", layer_index, matrix_to_string(weightedsum_wrt_weight));
         
-        // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
-        for(int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
-            for(int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
-                for(int j = 0; j < weightedsum_wrt_weight->columns; j++) {
-                    double product_result = loss_wrt_weightedsum[layer_index]->get_element(loss_wrt_weightedsum[layer_index], input_index, i) 
-                                        * weightedsum_wrt_weight->get_element(weightedsum_wrt_weight, input_index, j);
+        // clock_t hidden_layer_wg_start = clock();
 
-                    double value = network->weight_gradients[layer_index]->get_element(network->weight_gradients[layer_index], i, j) + product_result;
-                    network->weight_gradients[layer_index]->set_element(network->weight_gradients[layer_index], i, j, value);
-                    // network->weight_gradients[layer_index]->data[i]->elements[j] += loss_wrt_weightedsum[layer_index]->data[input_index]->elements[i] * input_matrix->data[input_index]->elements[j];
+        // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
+        for (int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
+            double scalar = 0.0; // Initialize scalar to zero
+            
+            for (int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
+                // Get the scalar once
+                scalar= loss_wrt_weightedsum[layer_index]->get_element(loss_wrt_weightedsum[layer_index], input_index, i);
+                
+                for (int j = 0; j < weightedsum_wrt_weight->columns; j++) {
+                    double product_result = scalar * weightedsum_wrt_weight->get_element(weightedsum_wrt_weight, input_index, j);
+                    
+                    // Update the gradients directly without creating additional vectors
+                    double new_gradient = network->weight_gradients[layer_index]->get_element(network->weight_gradients[layer_index], i, j) + product_result;
+                    network->weight_gradients[layer_index]->set_element(network->weight_gradients[layer_index], i, j, new_gradient);
                 }
             }
         }
@@ -339,6 +356,9 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
             log_info("Weight gradients of the layer #%d: %s", layer_index, debug_str);
             free(debug_str);
         #endif
+        // clock_t hidden_layer_wg_end = clock();
+        // log_info("time it took by weight gradient calculation of hidden layer: %f", ((double)(hidden_layer_wg_end - hidden_layer_wg_start) / CLOCKS_PER_SEC) * 1000);
+
         // if(useGradientClipping) clip_gradients(weight_gradients)
 
         for(int i = 0; i < loss_wrt_weightedsum[layer_index]->rows; i++) {
