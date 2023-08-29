@@ -1,4 +1,5 @@
 #include "layer.h"
+#include <stdlib.h>
 
 Layer* create_layer(LayerConfig* config) {
     Layer* layer = malloc(sizeof(Layer));
@@ -71,9 +72,13 @@ void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* 
 char* serialize_layer(const Layer* layer) {
     cJSON *root = cJSON_CreateObject();
     cJSON_AddItemToObject(root, "num_neurons", cJSON_CreateNumber(layer->num_neurons));
-    
-    cJSON_AddItemToObject(root, "weights", cJSON_CreateRaw(serialize_matrix(layer->weights)));
-    cJSON_AddItemToObject(root, "biases", cJSON_CreateRaw(serialize_vector(layer->biases)));
+
+
+    char* serialized_matrix = serialize_matrix(layer->weights);
+    cJSON_AddItemToObject(root, "weights", cJSON_CreateRaw(serialized_matrix));
+
+    char* serialized_vector = serialize_vector(layer->biases);
+    cJSON_AddItemToObject(root, "biases", cJSON_CreateRaw(serialized_vector));
         
     // Instead of trying to serialize the function pointers, we'll serialize a name associated with the function
     char* activationFunctionName = get_activation_function_name(layer->activation_fn);
@@ -82,6 +87,9 @@ char* serialize_layer(const Layer* layer) {
     char *jsonString = cJSON_PrintUnformatted(root);
 
     cJSON_Delete(root);
+
+    free(serialized_matrix);
+    free(serialized_vector);
 
     return jsonString;
 }
