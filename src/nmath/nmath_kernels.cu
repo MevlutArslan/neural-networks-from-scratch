@@ -1,7 +1,6 @@
 #include "nmath.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
-#include <cuda_device_runtime_api.h>
 #include <cuda_runtime_api.h>
 /*
     * The value of grid_size should not be lower than the number of SMs on the GPU, otherwise there will be SMs in the idle state.
@@ -86,6 +85,38 @@ __global__ void matrix_subtraction_kernel(double* m1, double* m2, double* output
         output[index] = m1[index] - m2[index];
     }
 }
+
+__global__ void matrix_addition_inplace_kernel(double* m1, double* m2, int rows, int cols) {
+    int row = (blockIdx.y * blockDim.y) + threadIdx.y;
+    int col = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+    int index = row * cols + col;
+
+    if(index < rows * cols) {
+        m1[index] = m1[index] + m2[index];
+    }
+}
+__global__ void matrix_subtraction_inplace_kernel(double* m1, double* m2, int rows, int cols) {
+    int row = (blockIdx.y * blockDim.y) + threadIdx.y;
+    int col = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+    int index = row * cols + col;
+
+    if(index < rows * cols) {
+        m1[index] = m1[index] - m2[index];
+    }
+}
+__global__ void matrix_multiplication_inplace_kernel(double* m1, double* m2, int rows, int cols) {
+    int row = (blockIdx.y * blockDim.y) + threadIdx.y;
+    int col = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+    int index = row * cols + col;
+
+    if(index < rows * cols) {
+        m1[index] = m1[index] * m2[index];
+    }
+}
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -237,6 +268,58 @@ Matrix* matrix_element_wise_operation_cuda(Matrix* m1, Matrix* m2, ElementWiseMa
 
     return output;
 }
+
+void matrix_element_wise_operation_inplace_cuda(Matrix* m1, Matrix* m2, ElementWiseMatrixOperation operation) {
+    assert(m1->rows == m2->rows && m1->columns == m2->columns);
+
+    double* m1_gpu;
+    double* m2_gpu;
+
+    size_t m1_size = m1->rows * m1->columns * sizeof(double);
+    size_t m2_size = m2->rows * m2->columns * sizeof(double);
+    
+    cudaMalloc(&m1_gpu, m1_size);
+    cudaMalloc(&m2_gpu, m2_size);
+
+    // copy to gpu
+    cudaMemcpy(m1_gpu, m1->data->elements, m1_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(m2_gpu, m2->data->elements, m2_size, cudaMemcpyHostToDevice);
+    
+    // each block is 16 threads by 16 threads.
+    int num_threads_block = 16;
+    dim3 block_dim(num_threads_block, num_threads_block);
+    dim3 grid_dim(
+        (m1->columns + num_threads_block - 1) / num_threads_block,
+        (m1->rows + num_threads_block - 1) / num_threads_block
+    );
+    // kernel
+    switch(operation) {
+        case ADD:
+            matrix_addition_inplace_kernel<<<grid_dim, block_dim>>> (m1_gpu, m2_gpu, m1->rows, m1->columns);
+            break;
+        case SUBTRACT:
+            matrix_subtraction_inplace_kernel<<<grid_dim, block_dim>>> (m1_gpu, m2_gpu, m1->rows, m1->columns);
+            break;
+        case MULTIPLY:
+            matrix_multiplication_inplace_kernel<<<grid_dim, block_dim>>> (m1_gpu, m2_gpu, m1->rows, m1->columns);
+            break;
+        default:
+            break;
+    }
+
+    cudaError_t return_code = cudaDeviceSynchronize();
+    if(return_code != 0) {
+        printf("error returned from device: %s \n", cudaGetErrorString(return_code));
+    }
+
+    // copy back to cpu
+    // i only need to copy back the output as m1 and m2 haven't been modified
+    cudaMemcpy(m1->data->elements, m1_gpu, m1_size, cudaMemcpyDeviceToHost);
+
+    cudaFree(m1_gpu);
+    cudaFree(m2_gpu);
+}
+
 
 #ifdef __cplusplus
 }

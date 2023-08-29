@@ -29,6 +29,11 @@ extern "C" {
     
 
     Matrix* matrix_element_wise_operation_cuda(Matrix* m1, Matrix* m2, ElementWiseMatrixOperation operation);
+
+    /*
+        Adds elements of m2 to m1 and stores them in m1
+    */
+    void matrix_element_wise_operation_inplace_cuda(Matrix* m1, Matrix* m2, ElementWiseMatrixOperation operation);
 #ifdef __cplusplus
 }
 #endif
@@ -38,6 +43,11 @@ extern "C" {
 */
 void matrix_addition(Matrix* m1, Matrix* m2, Matrix* output);
 
+/*
+    Adds m2 elements to m1 and stores result in m1.
+*/
+
+void matrix_addition_inplace(Matrix* m1, Matrix* m2);
 /*
     @returns NULL if m1's dimensions does not match m2's dimensions
     @returns A new Matrix.
