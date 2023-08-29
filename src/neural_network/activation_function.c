@@ -165,11 +165,12 @@ Matrix** softmax_derivative_batched(Matrix* output, struct ThreadPool* thread_po
             printf("%s \n", matrix_to_string(jacobian_matrices[i]));
         #endif
     }
+
     wait_for_all_tasks(thread_pool);
 
     for(int i = 0; i < output->rows; i++) {
         free(tasks[i]);
-        free(matrix_rows[i]);
+        free_vector(matrix_rows[i]);
     }
     
     free(matrix_rows);
@@ -178,7 +179,7 @@ Matrix** softmax_derivative_batched(Matrix* output, struct ThreadPool* thread_po
     return jacobian_matrices;
 }
 
-const char* get_activation_function_name(const ActivationFunction activation_function) {
+char* get_activation_function_name(const ActivationFunction activation_function) {
     switch (activation_function) {
         case RELU:
             return RELU_STR;
