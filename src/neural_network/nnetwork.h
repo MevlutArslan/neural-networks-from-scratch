@@ -40,7 +40,7 @@ typedef struct NNetwork{
     int num_layers;
     Layer** layers;
 
-    LossFunction loss_fn;
+    LossFunctionType loss_fn;
     double loss;
     double accuracy;
     
@@ -63,7 +63,7 @@ typedef struct {
     int* neurons_per_layer;        // Array of number of neurons per layer
     ActivationFunction* activation_fns;  // Array of activation functions for each layer
     double learning_rate;         // Learning rate for training the network
-    LossFunction loss_fn;
+    LossFunctionType loss_fn;
 
     int num_features;
     int num_rows;
@@ -86,6 +86,17 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix);
 void calculate_loss(NNetwork* network, Matrix* yValues);
 
 void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_values);
+void calculate_weight_gradients(NNetwork* network, int layer_index, Matrix* loss_wrt_weightedsum, Matrix* wsum_wrt_weight);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void calculate_weight_gradients_cuda(NNetwork* network, int layer_index, Matrix* loss_wrt_weightedsum, Matrix* wsum_wrt_weight); 
+
+#ifdef __cplusplus
+}
+#endif
 
 void dump_network_config(NNetwork* network);
 

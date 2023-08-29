@@ -8,9 +8,9 @@ CFLAGS += -DCUDA_ENABLED
 endif
 
 NVCCFLAGS = -G -g
-# tests/*.c tests/**/*.c
-C_FILES = $(wildcard src/*.c src/example_networks/**/*.c src/**/*.c libraries/**/*.c )
-CU_FILES = $(wildcard src/nmath/*.cu)
+
+C_FILES = $(wildcard src/*.c src/example_networks/**/*.c src/**/*.c libraries/**/*.c tests/*.c tests/**/*.c)
+CU_FILES = $(wildcard src/nmath/*.cu) $(wildcard src/neural_network/*.cu)
 
 OBJ_FILES = $(addprefix build/, $(addsuffix .o, $(basename $(C_FILES) $(CU_FILES))))
 

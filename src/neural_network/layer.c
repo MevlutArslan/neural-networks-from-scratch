@@ -94,8 +94,7 @@ Layer* deserialize_layer(cJSON* json) {
 
     layer->biases = deserialize_vector(cJSON_GetObjectItem(json, "biases"));
 
-    layer->activation_fn = malloc(sizeof(ActivationFunction));
-    *layer->activation_fn = get_activation_function_by_name(cJSON_GetObjectItem(json, "activationFunction")->valuestring);
+    layer->activation_fn = get_activation_function_by_name(cJSON_GetObjectItem(json, "ActivationFunction")->valuestring);
     
     layer->weight_cache = NULL;
     layer->bias_cache = NULL;
