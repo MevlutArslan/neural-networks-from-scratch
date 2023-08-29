@@ -196,7 +196,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     // TODO: ABSTRACT THIS OUT TO WORK WITH ANY ACTIVATION FUNCTION
     // jacobian_matrices AKA output_wrt_weightedsum
     Matrix** jacobian_matrices = softmax_derivative_batched(output, network->thread_pool);
-
+    
     loss_wrt_weightedsum[layer_index] = batch_matrix_vector_product(jacobian_matrices, loss_wrt_output, output->rows);
     #ifdef DEBUG
         debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
@@ -218,36 +218,21 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         free(debug_str);
     #endif
 
-    // clock_t start_wgradients = clock();
-    // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
-    for (int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
-        double scalar = 0.0; // Initialize scalar to zero
-        
-        for (int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
-            // Get the scalar once
-            scalar= loss_wrt_weightedsum[layer_index]->get_element(loss_wrt_weightedsum[layer_index], input_index, i);
-            
-            for (int j = 0; j < weightedsum_wrt_weight->columns; j++) {
-                double product_result = scalar * weightedsum_wrt_weight->get_element(weightedsum_wrt_weight, input_index, j);
-                
-                // Update the gradients directly without creating additional vectors
-                double new_gradient = network->weight_gradients[layer_index]->get_element(network->weight_gradients[layer_index], i, j) + product_result;
-                network->weight_gradients[layer_index]->set_element(network->weight_gradients[layer_index], i, j, new_gradient);
-            }
-        }
-    }
-    // clock_t end_wgradients = clock();
-    // double wgradients_time_elapsed = ((double)(end_wgradients - start_wgradients) / CLOCKS_PER_SEC) * 1000;
-    // log_info("weight gradient calculations elapsed time: %f", wgradients_time_elapsed);
-
+    #ifdef CUDA_ENABLED
+        calculate_weight_gradients_cuda(network, layer_index, loss_wrt_weightedsum[layer_index], weightedsum_wrt_weight);
+    #else
+        calculate_weight_gradients(network, layer_index, loss_wrt_weightedsum[layer_index], weightedsum_wrt_weight);
+    #endif
+   
     #ifdef DEBUG
         debug_str = matrix_to_string(network->weight_gradients[layer_index]);
         log_info("Weight gradients of the output layer: %s", debug_str);
         free(debug_str);
     #endif
 
+    // TODO: 
     // if(useGradientClipping) clip_gradients(weight_gradients)
-
+    
     for(int i = 0; i < loss_wrt_weightedsum[layer_index]->rows; i++) {
         for(int j = 0; j < loss_wrt_weightedsum[layer_index]->columns; j++) {
             network->bias_gradients[layer_index]->elements[j] += loss_wrt_weightedsum[layer_index]->get_element(loss_wrt_weightedsum[layer_index], i, j);
@@ -258,6 +243,8 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         log_info("Bias gradients for the output layer: %s", debug_str);
         free(debug_str);
     #endif
+
+    // TODO:
     // if(useGradientClipping) clip_gradients(bias_gradients)
 
     // clean memory
@@ -332,33 +319,20 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
 
         // log_info("weightedsum wrt weights for layer #%d: %s", layer_index, matrix_to_string(weightedsum_wrt_weight));
         
-        // clock_t hidden_layer_wg_start = clock();
-
-        // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
-        for (int input_index = 0; input_index < weightedsum_wrt_weight->rows; input_index++) {
-            double scalar = 0.0; // Initialize scalar to zero
-            
-            for (int i = 0; i < loss_wrt_weightedsum[layer_index]->columns; i++) {
-                // Get the scalar once
-                scalar= loss_wrt_weightedsum[layer_index]->get_element(loss_wrt_weightedsum[layer_index], input_index, i);
-                
-                for (int j = 0; j < weightedsum_wrt_weight->columns; j++) {
-                    double product_result = scalar * weightedsum_wrt_weight->get_element(weightedsum_wrt_weight, input_index, j);
-                    
-                    // Update the gradients directly without creating additional vectors
-                    double new_gradient = network->weight_gradients[layer_index]->get_element(network->weight_gradients[layer_index], i, j) + product_result;
-                    network->weight_gradients[layer_index]->set_element(network->weight_gradients[layer_index], i, j, new_gradient);
-                }
-            }
-        }
+        #ifdef CUDA_ENABLED
+            calculate_weight_gradients_cuda(network, layer_index, loss_wrt_weightedsum[layer_index], weightedsum_wrt_weight);
+            // log_info("gradients: %s", matrix_to_string(network->weight_gradients[layer_index]));
+        #else
+            calculate_weight_gradients(network, layer_index, loss_wrt_weightedsum[layer_index], weightedsum_wrt_weight);
+        #endif
+        
         #ifdef DEBUG
             debug_str = matrix_to_string(network->weight_gradients[layer_index]);
             log_info("Weight gradients of the layer #%d: %s", layer_index, debug_str);
             free(debug_str);
         #endif
-        // clock_t hidden_layer_wg_end = clock();
-        // log_info("time it took by weight gradient calculation of hidden layer: %f", ((double)(hidden_layer_wg_end - hidden_layer_wg_start) / CLOCKS_PER_SEC) * 1000);
 
+        // TODO:
         // if(useGradientClipping) clip_gradients(weight_gradients)
 
         for(int i = 0; i < loss_wrt_weightedsum[layer_index]->rows; i++) {
@@ -366,6 +340,10 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
                 network->bias_gradients[layer_index]->elements[j] += loss_wrt_weightedsum[layer_index]->get_element(loss_wrt_weightedsum[layer_index], i, j);
             }
         }
+
+        // TODO:
+        // if(useGradientClipping) clip_gradients(weight_gradients)
+
         #ifdef DEBUG
             debug_str = vector_to_string(network->bias_gradients[layer_index]);
             log_info("Bias gradients of the layer #%d: %s", layer_index, debug_str);
@@ -379,6 +357,29 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
 
     free(loss_wrt_weightedsum);
 } 
+
+void calculate_weight_gradients(NNetwork* network, int layer_index, Matrix* loss_wrt_weightedsum, Matrix* wsum_wrt_weight) {    
+     // multiplying each weighted sum with different input neurons to get the gradients of the weights that connect them
+    for (int input_index = 0; input_index < wsum_wrt_weight->rows; input_index++) {
+        double scalar = 0.0;
+            
+        for (int i = 0; i < loss_wrt_weightedsum->columns; i++) {
+            // Get the scalar once
+            scalar= loss_wrt_weightedsum->get_element(loss_wrt_weightedsum, input_index, i);
+            
+            for (int j = 0; j < wsum_wrt_weight->columns; j++) {
+                double product_result = scalar * wsum_wrt_weight->get_element(wsum_wrt_weight, input_index, j);
+            
+                // Accumulate the gradients by adding to the existing gradients
+                double current_gradient = network->weight_gradients[layer_index]->get_element(network->weight_gradients[layer_index], i, j);
+                double new_gradient = current_gradient + product_result;
+                
+                network->weight_gradients[layer_index]->set_element(network->weight_gradients[layer_index], i, j, new_gradient);
+            }
+        }
+    }
+}
+
 
 double accuracy(Matrix* targets, Matrix* outputs) {
     int counter = 0;
