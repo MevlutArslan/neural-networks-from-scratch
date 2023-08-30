@@ -9,12 +9,7 @@ Vector* create_vector(int size) {
 }
 
 Vector** create_vector_arr(int length) {
-    Vector** array = (Vector**) malloc(length * sizeof(Vector*));
-
-    for(int i = 0; i < length; i++) {
-        array[i] = NULL;
-    }
-
+    Vector** array = (Vector**) calloc(length, sizeof(Vector*));
     return array;
 }
 

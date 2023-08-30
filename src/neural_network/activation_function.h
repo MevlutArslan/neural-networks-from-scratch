@@ -29,7 +29,6 @@ void softmax_matrix(Matrix* matrix);
 
 Matrix* softmax_derivative(Vector* output);
 Matrix** softmax_derivative_batched(Matrix* output, struct ThreadPool* thread_pool);
-
 typedef struct SoftmaxDerivativeArgs {
     Matrix* jacobian_matrix;
     Vector* output_row;
@@ -39,6 +38,6 @@ typedef struct SoftmaxDerivativeArgs {
 */
 void softmax_derivative_parallelized(void* args);
 
-const char* get_activation_function_name(const ActivationFunction activationFunction);
+char* get_activation_function_name(const ActivationFunction activationFunction);
 ActivationFunction get_activation_function_by_name(char* name);
 #endif

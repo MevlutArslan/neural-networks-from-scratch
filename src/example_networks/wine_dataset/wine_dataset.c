@@ -139,9 +139,7 @@ NNetwork* wine_categorization_get_network(Model* model) {
     // output layer's activation
     config.activation_fns[config.numLayers - 1] = SOFTMAX;
     
-
-    config.loss_fn = malloc(sizeof(LossFunction));
-    memcpy(&config.loss_fn->loss_function, &CATEGORICAL_CROSS_ENTROPY, sizeof(LossFunction));
+    config.loss_fn = CATEGORICAL_CROSS_ENTROPY;
 
     NNetwork* network = create_network(&config);
     network->thread_pool = model->thread_pool;

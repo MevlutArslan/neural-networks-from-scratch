@@ -29,7 +29,13 @@ typedef struct Matrix{
     Vector* (*get_row)(struct Matrix* matrix, int row_index);
 } Matrix;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 Matrix* create_matrix(const int rows, const int cols);
+#ifdef __cplusplus
+}
+#endif
 Matrix** create_matrix_arr(int length);
 
 void set_element(struct Matrix* matrix, int row, int col, double value);
