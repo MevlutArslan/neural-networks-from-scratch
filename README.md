@@ -19,11 +19,6 @@ The primary aim of this library is to serve as a "playground" for understanding 
 
 While the library's performance and production-readiness are not the main focus, it serves as an educational tool for hands-on learning. Contributions and improvements are always welcome!
 
-## Memory Management
-
-My recent refactoring efforts have significantly reduced memory leaks from around 11 million bytes to 70,000 bytes during the execution of the Wine Recognition data model. However, the remaining leaks seem to stem from the logging library and a few other unknown sources. Therefore, please exercise caution when using very large datasets, as they may run out of memory.
-
-
 ## Performance
 The version on the main branch does not come with any performance optimizations, its priority was/is readability and understandability. If you want a more performant version or want to see how neural networks can be optimized take a look at the branch 'optimized-branch'.
 
@@ -33,13 +28,20 @@ It has the following optimizations:
 1. Optimized Memory access
 2. Refactored Matrix struct to allow for easier integration of CUDA.
 3. A thread pool for utilizing POSIX threads and reducing the overhead that comes with thread creation.
-4. CUDA support (Currently working on it).
+4. CUDA support for operations that were causing heavy performance issues.
 
 Here is the average time it takes to run wine-categorization model on different versions:
 1. Non-optimized sequential version: 39ms.
 2. Non-optimized batched version: 85ms.
-3. Optimized but not parallelized version: 56ms.
-4. Optimized and parallelized version: xx (working on it).
+3. Optimized (ThreadPool and/or CUDA) versions take significantly longer as the overhead introduced by parallelization, which outweighs the performance gains for smaller operations.
+
+Here is the average time it takes to run MNIST model on different versions:
+1. Non-Optimized sequential version: 70.9417 minutes.
+2. Optimized batched version: 18.245 minutes.
+
+## Memory Management
+
+My recent refactoring efforts have significantly reduced memory leaks from around 11 million bytes to around 10k bytes during the execution of the Wine Recognition data model. However, the remaining leaks seem to stem from the logging library and a few other unknown sources. Therefore, please exercise caution when using very large datasets, as they may run out of memory.
 
 ## Example Models
 
@@ -56,10 +58,10 @@ I appreciate any feedback that could help improve my skills. Please don't hesita
 
 ## Road Map
 
-1. Add Multithreading for matrix operations.
-2. Add an example model for regression.
-3. Implement Transformers (I might be over my head here, will see as time progresses).
-4. CUDA support.
+[X] Add Multithreading for matrix operations. 
+[ ] Add an example model for regression.
+[ ] Implement Transformers (I might be over my head here, will see as time progresses).
+[X] CUDA support.
 
 ## Prerequisites
 
