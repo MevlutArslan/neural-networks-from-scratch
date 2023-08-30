@@ -13,7 +13,7 @@ This project is my educational journey into the world of neural networks and mac
 
 ## Goal
 
-The primary aim of this library is to serve as a "playground" for understanding the underlying mathematical concepts and algorithms that drive neural networks and deep learning. By building it from the ground up in C, one can learn and customize all aspects of the implementation.
+The primary aim of this library is to serve as a "playground" for understanding the underlying mathematical concepts and algorithms that drive neural networks and deep learning. By building it from the ground up in C, one can learn and customize all aspects of the implementation. 
 
 ## Note
 
@@ -41,7 +41,7 @@ Here is the average time it takes to run MNIST model on different versions:
 
 ## Memory Management
 
-My recent refactoring efforts have significantly reduced memory leaks from around 11 million bytes to around 10k bytes during the execution of the Wine Recognition data model. However, the remaining leaks seem to stem from the logging library and a few other unknown sources. Therefore, please exercise caution when using very large datasets, as they may run out of memory.
+My recent refactoring efforts have significantly reduced memory leaks from around 11 million bytes to around 10k bytes during the execution of the Wine Recognition data model. However, the remaining leaks seem to stem from the logging library and a few other unknown sources.
 
 ## Example Models
 
@@ -58,10 +58,11 @@ I appreciate any feedback that could help improve my skills. Please don't hesita
 
 ## Road Map
 
-[X] Add Multithreading for matrix operations. 
-[ ] Add an example model for regression.
-[ ] Implement Transformers (I might be over my head here, will see as time progresses).
-[X] CUDA support.
+1. [X] Add Multithreading for matrix operations.
+2. [X] CUDA support.
+3. [ ] Add an example model for regression.
+4. [ ] Implement Transformers (I might be over my head here, will see as time progresses)
+5. [ ] Handle edge cases in Matrix operations (Determinant, inverse, mini-matrix ...).
 
 ## Prerequisites
 
