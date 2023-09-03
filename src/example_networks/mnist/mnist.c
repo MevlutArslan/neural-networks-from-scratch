@@ -19,11 +19,11 @@ Model* create_mnist_model() {
     model->plot_config = &mnist_plot_config;
 
     model->data = (ModelData*) malloc(sizeof(ModelData));
-    model->data->totalEpochs = 250;
-    model->data->losses = malloc(sizeof(double) * model->data->totalEpochs);
-    model->data->epochs = malloc(sizeof(double) * model->data->totalEpochs);
-    model->data->learningRates = malloc(sizeof(double) * model->data->totalEpochs);
-    model->data->accuracies = malloc(sizeof(double) * model->data->totalEpochs);
+    model->data->total_epochs = 2;
+    model->data->loss_history = calloc(model->data->total_epochs, sizeof(double));
+    model->data->epoch_history = calloc(model->data->total_epochs, sizeof(double));
+    model->data->learning_rate_history = calloc(model->data->total_epochs, sizeof(double));
+    model->data->accuracy_history = calloc(model->data->total_epochs, sizeof(double));
     model->data->path = "mnist_example_network";
 
     return model;
@@ -34,13 +34,13 @@ OptimizationConfig create_optimizer(int optimizer) {
     optimizationConfig.optimizer = optimizer;
 
     // Learning Rate Decay
-    optimizationConfig.shouldUseLearningRateDecay = 1;
-    optimizationConfig.shouldUseGradientClipping = 0;
+    optimizationConfig.use_learning_rate_decay = 1;
+    optimizationConfig.use_gradient_clipping = 0;
 
     // optimizationConfig.rho = 0.9;
     optimizationConfig.epsilon = 1e-8;
-    optimizationConfig.beta1 = 0.9;
-    optimizationConfig.beta2 = 0.999;
+    optimizationConfig.adam_beta1 = 0.9;
+    optimizationConfig.adam_beta2 = 0.999;
 
     return optimizationConfig;
 }
@@ -52,45 +52,43 @@ NNetwork* mnist_get_network(Model* model) {
 
     NetworkConfig config;
     config.numLayers = 2;
-    config.neuronsPerLayer = malloc(sizeof(int) * config.numLayers);
-    config.neuronsPerLayer[0] = 128;
-    config.neuronsPerLayer[1] = 10;
+    config.neurons_per_layer = malloc(sizeof(int) * config.numLayers);
+    config.neurons_per_layer[0] = 128;
+    config.neurons_per_layer[1] = 10;
 
-    config.inputSize = model->data->trainingData->columns;
+    config.num_rows = model->data->training_data->rows;
+    config.num_features = model->data->training_data->columns;
 
     OptimizationConfig optimizationConfig = create_optimizer(ADAM);
 
     // if you want to use l1 and/or l2 regularization you need to set the size to config.numLayers and 
     // fill these vectors with the lambda values you want
-    config.weightLambdas = create_vector(0);
-    config.biasLambdas = create_vector(0);
+    config.weight_lambdas = create_vector(0);
+    config.bias_lambdas = create_vector(0);
 
-    if(config.weightLambdas->size > 0 ){
-        fill_vector(config.weightLambdas, 1e-5);
+    if(config.weight_lambdas->size > 0 ){
+        fill_vector(config.weight_lambdas, 1e-5);
     }
 
-    if(config.biasLambdas->size > 0 ){
-        fill_vector(config.biasLambdas, 1e-3);
+    if(config.bias_lambdas->size > 0 ){
+        fill_vector(config.bias_lambdas, 1e-3);
     }
 
-    config.activationFunctions = malloc(sizeof(ActivationFunction) * config.numLayers - 1);  // Allocate memory
+    config.activation_fns = calloc(config.numLayers, sizeof(enum ActivationFunction));  // Allocate memory
     
-    config.optimizationConfig = malloc(sizeof(OptimizationConfig));
-    memcpy(config.optimizationConfig, &optimizationConfig, sizeof(OptimizationConfig));
+    config.optimization_config = malloc(sizeof(OptimizationConfig));
+    memcpy(config.optimization_config, &optimizationConfig, sizeof(OptimizationConfig));
 
-    int i;
     for (int i = 0; i < config.numLayers - 1; i++) {
-        memcpy(&config.activationFunctions[i], &LEAKY_RELU, sizeof(ActivationFunction));
+        config.activation_fns[i] = LEAKY_RELU;
     }
 
-    memcpy(&config.activationFunctions[config.numLayers - 1], &SOFTMAX, sizeof(ActivationFunction));
+    // output layer's activation
+    config.activation_fns[config.numLayers - 1] = SOFTMAX;
 
-    config.lossFunction = malloc(sizeof(LossFunction));
-    memcpy(&config.lossFunction->loss_function, &CATEGORICAL_CROSS_ENTROPY, sizeof(LossFunction));
-
+    config.loss_fn = CATEGORICAL_CROSS_ENTROPY;
 
     NNetwork* network = create_network(&config);
-    network->output = create_matrix(model->data->trainingData->rows, network->layers[network->layerCount - 1]->neuronCount);
 
     free_network_config(&config);
 
@@ -116,27 +114,26 @@ int mnist_preprocess_data(ModelData* modelData) {
     int targetColumn = 0;
     int trainingDataSize = training_data->rows;
 
-    modelData->trainingData = get_sub_matrix_except_column(training_data->data, 0, trainingDataSize - 1, 0, training_data->columns - 1, 0);
+    modelData->training_data = get_sub_matrix_except_column(training_data->data, 0, trainingDataSize - 1, 0, training_data->columns - 1, 0);
     
     // extract validation data
-    modelData->validationData = get_sub_matrix_except_column(validation_data->data, 0, validation_data->rows - 1, 0, validation_data->columns - 1, 0);
-    log_debug("Validation Data Matrix: %s", matrix_to_string(modelData->validationData));
+    modelData->validation_data = get_sub_matrix_except_column(validation_data->data, 0, validation_data->rows - 1, 0, validation_data->columns - 1, 0);
 
     // extract yValues
     Vector* yValues_Training = extractYValues(training_data->data, 0);
     Vector* yValues_Testing = extractYValues(validation_data->data, 0);
 
-    modelData->yValues_Training = oneHotEncode(yValues_Training, 10);
-    modelData->yValues_Testing = oneHotEncode(yValues_Testing, 10);
+    modelData->training_labels = oneHotEncode(yValues_Training, 10);
+    modelData->validation_labels = oneHotEncode(yValues_Testing, 10);
 
     // normalize training data 
-    for(int col = 0; col < modelData->trainingData->columns; col++) {
-        normalizeColumn_division(modelData->trainingData, col, 255);
+    for(int col = 0; col < modelData->training_data->columns; col++) {
+        normalizeColumn_division(modelData->training_data, col, 255);
     }
 
     // normalize validation data
-    for(int col = 0; col < modelData->validationData->columns; col++) {
-        normalizeColumn_division(modelData->validationData, col, 255);
+    for(int col = 0; col < modelData->validation_data->columns; col++) {
+        normalizeColumn_division(modelData->validation_data, col, 255);
     }
     
     free_data(training_data);
@@ -154,43 +151,42 @@ void mnist_train_network(Model* model) {
         log_error("%s", "Error creating network!");
         return;
     }
-    ModelData* modelData = model->data;
+    ModelData* model_data = model->data;
     
     // default rate of keras -> 0.001
     // kaparthy's recommendation for adam: 0.0003
     double learningRate = 0.01;
     double currentLearningRate = learningRate;
-    int step = 1;
-    int totalEpochs = modelData->totalEpochs;
+    int epoch = 1;
 
-    network->optimizationConfig->learningRateDecayAmount = learningRate / totalEpochs;
+    network->optimization_config->learning_rate_decay_amount = learningRate / model_data->total_epochs;
 
     double minLoss = __DBL_MAX__;
     double maxAccuracy = 0.0;
 
-      log_info("Starting training with learning rate of: %f for %d epochs.", learningRate, totalEpochs);
-    while(step < totalEpochs) {
-        // learningRates[step] = currentLearningRate;
+    log_info("Starting training with learning rate of: %f for %d epochs.", learningRate, model_data->total_epochs);
+    while(epoch < model_data->total_epochs) {
+        model_data->learning_rate_history[epoch] = currentLearningRate;
         
-        // for(int inputRow = 0; inputRow < model->data->trainingData->rows; inputRow++) {
-        //     Vector* output = create_vector(network->layers[network->layerCount - 1]->neuronCount);
-        //     forward_pass(network, modelData->trainingData->data[inputRow], output); 
-        //     backpropagation(network, modelData->trainingData->data[inputRow], output, modelData->yValues_Training->data[inputRow]);
-        //     network->output->data[inputRow] = copy_vector(output);
-        //     free_vector(output);
-        // }
-        
-        calculate_loss(network, modelData->yValues_Training);
-        
-        if(network->optimizationConfig->shouldUseLearningRateDecay == 1) {
-            double decayRate = network->optimizationConfig->learningRateDecayAmount;
-            currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)step)));
+        for(int inputRow = 0; inputRow < model->data->training_data->rows; inputRow++) {
+            Vector* output = create_vector(network->layers[network->num_layers - 1]->num_neurons);
+            forward_pass_row_by_row(network, model_data->training_data->data[inputRow], output); 
+            backpropagation(network, model_data->training_data->data[inputRow], output, model_data->training_labels->data[inputRow]);
+            network->output->data[inputRow] = copy_vector(output);
+            free_vector(output);
         }
-        network->currentStep = step;
-        network->optimizer(network, currentLearningRate);
+        
+        calculate_loss(network, model_data->validation_labels, network->output);
+        
+        if(network->optimization_config->use_learning_rate_decay == 1) {
+            double decayRate = network->optimization_config->learning_rate_decay_amount;
+            currentLearningRate = currentLearningRate * (1 / (1.0 + (decayRate * (double)epoch)));
+        }
+        network->training_epoch = epoch;
+        network->optimization_algorithm(network, currentLearningRate, 0);
 
         // if(step == 1 || step % 10 == 0){
-            log_debug("Step: %d, Accuracy: %f, Loss: %f \n", step, network->accuracy, network->loss);  
+            log_debug("Epoch: %d, Accuracy: %f, Loss: %f \n", epoch, network->accuracy, network->loss);  
         // }
         minLoss = fmin(minLoss, network->loss);
         
@@ -200,18 +196,18 @@ void mnist_train_network(Model* model) {
         // storedSteps[step] = step;
         // accuracies[step] = network->accuracy;
 
-        step++;
+        epoch++;
         // Clear the gradients
-        for(int layerIndex = 0; layerIndex < network->layerCount; layerIndex++) {
-            fill_matrix(network->layers[layerIndex]->gradients, 0.0f);
-            fill_vector(network->layers[layerIndex]->biasGradients, 0.0f);
+        for(int layerIndex = 0; layerIndex < network->num_layers; layerIndex++) {
+            fill_matrix(network->layers[layerIndex]->weight_gradients, 0.0f);
+            fill_vector(network->layers[layerIndex]->bias_gradients, 0.0f);
         }
     }
 
     log_info("Minimum loss during training: %f \n", minLoss);
     log_info("Maximum accuracy during training: %f \n", maxAccuracy);
 
-    save_network(modelData->path, network);
+    save_network(model_data->path, network);
 
     free_network(network);
 }

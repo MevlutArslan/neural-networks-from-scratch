@@ -2,10 +2,6 @@
 #include <stdio.h>
 #include <math.h>
 
-ActivationFunction RELU = { .activation = relu, .derivative = relu_derivative, .name = "RELU" };
-ActivationFunction LEAKY_RELU = { .activation = leakyRelu, .derivative = leakyRelu_derivative, .name = "LEAKY_RELU" };
-ActivationFunction SOFTMAX = { .activation = softmax, .name = "SOFTMAX" };
-
 // in place modification
 void relu(Vector* vector) {
     for (int i = 0; i < vector->size; i++) {
@@ -132,18 +128,28 @@ Matrix** softmax_derivative_parallelized(Matrix* output) {
     return jacobian_matrices;
 }
 
-const char* get_activation_function_name(const ActivationFunction* activationFunction) {
-    return activationFunction->name;
+char* get_activation_function_name(const ActivationFunction activation_function) {
+    switch (activation_function) {
+        case RELU:
+            return RELU_STR;
+        case LEAKY_RELU:
+            return LEAKY_RELU_STR;
+        case SOFTMAX:
+            return SOFTMAX_STR;
+        default:
+            return "unrecognized_afn";
+    }
 }
 
 ActivationFunction get_activation_function_by_name(char* name) {
-    if(strcmp(name, LEAKY_RELU.name) == 0) {
+    if(strcmp(name, RELU_STR) == 0) {
+        return RELU;
+    }else if(strcmp(name, LEAKY_RELU_STR) == 0) {
         return LEAKY_RELU;
-    }
-    if(strcmp(name, SOFTMAX.name) == 0) {
+    }else if(strcmp(name, SOFTMAX_STR) == 0) {
         return SOFTMAX;
+    }else {
+        log_error("Unrecognized activation function name: %s", name);
+        return UNRECOGNIZED_AFN;
     }
-    
-    // I will let RELU be the default for now
-    return RELU;
 }

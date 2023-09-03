@@ -6,16 +6,16 @@
 #include "../helper/data_processing.h"
 
 typedef struct {
-    double* losses;
-    double* epochs;
-    double* learningRates;
-    double* accuracies;
-    int totalEpochs;
+    double* loss_history;
+    double* epoch_history;
+    double* learning_rate_history;
+    double* accuracy_history;
+    int total_epochs;
 
-    Matrix* trainingData;
-    Matrix* validationData;
-    Matrix* yValues_Training;
-    Matrix* yValues_Testing;
+    Matrix* training_data;
+    Matrix* validation_data;
+    Matrix* training_labels;
+    Matrix* validation_labels;
 
     char* path;
 } ModelData;
@@ -30,10 +30,8 @@ typedef struct Model{
     void (*plot_config)();
     ModelData* data;
 
-    struct ThreadPool* thread_pool;
 } Model;
 
 void free_modelData(ModelData* modelData);
 void free_model(Model* model);
 #endif
-

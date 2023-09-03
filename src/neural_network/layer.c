@@ -3,41 +3,43 @@
 Layer* create_layer(LayerConfig* config) {
     Layer* layer = malloc(sizeof(Layer));
 
-    layer->neuronCount = config->neuronCount;
+    layer->num_neurons = config->num_neurons;
 
     // If 2 subsequent layers have X and Y neurons, then the number of weights is X*Y
-    layer->weights = create_matrix(config->neuronCount, config->inputSize);
-    initialize_weights_he(config->inputSize, config->neuronCount, layer->weights);
+    layer->weights = create_matrix(config->num_neurons, config->num_inputs);
+    initialize_weights_he(config->num_inputs, config->num_neurons, layer->weights);
     
-    layer->gradients = create_matrix(layer->weights->rows, layer->weights->columns);
-    fill_matrix(layer->gradients, 0.0);
+    layer->weight_gradients = create_matrix(layer->weights->rows, layer->weights->columns);
+    fill_matrix(layer->weight_gradients, 0.0);
 
-    layer->biases = create_vector(config->neuronCount);
+    layer->biases = create_vector(config->num_neurons);
     fill_vector_random(layer->biases, -0.5, 0.5);
 
-    layer->biasGradients = create_vector(config->neuronCount);
+    layer->output = create_vector(config->num_neurons);
 
-    layer->weightedSums = create_vector(config->neuronCount);
-    
-    layer->activationFunction = config->activationFunction;
+    layer->bias_gradients = create_vector(config->num_neurons);
 
-    layer->dLoss_dWeightedSums = create_vector(layer->neuronCount);
+    layer->weighted_sums = create_vector(config->num_neurons);
     
-    layer->weightMomentums = create_matrix(layer->weights->rows, layer->weights->columns);
-    layer->biasMomentums = create_vector(layer->biases->size);
-    layer->weightCache = create_matrix(layer->weights->rows, layer->weights->columns);
-    layer->biasCache = create_vector(layer->biases->size);
+    layer->activation_fn = config->activation_fn;
+
+    layer->loss_wrt_wsums = create_vector(layer->num_neurons);
     
-    if(config->shouldUseRegularization == 1) {
-        if(config->weightLambda != 0) {
-            layer->weightLambda = config->weightLambda;
+    layer->weight_momentums = create_matrix(layer->weights->rows, layer->weights->columns);
+    layer->bias_momentums = create_vector(layer->biases->size);
+    layer->weight_cache = create_matrix(layer->weights->rows, layer->weights->columns);
+    layer->bias_cache = create_vector(layer->biases->size);
+    
+    if(config->use_regularization == 1) {
+        if(config->weight_lambda != 0) {
+            layer->weight_lambda = config->weight_lambda;
         }
-        if(config->biasLambda != 0) {
-            layer->biasLambda = config->biasLambda;
+        if(config->bias_lambda != 0) {
+            layer->bias_lambda = config->bias_lambda;
         }
     }else {
-        layer->weightLambda = 0;
-        layer->biasLambda = 0;
+        layer->weight_lambda = 0;
+        layer->bias_lambda = 0;
     }
     return layer;
 }
@@ -49,16 +51,16 @@ void free_layer(Layer* layer) {
 
     // Free the resources allocated for the layer
     free_matrix(layer->weights);
-    free_matrix(layer->gradients);
-    free_matrix(layer->weightMomentums);
-    free_matrix(layer->weightCache);
+    free_matrix(layer->weight_gradients);
+    free_matrix(layer->weight_momentums);
+    free_matrix(layer->weight_cache);
     
-    free_vector(layer->biasCache);
-    free_vector(layer->biasMomentums);
+    free_vector(layer->bias_cache);
+    free_vector(layer->bias_momentums);
     free_vector(layer->biases);
-    free_vector(layer->biasGradients);
-    free_vector(layer->dLoss_dWeightedSums);
-    free_vector(layer->weightedSums);
+    free_vector(layer->bias_gradients);
+    free_vector(layer->loss_wrt_wsums);
+    free_vector(layer->weighted_sums);
 
     // Free the layer itself
     free(layer);
@@ -81,14 +83,18 @@ void initialize_weights_he(int inputNeuronCount, int outputNeuronCount, Matrix* 
 
 char* serialize_layer(const Layer* layer) {
     cJSON *root = cJSON_CreateObject();
-    cJSON_AddItemToObject(root, "neuronCount", cJSON_CreateNumber(layer->neuronCount));
+    cJSON_AddItemToObject(root, "num_neurons", cJSON_CreateNumber(layer->num_neurons));
     
-    cJSON_AddItemToObject(root, "weights", cJSON_CreateRaw(serialize_matrix(layer->weights)));
-    cJSON_AddItemToObject(root, "biases", cJSON_CreateRaw(serialize_vector(layer->biases)));
+    char* serialized_weights = serialize_matrix(layer->weights);
+    char* serialized_biases = serialize_vector(layer->biases);
+    cJSON_AddItemToObject(root, "weights", cJSON_CreateRaw(serialized_weights));
+    cJSON_AddItemToObject(root, "biases", cJSON_CreateRaw(serialized_biases));
+
+    free(serialized_weights);
         
     // Instead of trying to serialize the function pointers, we'll serialize a name associated with the function
-    char* activationFunctionName = get_activation_function_name(layer->activationFunction);
-    cJSON_AddItemToObject(root, "activationFunction", cJSON_CreateString(activationFunctionName));
+    char* activationFunctionName = get_activation_function_name(layer->activation_fn);
+    cJSON_AddItemToObject(root, "ActivationFunction", cJSON_CreateString(activationFunctionName));
     
     char *jsonString = cJSON_PrintUnformatted(root);
 
@@ -100,22 +106,24 @@ char* serialize_layer(const Layer* layer) {
 Layer* deserialize_layer(cJSON* json) {
     Layer* layer = malloc(sizeof(Layer));
 
-    layer->neuronCount = cJSON_GetObjectItem(json, "neuronCount")->valueint;
+    layer->num_neurons = cJSON_GetObjectItem(json, "num_neurons")->valueint;
     layer->weights = deserialize_matrix(cJSON_GetObjectItem(json, "weights"));
 
     layer->biases = deserialize_vector(cJSON_GetObjectItem(json, "biases"));
 
-    layer->activationFunction = malloc(sizeof(ActivationFunction));
-    *layer->activationFunction = get_activation_function_by_name(cJSON_GetObjectItem(json, "activationFunction")->valuestring);
-    layer->weightedSums = create_vector(layer->neuronCount);
-    
-    layer->weightCache = NULL;
-    layer->biasCache = NULL;
-    layer->weightMomentums = NULL;
-    layer->dLoss_dWeightedSums = NULL;
-    layer->biasMomentums = NULL;
+    layer->activation_fn = get_activation_function_by_name(cJSON_GetObjectItem(json, "ActivationFunction")->valuestring);
 
-    layer->gradients = NULL;
-    layer->biasGradients = NULL;
+    layer->weighted_sums = create_vector(layer->num_neurons);
+
+    layer->output = create_vector(layer->num_neurons);
+
+    layer->weight_cache = NULL;
+    layer->bias_cache = NULL;
+    layer->weight_momentums = NULL;
+    layer->loss_wrt_wsums = NULL;
+    layer->bias_momentums = NULL;
+
+    layer->weight_gradients = NULL;
+    layer->bias_gradients = NULL;
     return layer;
 }

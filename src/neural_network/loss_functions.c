@@ -1,8 +1,5 @@
 #include "loss_functions.h"
 
-LossFunction MEAN_SQUARED_ERROR = { .loss_function = meanSquaredError, .derivative = meanSquaredErrorDerivative, .name = "MEAN_SQUARED_ERROR" };
-LossFunction CATEGORICAL_CROSS_ENTROPY = { .loss_function = categoricalCrossEntropyLoss, .name = "CATEGORICAL_CROSS_ENTROPY" };
-
 double meanSquaredError(Matrix* outputs, Matrix* targets) {
     double mse = 0.0;
 
@@ -126,10 +123,6 @@ Vector* categoricalCrossEntropyLossDerivative(Vector* target, Vector* prediction
     return lossGrads;
 }
 
-const char* get_loss_function_name(const LossFunction* lossFunction) {
-    return lossFunction->name;
-}
-
 void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* prediction, Matrix* loss_wrt_output) {
     for(int i = 0; i < target->rows; i++) {
         Vector* derivatives = categoricalCrossEntropyLossDerivative(target->data[i], prediction->data[i]);
@@ -137,4 +130,27 @@ void computeCategoricalCrossEntropyLossDerivativeMatrix(Matrix* target, Matrix* 
         memcpy(loss_wrt_output->data[i]->elements, derivatives->elements, derivatives->size * sizeof(double));
         free_vector(derivatives);
     }
+}
+
+LossFunctionType get_loss_fn_by_name(char* name) {
+    if(strcmp(name, MEAN_SQUARED_ERROR_STR) == 0) {
+        return MEAN_SQUARED_ERROR;
+    }else if(strcmp(name, CATEGORICAL_CROSS_ENTROPY_STR) == 0) {
+        return CATEGORICAL_CROSS_ENTROPY;
+    }else {
+        log_error("Unrecognized loss function name: %s", name);
+        return UNRECOGNIZED_LFN;
+    }
+}
+
+const char* loss_fn_to_string(const LossFunctionType lossFunction) {
+    switch (lossFunction) {
+        case MEAN_SQUARED_ERROR:
+            return MEAN_SQUARED_ERROR_STR;
+        case CATEGORICAL_CROSS_ENTROPY:
+            return CATEGORICAL_CROSS_ENTROPY_STR;
+        default:
+            return "unrecognized_lfn";
+    }
+    
 }
