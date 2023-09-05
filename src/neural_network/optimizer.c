@@ -52,32 +52,46 @@ void adagrad(NNetwork* network, double learningRate, int batch_size) {
         return;
     }
 
-    Matrix** weight_gradients = network->weight_gradients;
-    Vector** bias_gradients = network->bias_gradients;
+    for(int layer_index = 0; layer_index < network->num_layers; layer_index++) {
+        Layer* current_layer = network->layers[layer_index];
 
-    
-    for(int layerIndex = 0; layerIndex < network->num_layers; layerIndex++) {
-        Layer* currentLayer = network->layers[layerIndex];
-        fill_matrix(currentLayer->weight_cache, 0.0f);
-        fill_vector(currentLayer->bias_cache, 0.0f);
-        for(int neuronIndex = 0; neuronIndex < currentLayer->num_neurons; neuronIndex++) {
-            double biasGradient = bias_gradients[layerIndex]->elements[neuronIndex];
-            // TODO rename biasValueToUpdateBy!!!!
-            double biasValueToUpdateBy = learningRate * biasGradient;
-            double biasGradientSquared = biasGradient * biasGradient;
-            
-            for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
-                double gradient = weight_gradients[layerIndex]->data[neuronIndex]->elements[weightIndex];
-                // TODO rename valueToUpdateBy!!!!
-                double valueToUpdateBy = learningRate * gradient;
-                double gradientSquared = gradient * gradient;
+        fill_matrix(current_layer->weight_cache, 0.0f);
+        fill_vector(current_layer->bias_cache, 0.0f);
 
-                currentLayer->weight_cache->data[neuronIndex]->elements[weightIndex] = gradientSquared;
-                currentLayer->weights->data[neuronIndex]->elements[weightIndex] -= valueToUpdateBy / (sqrt(gradientSquared) + epsilon);
+        for(int neuron_index = 0; neuron_index < current_layer->num_neurons; neuron_index++) {
+            for(int weight_index = 0; weight_index < current_layer->weights->columns; weight_index++) {
+                double weight_gradient = 0.0f;
+                if(batch_size == 1) {
+                    weight_gradient = network->weight_gradients[layer_index]->data[neuron_index]->elements[weight_index];
+                }else if(batch_size == 0) {
+                    weight_gradient = current_layer->weight_gradients->data[neuron_index]->elements[weight_index];
+                }else {
+                    log_error("not yet implemented!");
+                    return;
+                }
+
+                double weight_update = learningRate * weight_gradient;
+                double gradient_squared = weight_gradient * weight_gradient;
+
+                current_layer->weight_cache->data[neuron_index]->elements[weight_index] = gradient_squared;
+                current_layer->weights->data[neuron_index]->elements[weight_index] -= weight_update / (sqrt(gradient_squared) + epsilon);
             }
 
-            currentLayer->bias_cache->elements[neuronIndex] = biasGradientSquared;
-            currentLayer->biases->elements[neuronIndex] -= biasValueToUpdateBy / (sqrt(biasGradientSquared) + epsilon);
+            double bias_gradient = 0.0f;
+            if(batch_size == 1) {
+                bias_gradient = network->bias_gradients[layer_index]->elements[neuron_index];
+            }else if(batch_size == 0) {
+                bias_gradient = current_layer->bias_gradients->elements[neuron_index];
+            }else {
+                log_error("not yet implemented!");
+                return;
+            }
+            
+            double bias_update = learningRate * bias_gradient;
+            double gradient_squared = bias_gradient * bias_gradient;
+
+            current_layer->bias_cache->elements[neuron_index] = gradient_squared;
+            current_layer->biases->elements[neuron_index] -= bias_update / (sqrt(gradient_squared) + epsilon);
         }
     }
 }
