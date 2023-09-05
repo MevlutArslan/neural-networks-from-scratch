@@ -91,8 +91,8 @@ void adagrad(NNetwork* network, double learningRate, int batch_size) {
                 double weight_update = learningRate * weight_gradient;
                 double gradient_squared = weight_gradient * weight_gradient;
 
-                current_layer->weight_cache->data[neuron_index]->elements[weight_index] = gradient_squared;
-                current_layer->weights->data[neuron_index]->elements[weight_index] -= weight_update / (sqrt(gradient_squared) + epsilon);
+                current_layer->weight_cache->data[neuron_index]->elements[weight_index] += gradient_squared;
+                current_layer->weights->data[neuron_index]->elements[weight_index] -= weight_update / (sqrt(current_layer->weight_cache->data[neuron_index]->elements[weight_index]) + epsilon);
             }
 
             double bias_gradient = 0.0f;
@@ -108,8 +108,8 @@ void adagrad(NNetwork* network, double learningRate, int batch_size) {
             double bias_update = learningRate * bias_gradient;
             double gradient_squared = bias_gradient * bias_gradient;
 
-            current_layer->bias_cache->elements[neuron_index] = gradient_squared;
-            current_layer->biases->elements[neuron_index] -= bias_update / (sqrt(gradient_squared) + epsilon);
+            current_layer->bias_cache->elements[neuron_index] += gradient_squared;
+            current_layer->biases->elements[neuron_index] -= bias_update / (sqrt(current_layer->bias_cache->elements[neuron_index]) + epsilon);
         }
     }
 }
