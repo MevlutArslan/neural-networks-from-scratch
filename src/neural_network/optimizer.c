@@ -137,9 +137,6 @@ void adam(NNetwork* network, double learningRate, int batch_size) {
     double beta2 = network->optimization_config->adam_beta2;
     double epsilon = network->optimization_config->epsilon;
 
-    Matrix** weight_gradients = network->weight_gradients;
-    Vector** bias_gradients = network->bias_gradients;
-
     if(beta1 == 0) {
         log_error("%s", "BETA_1 HAS NOT BEEN SET! \n");
         return;
@@ -156,30 +153,35 @@ void adam(NNetwork* network, double learningRate, int batch_size) {
     }
     
 
-    for(int layerIndex = 0; layerIndex < network->num_layers; layerIndex++) {
-        Layer* currentLayer = network->layers[layerIndex];
+    for(int layer_index = 0; layer_index < network->num_layers; layer_index++) {
+        Layer* current_layer = network->layers[layer_index];
 
-        fill_matrix(currentLayer->weight_momentums, 0.0f);
-        fill_vector(currentLayer->bias_momentums, 0.0f);
+        fill_matrix(current_layer->weight_momentums, 0.0f);
+        fill_vector(current_layer->bias_momentums, 0.0f);
 
-        fill_matrix(currentLayer->weight_cache, 0.0f);
-        fill_vector(currentLayer->bias_cache, 0.0f);
+        fill_matrix(current_layer->weight_cache, 0.0f);
+        fill_vector(current_layer->bias_cache, 0.0f);
 
-        for(int neuronIndex = 0; neuronIndex < currentLayer->num_neurons; neuronIndex++) {
-            for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
+        for(int neuron_index = 0; neuron_index < current_layer->num_neurons; neuron_index++) {
+            for(int weight_index = 0; weight_index < current_layer->weights->columns; weight_index++) {
                 double weight_gradient = 0.0;
                 if(batch_size == 1) {
-                    weight_gradient = weight_gradients[layerIndex]->data[neuronIndex]->elements[weightIndex];
+                    weight_gradient = network->weight_gradients[layer_index]->data[neuron_index]->elements[weight_index];
                 }else if(batch_size == 0) {
-                    weight_gradient = network->layers[layerIndex]->weight_gradients->data[neuronIndex]->elements[weightIndex];
+                    weight_gradient = network->layers[layer_index]->weight_gradients->data[neuron_index]->elements[weight_index];
+                }else {
+                    log_error("not yet implemented!");
+                    return;
                 }
-                // m(t) = beta1 * m(t-1) + (1 – beta1) * g(t)
-                double old_momentum =  currentLayer->weight_momentums->data[neuronIndex]->elements[weightIndex];
-                double weightMomentum = beta1 * old_momentum + (1 - beta1) * weight_gradient;
 
-                currentLayer->weight_momentums->data[neuronIndex]->elements[weightIndex] = weightMomentum;
+                // m(t) = beta1 * m(t-1) + (1 – beta1) * g(t)
+                double old_momentum =  current_layer->weight_momentums->data[neuron_index]->elements[weight_index];
+                double weight_momentum = beta1 * old_momentum + (1 - beta1) * weight_gradient;
+
+                current_layer->weight_momentums->data[neuron_index]->elements[weight_index] = weight_momentum;
+
                 // mhat(t) = m(t) / (1 – beta1(t))
-                double momentumCorrection = weightMomentum / (1 - pow(beta1, network->training_epoch));
+                double momentum_correction = weight_momentum / (1 - pow(beta1, network->training_epoch));
 
                 #ifdef DEBUG
                     log_debug("Weight Momentum: %f \n"
@@ -191,12 +193,12 @@ void adam(NNetwork* network, double learningRate, int batch_size) {
                 #endif
 
                 // v(t) = beta2 * v(t-1) + (1 – beta2) * g(t)^2
-                double old_cache = currentLayer->weight_cache->data[neuronIndex]->elements[weightIndex];
+                double old_cache = current_layer->weight_cache->data[neuron_index]->elements[weight_index];
+                
                 double weight_cache = beta2 * old_cache + (1 - beta2) * pow(weight_gradient, 2);
-                currentLayer->weight_cache->data[neuronIndex]->elements[weightIndex] = weight_cache;
-
+                current_layer->weight_cache->data[neuron_index]->elements[weight_index] = weight_cache;
                 // vhat(t) = v(t) / (1 – beta2(t))
-                double cacheCorrection = weight_cache / (1 - pow(beta2, network->training_epoch));
+                double cache_correction = weight_cache / (1 - pow(beta2, network->training_epoch));
 
                 #ifdef DEBUG
                     log_debug("Weight Cache: %f \n"
@@ -207,32 +209,37 @@ void adam(NNetwork* network, double learningRate, int batch_size) {
                               beta1, pow(gradient, 2), network->currentStep);
                 #endif
                 // x(t) = x(t-1) – alpha * mhat(t) / (sqrt(vhat(t)) + eps)
-                double oldWeight = currentLayer->weights->data[neuronIndex]->elements[weightIndex];
-                double newWeight = oldWeight - (learningRate * momentumCorrection) / (sqrt(cacheCorrection) + epsilon);
+                double old_weight = current_layer->weights->data[neuron_index]->elements[weight_index];
+                double new_weight = old_weight - (learningRate * momentum_correction) / (sqrt(cache_correction) + epsilon);
 
-                currentLayer->weights->data[neuronIndex]->elements[weightIndex] = newWeight;
+                current_layer->weights->data[neuron_index]->elements[weight_index] = new_weight;
                 #ifdef DEBUG
                     log_debug("Old Weight: %f \n"
                               "\t\t\t\tNew Weight %f \n",                     
-                              oldWeight,
+                              old_weight,
                               currentLayer->weights->data[neuronIndex][weightIndex]);
                 #endif
+                // printf("%f, ", currentLayer->weights->data[neuronIndex]->elements[weightIndex]);
+
             }
 
-            double biasGradient = 0;
+            double bias_gradient = 0;
             if(batch_size == 1) {
-                biasGradient = bias_gradients[layerIndex]->elements[neuronIndex];
+                bias_gradient = network->bias_gradients[layer_index]->elements[neuron_index];
             }else if(batch_size == 0) {
-                biasGradient = network->layers[layerIndex]->bias_gradients->elements[neuronIndex];
+                bias_gradient = network->layers[layer_index]->bias_gradients->elements[neuron_index];
+            }else {
+                log_error("not yet implemented!");
+                return;
             }
 
             // BIAS UPDATE
 
             // Momentum calculations
-            double biasMomentum = beta1 * currentLayer->bias_momentums->elements[neuronIndex] + (1 - beta1) * biasGradient;
-            currentLayer->bias_momentums->elements[neuronIndex] = biasMomentum;
+            double bias_momentum = beta1 * current_layer->bias_momentums->elements[neuron_index] + (1 - beta1) * bias_gradient;
+            current_layer->bias_momentums->elements[neuron_index] = bias_momentum;
 
-            double momentumCorrection = biasMomentum / (1 - pow(beta1, network->training_epoch));
+            double momentum_correction = bias_momentum / (1 - pow(beta1, network->training_epoch));
 
             #ifdef DEBUG
                 log_debug("Bias Momentum: %f \n"
@@ -243,8 +250,8 @@ void adam(NNetwork* network, double learningRate, int batch_size) {
                           beta1, biasGradient, network->currentStep);
             #endif
             // Cache calculations
-            double bias_cache = beta2 * currentLayer->bias_cache->elements[neuronIndex] + (1 - beta2) * pow(biasGradient, 2);
-            currentLayer->bias_cache->elements[neuronIndex] = bias_cache;
+            double bias_cache = beta2 * current_layer->bias_cache->elements[neuron_index] + (1 - beta2) * pow(bias_gradient, 2);
+            current_layer->bias_cache->elements[neuron_index] = bias_cache;
 
             double cacheCorrection = bias_cache / (1 - pow(beta2, network->training_epoch));
             #ifdef DEBUG
@@ -256,14 +263,15 @@ void adam(NNetwork* network, double learningRate, int batch_size) {
                           beta2, pow(biasGradient, 2), network->currentStep);
             #endif
 
-            double oldBias = currentLayer->biases->elements[neuronIndex];
-            currentLayer->biases->elements[neuronIndex] -= (learningRate * momentumCorrection) / (sqrt(cacheCorrection) + epsilon);
-
+            double old_bias = current_layer->biases->elements[neuron_index];
+            double new_bias = old_bias - (learningRate * momentum_correction) / (sqrt(cacheCorrection) + epsilon);
+            current_layer->biases->elements[neuron_index] = new_bias;
+            
             #ifdef DEBUG
                 log_debug("Old Weight: %f \n"
                           "\t\t\t\tNew Weight: %f \n",                     
                           oldBias,
-                          currentLayer->biases->elements[neuronIndex]);
+                          current_layer->biases->elements[neuron_index]);
             #endif
         }
     }
