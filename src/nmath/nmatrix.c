@@ -93,7 +93,7 @@ char* matrix_to_string(const Matrix* matrix) {
 }
 
 
-int is_equal(const Matrix* m1, const Matrix* m2) {
+int is_equal_matrix(const Matrix* m1, const Matrix* m2) {
     double epsilon = 1e-6; // Adjust the epsilon value as needed
 
     if (m1->rows != m2->rows || m1->columns != m2->columns) {
@@ -104,6 +104,7 @@ int is_equal(const Matrix* m1, const Matrix* m2) {
         for (int j = 0; j < m1->columns; j++) {
             double diff = fabs(m1->data[i]->elements[j] - m2->data[i]->elements[j]);
             if (diff > epsilon) {
+                log_error("values: %f, %f don't match!", m1->data[i]->elements[j], m2->data[i]->elements[j]);
                 return 0; // Element mismatch
             }
         }

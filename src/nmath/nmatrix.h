@@ -21,7 +21,7 @@ void fill_matrix(Matrix* matrix, double value);
 void free_matrix(Matrix* matrix);
 
 char* matrix_to_string(const Matrix* matrix);
-int is_equal(const Matrix* m1, const Matrix* m2);
+int is_equal_matrix(const Matrix* m1, const Matrix* m2);
 
 int is_square(const Matrix* m);
 
