@@ -13,4 +13,7 @@ const char* get_optimizer_name(enum OPTIMIZER optimizer);
 // DEBUG VARIABLES
 // #define DEBUG
 
+#define TRUE 1
+#define FALSE 0
+
 #endif
