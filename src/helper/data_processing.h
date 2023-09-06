@@ -11,6 +11,10 @@ typedef struct {
     Matrix* data;
 } Data;
 
+typedef enum NormalizationMethod {
+    STANDARD_DEVIATION, BY_DIVISION
+} NormalizationMethod;
+
 Data* load_csv(char* fileLocation);
 
 void removeResultsFromEvaluationSet(Matrix* evalMatrix, int columnIndex);
@@ -20,8 +24,9 @@ Matrix* oneHotEncode(Vector* categories, int numberOfCategories);
 int getRowCount(char* fileLocation);
 int getColumnCount(char* fileLocation);
 
-void normalizeColumn_standard_deviation(Matrix* matrix, int columnIndex);
-void normalizeColumn_division(Matrix* matrix, int columnIndex, double toDivideBy);
+void normalize_column(NormalizationMethod normalization_method, Matrix* matrix, int column_index, float division_factor);
+void normalize_column_standard_deviation(Matrix* matrix, int column_index);
+void normalize_column_by_division(Matrix* matrix, int column_index, float division_factor);
 
 void normalizeVector(Vector* vector);
 

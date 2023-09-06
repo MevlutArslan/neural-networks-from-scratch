@@ -134,18 +134,31 @@ int getRowCount(char* fileLocation) {
 }
 
 
-void normalizeColumn_standard_deviation(Matrix* matrix, int columnIndex) {
-    double mean = column_mean(matrix, columnIndex);
-    double standard_deviation = column_standard_deviation(matrix, columnIndex);
-
-    for(int row = 0; row < matrix->rows; row++) {
-        matrix->data[row]->elements[columnIndex] = (matrix->data[row]->elements[columnIndex] - mean) / standard_deviation;
+void normalize_column(NormalizationMethod normalization_method, Matrix* matrix, int column_index, float division_factor) {
+    switch (normalization_method)
+    {
+    case STANDARD_DEVIATION:
+        normalize_column_standard_deviation(matrix, column_index);
+        break;
+    case BY_DIVISION:
+        normalize_column_by_division(matrix, column_index, division_factor);
+    default:
+        break;
     }
 }
 
-void normalizeColumn_division(Matrix* matrix, int columnIndex, double toDivideBy) {
+void normalize_column_standard_deviation(Matrix* matrix, int column_index) {
+    double mean = column_mean(matrix, column_index);
+    double standard_deviation = column_standard_deviation(matrix, column_index);
+
     for(int row = 0; row < matrix->rows; row++) {
-        matrix->data[row]->elements[columnIndex] = matrix->data[row]->elements[columnIndex] / toDivideBy;
+        matrix->data[row]->elements[column_index] = (matrix->data[row]->elements[column_index] - mean) / standard_deviation;
+    }
+}
+
+void normalize_column_by_division(Matrix* matrix, int column_index, float division_factor) {
+    for(int row = 0; row < matrix->rows; row++) {
+        matrix->data[row]->elements[column_index] = matrix->data[row]->elements[column_index] / division_factor;
     }
 }
 
