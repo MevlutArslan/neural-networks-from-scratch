@@ -5,13 +5,11 @@
 #include "../tests/test.h"
 #include <time.h>
 #include "../libraries/logger/log.h"
-#include "example_networks/mnist/mnist.h"
-#include "example_networks/wine_dataset/wine_dataset.h"
 #include "helper/thread_pool.h"
 #include "nmath/nmath.h"
 #include "nmath/nmatrix.h"
 #include "nmath/nvector.h"
-#include "nmath/math_tasks.h"
+#include "networks/model.h"
 
 void runProgram();
 

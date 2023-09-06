@@ -2,7 +2,6 @@
 #define NMATH_H
 
 #include <math.h>
-#include "math_tasks.h"
 #include "nvector.h"
 #include "nmatrix.h"
 #include "../../libraries/logger/log.h"
@@ -95,9 +94,5 @@ int arg_max(Vector* output);
 double column_mean(Matrix* matrix, int columnIndex);
 double column_standard_deviation(Matrix* matrix, int columnIndex);
 
-// Parallelized functions
-// #ifdef ENABLE_PARALLELISM
-    void parallelized_dot_product(void* args);
-// #endif
 
 #endif

@@ -1,5 +1,4 @@
 #include "nmath.h"
-#include "math_tasks.h"
 #include "nmatrix.h"
 #include "nvector.h"
 #include <pthread.h>
@@ -358,21 +357,3 @@ Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size)
 
     return result;
 }
-
-// PARALLELIZED CODE
-
-void parallelized_dot_product(void* args) {
-    struct MatrixVectorOperation* data = (struct MatrixVectorOperation*) args;
-    assert(data->matrix != NULL && data->vector != NULL && data->output != NULL);
-    assert(data->matrix->columns == data->vector->size);
-
-    int beginIndex = data->begin_index;
-    int endIndex = data->end_index;
-
-    for(int i = beginIndex; i < endIndex; i++) {
-        for(int j = 0; j < data->matrix->columns; j++) {
-            data->output->elements[i] += data->matrix->data[i]->elements[j] * data->vector->elements[j];
-        }
-    }
-}
-
