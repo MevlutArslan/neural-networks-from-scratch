@@ -23,4 +23,7 @@ void run_tests() {
     // test_serialize_matrix();
 
     test_mock_sgd();
+    test_mock_adagrad();
+    test_mock_rms_prop();
+    test_mock_adam();
 }

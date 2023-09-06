@@ -7,7 +7,6 @@
 NNetwork* create_mock_network(OptimizationConfig* optimization_config);
 
 void test_mock_sgd();
-void test_mock_sgd_momentum();
 void test_mock_adagrad();
 void test_mock_rms_prop();
 void test_mock_adam();
