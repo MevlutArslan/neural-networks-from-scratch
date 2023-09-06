@@ -21,8 +21,6 @@ NNetwork* create_mock_network(OptimizationConfig* optimization_config) {
     network_config.num_rows = 1;
     network_config.num_features = 4;
 
-    network_config.weight_lambdas = create_vector(0);
-    network_config.bias_lambdas = create_vector(0);
 
     network_config.loss_fn = CATEGORICAL_CROSS_ENTROPY;
 
