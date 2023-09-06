@@ -53,7 +53,7 @@ int wine_categorization_preprocess_data(ModelData* model_data) {
 
     
     for(int colIndex = 0; colIndex < model_data->training_data->columns; colIndex++) {
-        normalizeColumn_standard_deviation(model_data->training_data, colIndex);
+        normalize_column(STANDARD_DEVIATION, model_data->training_data, colIndex, 0);
     }
     
     Matrix* validation_data = get_sub_matrix(wine_data->data, model_data->training_data->rows, wine_data->rows - 1, 0, wine_data->data->columns - 1);
@@ -63,7 +63,7 @@ int wine_categorization_preprocess_data(ModelData* model_data) {
     model_data->validation_labels = oneHotEncode(validation_labels, 3);
     
     for(int colIndex = 0; colIndex < model_data->validation_data->columns; colIndex++) {
-        normalizeColumn_standard_deviation(model_data->validation_data, colIndex);
+        normalize_column(STANDARD_DEVIATION, model_data->validation_data, colIndex, 0);
     }
 
     free_matrix(trainingData);
@@ -135,7 +135,7 @@ NNetwork* wine_categorization_get_network(Model* model) {
     log_info("%s", "Created Network:");
     dump_network_config(network);
 
-    model->plot_config();
+    // model->plot_config();
 
     return network;
 }
@@ -152,7 +152,7 @@ void wine_categorization_train_network(Model* model) {
 
     train_network(network,model_data->training_data, model_data->training_labels, 1, model->data->total_epochs);
 
-    // save_network(model_data->path, network);
+    save_network(model_data->path, network);
     free_network(network);
 }
 

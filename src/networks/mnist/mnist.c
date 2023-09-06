@@ -29,22 +29,6 @@ Model* create_mnist_model() {
     return model;
 }
 
-OptimizationConfig create_optimizer(int optimizer) {
-    OptimizationConfig optimizationConfig;
-    optimizationConfig.optimizer = optimizer;
-
-    // Learning Rate Decay
-    optimizationConfig.use_learning_rate_decay = 1;
-    optimizationConfig.use_gradient_clipping = 0;
-
-    // optimizationConfig.rho = 0.9;
-    optimizationConfig.epsilon = 1e-8;
-    optimizationConfig.adam_beta1 = 0.9;
-    optimizationConfig.adam_beta2 = 0.999;
-
-    return optimizationConfig;
-}
-
 NNetwork* mnist_get_network(Model* model) {
     if(model->preprocess_data(model->data) == -1) {
         log_error("%s", "Failed to complete preprocessing of MNIST data!");
@@ -59,25 +43,8 @@ NNetwork* mnist_get_network(Model* model) {
     config.num_rows = model->data->training_data->rows;
     config.num_features = model->data->training_data->columns;
 
-    OptimizationConfig optimizationConfig = create_optimizer(ADAM);
-
-    // if you want to use l1 and/or l2 regularization you need to set the size to config.numLayers and 
-    // fill these vectors with the lambda values you want
-    config.weight_lambdas = create_vector(0);
-    config.bias_lambdas = create_vector(0);
-
-    if(config.weight_lambdas->size > 0 ){
-        fill_vector(config.weight_lambdas, 1e-5);
-    }
-
-    if(config.bias_lambdas->size > 0 ){
-        fill_vector(config.bias_lambdas, 1e-3);
-    }
 
     config.activation_fns = calloc(config.numLayers, sizeof(enum ActivationFunction));  // Allocate memory
-    
-    config.optimization_config = malloc(sizeof(OptimizationConfig));
-    memcpy(config.optimization_config, &optimizationConfig, sizeof(OptimizationConfig));
 
     for (int i = 0; i < config.numLayers - 1; i++) {
         config.activation_fns[i] = LEAKY_RELU;
@@ -87,6 +54,36 @@ NNetwork* mnist_get_network(Model* model) {
     config.activation_fns[config.numLayers - 1] = SOFTMAX;
 
     config.loss_fn = CATEGORICAL_CROSS_ENTROPY;
+
+
+    OptimizationConfig* optimization_config = (OptimizationConfig*) calloc(1, sizeof(OptimizationConfig));
+    optimization_config->optimizer = ADAM;
+
+    // Learning Rate Decay
+    optimization_config->use_learning_rate_decay = 1;
+    optimization_config->use_gradient_clipping = 0;
+    optimization_config->gradient_clip_lower_bound = 0;
+    optimization_config->gradient_clip_upper_bound = 0;
+    optimization_config->use_momentum = 0;
+
+    optimization_config->rho = 0;
+    optimization_config->epsilon = 1e-8;
+    optimization_config->adam_beta1 = 0.9;
+    optimization_config->adam_beta2 = 0.999;
+    
+    // if you want to apply regularization:
+    /*
+        optimization_config->use_l1_regularization = TRUE;
+        optimization_config->use_l2_regularization = TRUE;  
+
+        optimization_config->l1_weight_lambdas = vector
+        optimization_config->l2_weight_lambdas = vector
+
+        optimization_config->l1_bias_lambdas = vector
+        optimization_config->l2_bias_lambdas = vector
+    */
+    
+    config.optimization_config = optimization_config;
 
     NNetwork* network = create_network(&config);
 
@@ -128,12 +125,12 @@ int mnist_preprocess_data(ModelData* modelData) {
 
     // normalize training data 
     for(int col = 0; col < modelData->training_data->columns; col++) {
-        normalizeColumn_division(modelData->training_data, col, 255);
+        normalize_column(BY_DIVISION, modelData->training_data, col, 255);
     }
 
     // normalize validation data
     for(int col = 0; col < modelData->validation_data->columns; col++) {
-        normalizeColumn_division(modelData->validation_data, col, 255);
+        normalize_column(BY_DIVISION, modelData->validation_data, col, 255);
     }
     
     free_data(training_data);
