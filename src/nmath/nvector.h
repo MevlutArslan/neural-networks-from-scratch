@@ -6,6 +6,8 @@
 #include <string.h>
 #include "../../libraries/logger/log.h"
 #include "../../libraries/cJson/cJSON.h"
+#include <assert.h>
+#include <math.h>
 
 typedef struct {
     double* elements;
@@ -22,6 +24,8 @@ void fill_vector(Vector* vector, double value);
 
 char* vector_to_string(const Vector* vector);
 Vector* copy_vector(const Vector* vector);
+
+int is_equal_vector(Vector* v1, Vector* v2);
 
 Vector* slice_vector(const Vector* vector, int beginIndex, int endIndex);
 Vector* array_to_vector(double* array, int length);

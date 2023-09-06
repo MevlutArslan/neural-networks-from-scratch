@@ -16,6 +16,20 @@ Vector** create_vector_arr(int size) {
     return vector;
 }
 
+int is_equal_vector(Vector* v1, Vector* v2) { 
+    assert(v1->size == v2->size);
+    double epsilon = 1e-6;
+
+    for(int i = 0; i < v1->size; i++) {
+        double diff = fabs(v1->elements[i] - v2->elements[i]);
+        if(diff > epsilon) {
+            log_info("values: %f, %f don't match!", v1->elements[i], v2->elements[i]);
+            return 0;
+        }
+    }
+    return 1;
+}
+
 void free_vector(Vector* vector) {
     if(vector == NULL) {
         return;
@@ -30,7 +44,9 @@ void fill_vector_random(Vector* vector, double min, double max) {
 }
 
 void fill_vector(Vector* vector, double value) {
-    memset(vector->elements, value, vector->size * sizeof(double));
+    for (int i = 0; i < vector->size; i++) {
+        vector->elements[i] = value;
+    }
 }
 
 char* vector_to_string(const Vector* vector) {
