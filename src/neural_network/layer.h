@@ -28,11 +28,11 @@ typedef struct Layer{
     Vector* bias_cache;
 
     // lambda dictates how much of an impact the regularization penalty carries.
-    float l1_weight_lambda;
-    float l1_bias_lambda;
+    double l1_weight_lambda;
+    double l1_bias_lambda;
 
-    float l2_weight_lambda;
-    float l2_bias_lambda;
+    double l2_weight_lambda;
+    double l2_bias_lambda;
 } Layer;
 
 typedef struct {
@@ -43,11 +43,11 @@ typedef struct {
     int use_l1_regularization;
     int use_l2_regularization;
 
-    float l1_weight_lambda;
-    float l1_bias_lambda;
+    double l1_weight_lambda;
+    double l1_bias_lambda;
 
-    float l2_weight_lambda;
-    float l2_bias_lambda;
+    double l2_weight_lambda;
+    double l2_bias_lambda;
 } LayerConfig;
 
 Layer* create_layer(LayerConfig* config);
