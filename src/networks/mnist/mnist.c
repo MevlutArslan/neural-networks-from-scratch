@@ -1,4 +1,4 @@
-#include "mnist.h"
+#include "../model.h"
 
 NNetwork* mnist_get_network(Model* model);
 void mnist_train_network(Model* model);

@@ -1,4 +1,4 @@
-#include "wine_dataset.h"
+#include "../model.h"
 
 NNetwork* wine_categorization_get_network(Model* model);
 void wine_categorization_train_network(Model* model);
@@ -28,25 +28,6 @@ Model* create_wine_categorization_model() {
 
     return model;
 }
-
-// doesnt seem to contain any leaks.
-OptimizationConfig wine_categorization_create_optimizer(int optimizer) {
-    OptimizationConfig optimizationConfig;
-    optimizationConfig.optimizer = optimizer;
-
-    // Learning Rate Decay
-    optimizationConfig.use_learning_rate_decay = 1;
-    optimizationConfig.use_gradient_clipping = 0;
-    // optimizationConfig.rho = 0.9;
-    optimizationConfig.epsilon = 1e-8;
-    optimizationConfig.adam_beta1 = 0.9;
-    optimizationConfig.adam_beta2 = 0.999;
-
-
-    return optimizationConfig;
-}
-
-
 int wine_categorization_preprocess_data(ModelData* model_data) {
     Data* wine_data = load_csv("/Users/mevlutarslan/Downloads/datasets/wine_with_headers.csv");
     
@@ -108,25 +89,8 @@ NNetwork* wine_categorization_get_network(Model* model) {
     config.num_rows = model->data->training_data->rows;
     config.num_features = model->data->training_data->columns;
 
-    OptimizationConfig optimizationConfig = wine_categorization_create_optimizer(ADAM);
-
-    // if you want to use l1 and/or l2 regularization you need to set the size to config.numLayers and 
-    // fill these vectors with the lambda values you want
-    config.weight_lambdas = create_vector(0);
-    config.bias_lambdas = create_vector(0);
-
-    if(config.weight_lambdas->size > 0 ){
-        fill_vector(config.weight_lambdas, 1e-5);
-    }
-
-    if(config.bias_lambdas->size > 0 ){
-        fill_vector(config.bias_lambdas, 1e-3);
-    }   
-
     config.activation_fns = calloc(config.numLayers, sizeof(enum ActivationFunction));
     
-    config.optimization_config = malloc(sizeof(OptimizationConfig));
-    memcpy(config.optimization_config, &optimizationConfig, sizeof(OptimizationConfig));
     
     for (int i = 0; i < config.numLayers - 1; i++) {
         config.activation_fns[i] = LEAKY_RELU;
@@ -137,9 +101,40 @@ NNetwork* wine_categorization_get_network(Model* model) {
     
     config.loss_fn = CATEGORICAL_CROSS_ENTROPY;
 
-    NNetwork* network = create_network(&config);
+    OptimizationConfig* optimization_config = (OptimizationConfig*) calloc(1, sizeof(OptimizationConfig));
+    optimization_config->optimizer = ADAM;
+
+    // Learning Rate Decay
+    optimization_config->use_learning_rate_decay = 1;
+    optimization_config->use_gradient_clipping = 0;
+    optimization_config->gradient_clip_lower_bound = 0;
+    optimization_config->gradient_clip_upper_bound = 0;
+    optimization_config->use_momentum = 0;
+
+    optimization_config->rho = 0;
+    optimization_config->epsilon = 1e-8;
+    optimization_config->adam_beta1 = 0.9;
+    optimization_config->adam_beta2 = 0.999;
     
-    free_network_config(&config);
+    // if you want to apply regularization:
+    /*
+        optimization_config->use_l1_regularization = TRUE;
+        optimization_config->use_l2_regularization = TRUE;  
+
+        optimization_config->l1_weight_lambdas = vector
+        optimization_config->l2_weight_lambdas = vector
+
+        optimization_config->l1_bias_lambdas = vector
+        optimization_config->l2_bias_lambdas = vector
+    */
+    
+    config.optimization_config = optimization_config;
+
+    NNetwork* network = create_network(&config);
+
+    log_info("%s", "Created Network:");
+    dump_network_config(network);
+
     model->plot_config();
 
     return network;
@@ -155,7 +150,7 @@ void wine_categorization_train_network(Model* model) {
 
     ModelData* model_data = model->data;
 
-    train_network(network,model_data->training_data, model_data->training_labels, 0, model->data->total_epochs);
+    train_network(network,model_data->training_data, model_data->training_labels, 1, model->data->total_epochs);
 
     // save_network(model_data->path, network);
     free_network(network);
@@ -210,6 +205,4 @@ void wine_categorization_plot_config() {
     
     gnuplot_set_xlabel(learning_rate_step_plot, "step");
     gnuplot_set_ylabel(learning_rate_step_plot, "learning rate");
-
 }
-

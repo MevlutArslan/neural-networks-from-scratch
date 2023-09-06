@@ -33,7 +33,18 @@ typedef struct {
     // ADAM
     double adam_beta1;
     double adam_beta2;
+
+    // For l1 & l2 regularization
+    int use_l1_regularization;
+    int use_l2_regularization;
+
+    Vector* l1_weight_lambdas; // <- can assign a different lambda to each layer 
+    Vector* l1_bias_lambdas; // <- can assign a different lambda to each layer 
+
+    Vector* l2_weight_lambdas;
+    Vector* l2_bias_lambdas;
 } OptimizationConfig;
+
 typedef struct NNetwork{
     int num_layers;
     Layer** layers;
@@ -67,9 +78,7 @@ typedef struct {
 
     OptimizationConfig* optimization_config;
 
-    // For l1 & l2 regularization
-    Vector* weight_lambdas;
-    Vector* bias_lambdas;
+    
 } NetworkConfig;
 
 

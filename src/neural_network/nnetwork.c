@@ -4,41 +4,37 @@ NNetwork* create_network(const NetworkConfig* config) {
     NNetwork* network = malloc(sizeof(NNetwork));
     network->num_layers = config->numLayers;
     network->layers = malloc(network->num_layers * sizeof(Layer));
+    network->optimization_config = config->optimization_config;
 
-   for (int i = 0; i < config->numLayers; i++) {
-        LayerConfig layerConfig;
-        layerConfig.num_inputs = i == 0 ? config->num_features : network->layers[i - 1]->num_neurons;
-        layerConfig.num_neurons = config->neurons_per_layer[i];
-        layerConfig.activation_fn = config->activation_fns[i];
+   for (int layer_index = 0; layer_index < config->numLayers; layer_index++) {
+        LayerConfig layer_config;
+        layer_config.num_inputs = layer_index == 0 ? config->num_features : network->layers[layer_index - 1]->num_neurons;
+        layer_config.num_neurons = config->neurons_per_layer[layer_index];
+        layer_config.activation_fn = config->activation_fns[layer_index];
 
 
-        if(i < config->numLayers - 1){
+        if(layer_index < config->numLayers - 1){
             int use_regularization = 0;
 
-            if(config->weight_lambdas != NULL && config->weight_lambdas->size > 0){
-                use_regularization = 1;
-                layerConfig.weight_lambda = config->weight_lambdas->elements[i]; 
-            }else {
-                layerConfig.weight_lambda = 0;
+            if(network->optimization_config->use_l1_regularization == TRUE) {
+                layer_config.use_l1_regularization = TRUE;
+                layer_config.l1_weight_lambda = network->optimization_config->l1_weight_lambdas->elements[layer_index];
+                layer_config.l1_bias_lambda = network->optimization_config->l1_bias_lambdas->elements[layer_index];
             }
 
-            if(config->bias_lambdas != NULL && config->bias_lambdas->size > 0) {
-                use_regularization = 1;
-                layerConfig.bias_lambda = config->bias_lambdas->elements[i];
-            }else {
-                layerConfig.bias_lambda = 0;
+            if(network->optimization_config->use_l2_regularization == TRUE) {
+                layer_config.use_l2_regularization = TRUE;
+                layer_config.l2_weight_lambda = network->optimization_config->l2_weight_lambdas->elements[layer_index];
+                layer_config.l2_bias_lambda = network->optimization_config->l2_bias_lambdas->elements[layer_index];
             }
-
-            layerConfig.use_regularization = use_regularization;
         }
-        Layer* layer = create_layer(&layerConfig);
-        network->layers[i] = layer;
+        Layer* layer = create_layer(&layer_config);
+        network->layers[layer_index] = layer;
     }
     
 
     network->loss_fn = config->loss_fn;
 
-    network->optimization_config = config->optimization_config;
 
     network->loss = 0.0f;
     network->accuracy = 0.0f;
@@ -75,9 +71,6 @@ NNetwork* create_network(const NetworkConfig* config) {
         fill_vector(network->bias_gradients[i], 0.0f);
     }
 
-    log_info("%s", "Created Network:");
-    dump_network_config(network);
-
     return network;
 }
 
@@ -98,13 +91,11 @@ void train_network(NNetwork* network, Matrix* training_data, Matrix* training_la
 
     while(epoch < num_epochs) {
         if(batch_size == 1) {
-            log_info("running batch processing!");
             forward_pass_batched(network, training_data); 
             backpropagation_batched(network, training_data, training_labels);
-            
+
             calculate_loss(network, training_labels, network->batched_outputs[network->num_layers - 1]);
         }else if(batch_size == 0) {
-            log_info("running row by row processing!");
             for(int inputRow = 0; inputRow < training_data->rows; inputRow++) {
                 Vector* output = create_vector(network->layers[network->num_layers - 1]->num_neurons);
                 forward_pass_row_by_row(network, training_data->data[inputRow], output); 
@@ -566,18 +557,15 @@ void free_network(NNetwork* network) {
     free(network->layers);
     free(network->weight_gradients);
     free(network->bias_gradients);
-    
-    free(network->optimization_config);
 
+    free(network->optimization_config);
+    
     // Finally, free the network itself
     free(network);
 }
 
 void free_network_config(NetworkConfig* config) { 
     free(config->neurons_per_layer);
-
-    free_vector(config->weight_lambdas);
-    free_vector(config->bias_lambdas);
 }
 char* serialize_optimization_config(OptimizationConfig* config) {
      if (config == NULL) {

@@ -30,17 +30,22 @@ Layer* create_layer(LayerConfig* config) {
     layer->weight_cache = create_matrix(layer->weights->rows, layer->weights->columns);
     layer->bias_cache = create_vector(layer->biases->size);
     
-    if(config->use_regularization == 1) {
-        if(config->weight_lambda != 0) {
-            layer->weight_lambda = config->weight_lambda;
-        }
-        if(config->bias_lambda != 0) {
-            layer->bias_lambda = config->bias_lambda;
-        }
+    if(config->use_l1_regularization == TRUE) {
+        layer->l1_weight_lambda = config->l1_weight_lambda;
+        layer->l1_bias_lambda = config->l1_bias_lambda;
     }else {
-        layer->weight_lambda = 0;
-        layer->bias_lambda = 0;
+        layer->l1_weight_lambda = 0;
+        layer->l1_bias_lambda = 0;
     }
+
+    if(config->use_l2_regularization == TRUE) {
+        layer->l2_weight_lambda = config->l2_weight_lambda;
+        layer->l2_bias_lambda = config->l2_bias_lambda;
+    }else {
+        layer->l2_weight_lambda = 0;
+        layer->l2_bias_lambda = 0;
+    }
+    
     return layer;
 }
 

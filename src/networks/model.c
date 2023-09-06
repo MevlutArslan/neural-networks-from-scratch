@@ -1,6 +1,5 @@
 #include "model.h"
 
-
 void free_modelData(ModelData* modelData) {
     if(modelData) {
         free(modelData->loss_history);

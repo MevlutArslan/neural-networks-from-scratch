@@ -29,8 +29,13 @@ typedef struct Model{
     void (*plot_data)(ModelData* data);
     void (*plot_config)();
     ModelData* data;
-
 } Model;
+
+
+// Register your models here
+Model* create_wine_categorization_model();
+Model* create_mnist_model();
+
 
 void free_modelData(ModelData* modelData);
 void free_model(Model* model);

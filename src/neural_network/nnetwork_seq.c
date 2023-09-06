@@ -127,8 +127,8 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
         */
 
         int layerIndex = network->num_layers - 1;
-        Layer* currentLayer = network->layers[layerIndex];
-        for(int outputNeuronIndex = 0; outputNeuronIndex < currentLayer->num_neurons; outputNeuronIndex++) {
+        Layer* current_layer = network->layers[layerIndex];
+        for(int outputNeuronIndex = 0; outputNeuronIndex < current_layer->num_neurons; outputNeuronIndex++) {
             #ifdef DEBUG
                 log_debug("Partial derivative of Loss with respect to Output for target: %f, prediction: %f is %f \n", target->elements[outputNeuronIndex], prediction->elements[outputNeuronIndex], dLoss_dOutputs->elements[outputNeuronIndex]);
             #endif
@@ -137,7 +137,7 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                 log_debug("Partial derivative of Loss with respect to the input to the activation function of the output layer's node #%d is: %f \n",outputNeuronIndex ,dLoss_dWeightedSums->elements[outputNeuronIndex]);
             #endif
             
-            for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
+            for(int weightIndex = 0; weightIndex < current_layer->weights->columns; weightIndex++) {
                 double dWeightedSum_dWeight = 0.0f;
                 if(layerIndex == 0) {
                     dWeightedSum_dWeight= input->elements[weightIndex];
@@ -157,17 +157,17 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                     );
                 #endif
 
-                currentLayer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex] += dLoss_dWeight;
+                current_layer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex] += dLoss_dWeight;
                 
                 // Gradient Clipping
                 if(network->optimization_config->use_gradient_clipping == 1) {
-                    double originalGradient = currentLayer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex];
+                    double originalGradient = current_layer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex];
                     if(originalGradient < network->optimization_config->gradient_clip_lower_bound) {
-                        currentLayer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex] = network->optimization_config->gradient_clip_lower_bound;
+                        current_layer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex] = network->optimization_config->gradient_clip_lower_bound;
                     } else if(originalGradient > network->optimization_config->gradient_clip_upper_bound) {
-                        currentLayer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex] = network->optimization_config->gradient_clip_upper_bound;
+                        current_layer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex] = network->optimization_config->gradient_clip_upper_bound;
                     }
-                    double clippedGradient = currentLayer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex];
+                    double clippedGradient = current_layer->weight_gradients->data[outputNeuronIndex]->elements[weightIndex];
                     
                     #ifdef DEBUG
                         if(originalGradient != clippedGradient) {
@@ -182,17 +182,17 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                 }
             }
 
-            currentLayer->bias_gradients->elements[outputNeuronIndex] += dLoss_dWeightedSums->elements[outputNeuronIndex];
+            current_layer->bias_gradients->elements[outputNeuronIndex] += dLoss_dWeightedSums->elements[outputNeuronIndex];
   
             // Gradient Clipping
             if(network->optimization_config->use_gradient_clipping == 1) {
-                double originalBiasGradient = currentLayer->bias_gradients->elements[outputNeuronIndex] = dLoss_dWeightedSums->elements[outputNeuronIndex];
+                double originalBiasGradient = current_layer->bias_gradients->elements[outputNeuronIndex] = dLoss_dWeightedSums->elements[outputNeuronIndex];
                 if(originalBiasGradient < network->optimization_config->gradient_clip_lower_bound) {
-                    currentLayer->bias_gradients->elements[outputNeuronIndex] = network->optimization_config->gradient_clip_lower_bound;
+                    current_layer->bias_gradients->elements[outputNeuronIndex] = network->optimization_config->gradient_clip_lower_bound;
                 } else if(originalBiasGradient > network->optimization_config->gradient_clip_upper_bound) {
-                    currentLayer->bias_gradients->elements[outputNeuronIndex] = network->optimization_config->gradient_clip_upper_bound;
+                    current_layer->bias_gradients->elements[outputNeuronIndex] = network->optimization_config->gradient_clip_upper_bound;
                 }
-                double clippedBiasGradient = currentLayer->bias_gradients->elements[outputNeuronIndex];
+                double clippedBiasGradient = current_layer->bias_gradients->elements[outputNeuronIndex];
                 
                 #ifdef DEBUG
                     if(originalBiasGradient != clippedBiasGradient) {
@@ -207,7 +207,7 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
             }
 
             // Backpropagating the error to the hidden layers
-            currentLayer->loss_wrt_wsums->elements[outputNeuronIndex] = dLoss_dWeightedSums->elements[outputNeuronIndex];
+            current_layer->loss_wrt_wsums->elements[outputNeuronIndex] = dLoss_dWeightedSums->elements[outputNeuronIndex];
             #ifdef DEBUG
                 log_debug( 
                     "Partial derivative of Loss with respect to the weighted sum for neuron #%d: %f \n", 
@@ -237,18 +237,21 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
             log_debug("Calculating gradients for the hidden layers of output index: %d", outputIndex);
         #endif
         for(layerIndex = network->num_layers - 2; layerIndex >= 0; layerIndex --) {
-            currentLayer = network->layers[layerIndex];
+            current_layer = network->layers[layerIndex];
 
-            // l1 & l2 regularization
+            // l1 &/or l2 regularization
             Vector* l1_bias_derivatives;
             Vector* l2_bias_derivatives;
-
-            if(currentLayer->bias_lambda > 0 ){
-                l1_bias_derivatives = l1_derivative(currentLayer->bias_lambda, currentLayer->biases);
-                l2_bias_derivatives = l2_derivative(currentLayer->bias_lambda, currentLayer->biases);
+            
+            if(current_layer->l1_bias_lambda > 0) {
+                l1_bias_derivatives = l1_derivative(current_layer->l1_bias_lambda, current_layer->biases);
+            }
+            
+            if(current_layer->l2_bias_lambda > 0) {
+                l2_bias_derivatives = l2_derivative(current_layer->l2_bias_lambda, current_layer->biases);
             }
 
-            for(int neuronIndex = 0; neuronIndex < currentLayer->num_neurons; neuronIndex++) {
+            for(int neuronIndex = 0; neuronIndex < current_layer->num_neurons; neuronIndex++) {
                 double dLoss_dOutput = 0.0f;
                 
                 Layer* nextLayer = network->layers[layerIndex + 1];
@@ -262,12 +265,12 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
 
                 double dOutput_dWeightedSum = 0;
                 
-                switch(currentLayer->activation_fn) {
+                switch(current_layer->activation_fn) {
                     case RELU:
-                        dOutput_dWeightedSum = relu_derivative(currentLayer->weighted_sums->elements[neuronIndex]);
+                        dOutput_dWeightedSum = relu_derivative(current_layer->weighted_sums->elements[neuronIndex]);
                         break;
                     case LEAKY_RELU:
-                        dOutput_dWeightedSum = leakyRelu_derivative(currentLayer->weighted_sums->elements[neuronIndex]);
+                        dOutput_dWeightedSum = leakyRelu_derivative(current_layer->weighted_sums->elements[neuronIndex]);
                         break;
                     default:
                         break;
@@ -281,12 +284,15 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                 Vector* l1_weights_derivatives;
                 Vector* l2_weights_derivatives;
 
-                if(currentLayer->weight_lambda > 0) {
-                    l1_weights_derivatives = l1_derivative(currentLayer->weight_lambda, currentLayer->weights->data[neuronIndex]);
-                    l2_weights_derivatives = l2_derivative(currentLayer->weight_lambda, currentLayer->weights->data[neuronIndex]);
+                if(current_layer->l1_weight_lambda > 0) {
+                    l1_weights_derivatives = l1_derivative(current_layer->l1_weight_lambda, current_layer->biases);
+                }
+            
+                if(current_layer->l2_weight_lambda > 0) {
+                    l2_weights_derivatives = l2_derivative(current_layer->l2_weight_lambda, current_layer->biases);
                 }
 
-                for(int weightIndex = 0; weightIndex < currentLayer->weights->columns; weightIndex++) {
+                for(int weightIndex = 0; weightIndex < current_layer->weights->columns; weightIndex++) {
                     double dWeightedSum_dWeight = 0.0f;
                     if(layerIndex == 0) {
                         dWeightedSum_dWeight= input->elements[weightIndex];
@@ -296,10 +302,13 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                     
                     
                     double dLoss_dWeight = dLoss_dWeightedSum * dWeightedSum_dWeight;
-                    // if(currentLayer->weight_lambda > 0) {
-                    //     dLoss_dWeight += l1_weights_derivatives->elements[weightIndex];
-                    //     dLoss_dWeight += l2_weights_derivatives->elements[weightIndex];
-                    // }
+                    if(current_layer->l1_weight_lambda > 0) {
+                        dLoss_dWeight += l1_weights_derivatives->elements[weightIndex];
+                    }
+
+                    if(current_layer->l2_weight_lambda > 0) {
+                        dLoss_dWeight += l2_weights_derivatives->elements[weightIndex];
+                    }
 
                     #ifdef DEBUG
                         log_debug(
@@ -311,30 +320,33 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                         );
                     #endif
 
-                    currentLayer->weight_gradients->data[neuronIndex]->elements[weightIndex] += dLoss_dWeight;
+                    current_layer->weight_gradients->data[neuronIndex]->elements[weightIndex] += dLoss_dWeight;
                 }
                 
-                currentLayer->bias_gradients->elements[neuronIndex] += dLoss_dWeightedSum;
+                current_layer->bias_gradients->elements[neuronIndex] += dLoss_dWeightedSum;
 
-                
-                // if(currentLayer->bias_lambda > 0) {
-                //     currentLayer->bias_gradients->elements[neuronIndex] += l1_bias_derivatives->elements[neuronIndex] + l2_bias_derivatives->elements[neuronIndex];
-                // }
+                if(current_layer->l1_bias_lambda > 0) {
+                    current_layer->bias_gradients->elements[neuronIndex] += l1_bias_derivatives->elements[neuronIndex];
+                }
+
+                if(current_layer->l2_bias_lambda > 0) {
+                    current_layer->bias_gradients->elements[neuronIndex] += l2_bias_derivatives->elements[neuronIndex];
+                }
 
                 if(network->optimization_config->use_gradient_clipping == 1) {
-                    double originalBiasGradient = currentLayer->bias_gradients->elements[neuronIndex];
+                    double originalBiasGradient = current_layer->bias_gradients->elements[neuronIndex];
             
                     if (originalBiasGradient < network->optimization_config->gradient_clip_lower_bound) {
-                        currentLayer->bias_gradients->elements[neuronIndex] = network->optimization_config->gradient_clip_lower_bound;
+                        current_layer->bias_gradients->elements[neuronIndex] = network->optimization_config->gradient_clip_lower_bound;
                     } else if (originalBiasGradient > network->optimization_config->gradient_clip_upper_bound) {
-                        currentLayer->bias_gradients->elements[neuronIndex] = network->optimization_config->gradient_clip_upper_bound;
+                        current_layer->bias_gradients->elements[neuronIndex] = network->optimization_config->gradient_clip_upper_bound;
                     }
                     
-                    double clippedBiasGradient = currentLayer->bias_gradients->elements[neuronIndex];
+                    double clippedBiasGradient = current_layer->bias_gradients->elements[neuronIndex];
 
                     #ifdef DEBUG
-                        char* gradients_str = matrix_to_string(currentLayer->gradients);
-                        char* bias_gradients_str = vector_to_string(currentLayer->biasGradients);
+                        char* gradients_str = matrix_to_string(current_layer->gradients);
+                        char* bias_gradients_str = vector_to_string(current_layer->biasGradients);
                         log_debug(
                             "Gradients for layer #%d: \n"
                             "\t\t\t\tWeight gradients: \n%s\n"
@@ -346,16 +358,23 @@ void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* t
                     #endif
                 }
 
-                currentLayer->loss_wrt_wsums->elements[neuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
+                current_layer->loss_wrt_wsums->elements[neuronIndex] = dLoss_dOutput * dOutput_dWeightedSum;
 
                 // log_info("Gradient for weights and biases computed for neuron index: %d in layer index: %d", neuronIndex, layerIndex);
-                if(currentLayer->weight_lambda > 0) {
+                if(current_layer->l1_weight_lambda > 0) {
                     free_vector(l1_weights_derivatives);
+                }
+
+                if(current_layer->l2_weight_lambda > 0) {
                     free_vector(l2_weights_derivatives);
                 }
             }
-            if(currentLayer->bias_lambda > 0) {
+
+            if(current_layer->l1_bias_lambda > 0) {
                 free_vector(l1_bias_derivatives);
+            }
+
+            if(current_layer->l2_bias_lambda > 0) {
                 free_vector(l2_bias_derivatives);
             }
            
