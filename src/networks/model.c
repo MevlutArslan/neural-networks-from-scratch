@@ -1,26 +1,58 @@
 #include "model.h"
 
-void free_modelData(ModelData* modelData) {
-    if(modelData) {
-        free(modelData->loss_history);
-        free(modelData->epoch_history);
-        free(modelData->learning_rate_history);
-        free(modelData->accuracy_history);
+void train_model(Model* model, int should_save) {
+    log_info("Starting to train model!");
+    NNetwork* network = model->get_network(model);
 
-        free_matrix(modelData->training_data);
-        free_matrix(modelData->validation_data);
-        free_matrix(modelData->training_labels);
-        free_matrix(modelData->validation_labels);
-        
-        // Add code here to free any other dynamically allocated members of ModelData
-
-        free(modelData);
+    if(network == NULL) {
+        log_error("%s", "Error creating network!");
+        return;
     }
+
+    ModelData* model_data = model->data;
+
+    train_network(network, model_data->training_data, model_data->training_labels, model_data->num_batches, model->data->total_epochs);
+
+    if(should_save == TRUE) {
+        save_network(model_data->save_path, network);
+    }
+    free_network(network);
+}
+
+void validate_model(Model* model) {
+    NNetwork* network = load_network(model->data->save_path);
+
+    forward_pass_batched(network, model->data->validation_data);
+    calculate_loss(network, model->data->validation_labels, network->batched_outputs[network->num_layers - 1]);
+
+    log_info("Validation Loss: %f", network->loss);
+    log_info("Validation Accuracy: %f", network->accuracy);
+
+    free_network(network);
+}
+
+void free_model_data(ModelData* modelData) {
+    if(modelData == NULL) {
+        return;
+    }
+
+    free(modelData->loss_history);
+    free(modelData->epoch_history);
+    free(modelData->learning_rate_history);
+    free(modelData->accuracy_history);
+
+    free_matrix(modelData->training_data);
+    free_matrix(modelData->validation_data);
+    free_matrix(modelData->training_labels);
+    free_matrix(modelData->validation_labels);
+        
+    free(modelData);
 }
 
 void free_model(Model* model) {
-    if(model) {
-        free_modelData(model->data);
-        free(model);
+    if(model == NULL) {
+        return;
     }
+    free_model_data(model->data);
+    free(model);
 }
