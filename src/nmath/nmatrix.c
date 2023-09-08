@@ -210,6 +210,7 @@ Matrix* copy_matrix(const Matrix* source) {
 }
 
 
+// all boundaries are INCLUSIVE
 Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, int endCol) {
     Matrix* matrix = create_matrix(endRow - startRow + 1, endCol - startCol + 1); // 
     // lets say my source is of dimensions 8,12 and 
@@ -224,6 +225,7 @@ Matrix* get_sub_matrix(Matrix* source, int startRow, int endRow, int startCol, i
     return matrix;
 }
 
+// all boundaries are INCLUSIVE
 Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, int startCol, int endCol, int columnIndex) {
     // if the column we want to remove is out of the range we want our submatrix to be in
     // the column we want to remove can automatically be left out of the submatrix.
