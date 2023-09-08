@@ -1,15 +1,15 @@
 #include "model.h"
 
 void train_model(Model* model, int should_save) {
-    log_info("Starting to train model!");
     NNetwork* network = model->get_network(model);
 
     if(network == NULL) {
         log_error("%s", "Error creating network!");
         return;
     }
-
     ModelData* model_data = model->data;
+
+    log_info("Starting to train model!");
 
     train_network(network, model_data->training_data, model_data->training_labels, model_data->num_batches, model->data->total_epochs);
 
@@ -18,7 +18,10 @@ void train_model(Model* model, int should_save) {
     }
     free_network(network);
 }
-
+/*
+    Using batched or sequential processing does not matter in terms of the result, (because the weights & biases are from the same source)
+    for the sake of simplicity I chose to implement validation using batched processing.
+*/
 void validate_model(Model* model) {
     NNetwork* network = load_network(model->data->save_path);
 

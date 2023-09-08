@@ -26,8 +26,6 @@ Data* load_csv(char* fileLocation) {
     data->rows = getRowCount(fileLocation) - 1;
     data->columns = getColumnCount(fileLocation);
 
-    log_info("row count: %d", data->rows);
-
     data->data = create_matrix(data->rows, data->columns);
     if (data->data == NULL) {
         printf("Failed to create matrix\n");

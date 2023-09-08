@@ -2,7 +2,7 @@ CC = gcc
 
 CFLAGS = -g -Wall
 
-C_FILES = $(wildcard src/*.c src/example_networks/**/*.c src/**/*.c libraries/**/*.c tests/*.c tests/**/*.c)
+C_FILES = $(wildcard src/*.c src/networks/**/*.c src/**/*.c libraries/**/*.c tests/*.c tests/**/*.c)
 
 OBJ_FILES = $(addprefix build/, $(addsuffix .o, $(basename $(C_FILES))))
 
