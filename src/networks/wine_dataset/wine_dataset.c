@@ -59,7 +59,6 @@ void wine_categorization_preprocess_data(ModelData* model_data) {
     free_vector(yValues_training);
     free_vector(validation_labels);
     free_data(wine_data);
-
 }
 
 
@@ -67,22 +66,22 @@ NNetwork* wine_categorization_get_network(Model* model) {
     model->preprocess_data(model->data);
 
     NetworkConfig config;
-    config.numLayers = 2;
-    config.neurons_per_layer = malloc(sizeof(int) * config.numLayers);
+    config.num_layers = 2;
+    config.neurons_per_layer = malloc(sizeof(int) * config.num_layers);
     config.neurons_per_layer[0] = 2;
     config.neurons_per_layer[1] = 3;
 
     config.num_rows = model->data->training_data->rows;
     config.num_features = model->data->training_data->columns;
 
-    config.activation_fns = calloc(config.numLayers, sizeof(enum ActivationFunction));
+    config.activation_fns = calloc(config.num_layers, sizeof(enum ActivationFunction));
     
-    for (int i = 0; i < config.numLayers - 1; i++) {
+    for (int i = 0; i < config.num_layers - 1; i++) {
         config.activation_fns[i] = LEAKY_RELU;
     }
 
     // output layer's activation
-    config.activation_fns[config.numLayers - 1] = SOFTMAX;
+    config.activation_fns[config.num_layers - 1] = SOFTMAX;
     
     config.loss_fn = CATEGORICAL_CROSS_ENTROPY;
 

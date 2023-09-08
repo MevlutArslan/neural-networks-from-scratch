@@ -2,18 +2,18 @@
 
 NNetwork* create_network(const NetworkConfig* config) {
     NNetwork* network = malloc(sizeof(NNetwork));
-    network->num_layers = config->numLayers;
+    network->num_layers = config->num_layers;
     network->layers = malloc(network->num_layers * sizeof(Layer));
     network->optimization_config = config->optimization_config;
 
-   for (int layer_index = 0; layer_index < config->numLayers; layer_index++) {
+   for (int layer_index = 0; layer_index < config->num_layers; layer_index++) {
         LayerConfig layer_config;
         layer_config.num_inputs = layer_index == 0 ? config->num_features : network->layers[layer_index - 1]->num_neurons;
         layer_config.num_neurons = config->neurons_per_layer[layer_index];
         layer_config.activation_fn = config->activation_fns[layer_index];
 
 
-        if(layer_index < config->numLayers - 1){
+        if(layer_index < config->num_layers - 1){
             int use_regularization = 0;
 
             if(network->optimization_config->use_l1_regularization == TRUE) {
@@ -98,8 +98,8 @@ void train_network(NNetwork* network, Matrix* training_data, Matrix* training_la
         }else if(batch_size == 0) {
             for(int inputRow = 0; inputRow < training_data->rows; inputRow++) {
                 Vector* output = create_vector(network->layers[network->num_layers - 1]->num_neurons);
-                forward_pass_row_by_row(network, training_data->data[inputRow], output); 
-                backpropagation(network, training_data->data[inputRow], output, training_labels->data[inputRow]);
+                forward_pass_sequential(network, training_data->data[inputRow], output); 
+                backpropagation_sequential(network, training_data->data[inputRow], output, training_labels->data[inputRow]);
                 network->output->data[inputRow] = copy_vector(output);
                 free_vector(output);
             }
@@ -145,7 +145,6 @@ void train_network(NNetwork* network, Matrix* training_data, Matrix* training_la
 
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix) { 
     for(int layer_index = 0; layer_index < network->num_layers; layer_index++) {
-
         Matrix* product_result = NULL;
 
         Layer* current_layer = network->layers[layer_index];
@@ -156,7 +155,7 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
             // log_info("product result for first layer: %s", matrix_to_string(product));
         }else{
             product_result = matrix_product(network->batched_outputs[layer_index - 1], transposed_weights);
-            // log_info("product result for second layer: %s", matrix_to_string(product));
+            // log_info("product result for layer #%d: %s", layer_index, matrix_to_string(product));
         }
         
         network->weighted_sums[layer_index] = matrix_vector_addition(product_result, current_layer->biases);
@@ -208,22 +207,15 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         free(debug_str);
     #endif
 
-    Matrix** jacobian_matrices = softmax_derivative_parallelized(output);
+    // Also known as jacobian matrices
+    Matrix** output_wrt_weightedsum = softmax_derivative_parallelized(output);
 
-    loss_wrt_weightedsum[layer_index] = matrix_vector_product_arr(jacobian_matrices, loss_wrt_output, output->rows);
+    loss_wrt_weightedsum[layer_index] = matrix_vector_product_arr(output_wrt_weightedsum, loss_wrt_output, output->rows);
     #ifdef DEBUG
         debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
         log_info("Loss wrt WeightedSum matrix for layer #%d: %s", layer_index, debug_str);
         free(debug_str);
     #endif
-
-    // clean memory
-    free_matrix(loss_wrt_output);
-
-    for(int i = 0; i < output->rows; i++) {
-        free_matrix(jacobian_matrices[i]);
-    }
-    free(jacobian_matrices);
 
     Matrix* weightedsum_wrt_weight = network->batched_outputs[layer_index - 1];    
 
@@ -256,6 +248,13 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     #endif
     // if(useGradientClipping) clip_gradients(bias_gradients)
 
+    // clean memory
+    free_matrix(loss_wrt_output);
+
+    for(int i = 0; i < output->rows; i++) {
+        free_matrix(output_wrt_weightedsum[i]);
+    }
+    free(output_wrt_weightedsum);
     
     // ------------- HIDDEN LAYERS -------------
     for (layer_index -= 1; layer_index >= 0; layer_index--) {
@@ -276,7 +275,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
             case LEAKY_RELU:
                 output_wrt_weightedsums = leakyRelu_derivative_matrix(network->weighted_sums[layer_index]);
                 break;
-            case SOFTMAX: // 
+            case SOFTMAX:
                 log_error("cannot/shouldn't be softmax in the hidden layers.");
                 return;
             case UNRECOGNIZED_AFN:
@@ -414,7 +413,7 @@ void dump_network_config(NNetwork* network) {
         "cross_entropy" // TODO: Turn into const values
     );
 
-    for(int i = 0; i < network->num_layers; i++) {
+    for(int i = 0; i< network->num_layers; i++) {
         Layer* layer = network->layers[i];
         sprintf(
             json_output + strlen(json_output), // add to the end of the current string
@@ -558,7 +557,7 @@ void free_network(NNetwork* network) {
     free(network->weight_gradients);
     free(network->bias_gradients);
 
-    free(network->optimization_config);
+    // free(network->optimization_config);
     
     // Finally, free the network itself
     free(network);

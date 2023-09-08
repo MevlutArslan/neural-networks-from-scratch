@@ -67,7 +67,7 @@ typedef struct NNetwork{
 } NNetwork;
 
 typedef struct {
-    int numLayers;               // Number of layers in the network
+    int num_layers;               // Number of layers in the network
     int* neurons_per_layer;        // Array of number of neurons per layer
     ActivationFunction* activation_fns;  // Array of activation functions for each layer
     double learning_rate;         // Learning rate for training the network

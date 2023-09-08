@@ -67,8 +67,8 @@ NNetwork* mnist_get_network(Model* model) {
     model->preprocess_data(model->data);
 
     NetworkConfig config;
-    config.numLayers = 2;
-    config.neurons_per_layer = malloc(sizeof(int) * config.numLayers);
+    config.num_layers = 2;
+    config.neurons_per_layer = malloc(sizeof(int) * config.num_layers);
     config.neurons_per_layer[0] = 128;
     config.neurons_per_layer[1] = 10;
 
@@ -76,14 +76,14 @@ NNetwork* mnist_get_network(Model* model) {
     config.num_features = model->data->training_data->columns;
 
 
-    config.activation_fns = calloc(config.numLayers, sizeof(enum ActivationFunction));  // Allocate memory
+    config.activation_fns = calloc(config.num_layers, sizeof(enum ActivationFunction));  // Allocate memory
 
-    for (int i = 0; i < config.numLayers - 1; i++) {
+    for (int i = 0; i < config.num_layers - 1; i++) {
         config.activation_fns[i] = LEAKY_RELU;
     }
 
     // output layer's activation
-    config.activation_fns[config.numLayers - 1] = SOFTMAX;
+    config.activation_fns[config.num_layers - 1] = SOFTMAX;
 
     config.loss_fn = CATEGORICAL_CROSS_ENTROPY;
 
