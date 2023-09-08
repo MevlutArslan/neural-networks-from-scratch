@@ -65,6 +65,44 @@ void real_estate_preprocess_data(ModelData* model_data) {
 NNetwork* real_estate_get_network(Model* model) {
     real_estate_preprocess_data(model->data);
 
-    return NULL;
+    NetworkConfig network_config;
+    network_config.num_layers = 2;
+    network_config.neurons_per_layer = (int*) calloc(network_config.num_layers, sizeof(int));
+    network_config.neurons_per_layer[0] = 5;
+    network_config.neurons_per_layer[1] = 1;
+
+    network_config.num_features = model->data->training_data->columns;
+    network_config.num_rows = model->data->training_data->rows;
+
+    network_config.activation_fns = (ActivationFunction*) calloc(network_config.num_layers, sizeof(enum ActivationFunction));
+    network_config.activation_fns[0] = LEAKY_RELU;
+    network_config.activation_fns[1] = LEAKY_RELU;
+
+    network_config.loss_fn = MEAN_SQUARED_ERROR;
+
+    OptimizationConfig* optimization_config = (OptimizationConfig*) calloc(1, sizeof(OptimizationConfig));
+    assert(optimization_config != NULL);
+    optimization_config->optimizer = ADAM;
+
+    optimization_config->use_learning_rate_decay = 1;
+    optimization_config->use_gradient_clipping = 0;
+    optimization_config->gradient_clip_lower_bound = 0;
+    optimization_config->gradient_clip_upper_bound = 0;
+    optimization_config->use_momentum = 0;
+
+    optimization_config->rho = 0;
+    optimization_config->epsilon = 1e-8;
+    optimization_config->adam_beta1 = 0.9;
+    optimization_config->adam_beta2 = 0.999;
+
+    network_config.optimization_config = optimization_config;
+
+    NNetwork* network = create_network(&network_config);
+    assert(network != NULL);
+
+    log_info("%s", "Created Network:");
+    dump_network_config(network);
+
+    return network;
 }
 
