@@ -16,18 +16,14 @@ Model* create_wine_categorization_model() {
     model->data->save_path = "wine_dataset_network";
 
     // TODO: Implement ability to divide the dataset into multiple batches.
-    model->data->num_batches = 1;
+    model->data->num_batches = 0;
 
     return model;
 }
 
-int wine_categorization_preprocess_data(ModelData* model_data) {
+void wine_categorization_preprocess_data(ModelData* model_data) {
     Data* wine_data = load_csv("/Users/mevlutarslan/Downloads/datasets/wine_with_headers.csv");
-    
-    if(wine_data == NULL) {
-        log_error("%s", "Failed to load Wine Data");
-        return -1;
-    }
+    assert(wine_data != NULL);
 
     shuffle_rows(wine_data->data);
 
@@ -64,7 +60,6 @@ int wine_categorization_preprocess_data(ModelData* model_data) {
     free_vector(validation_labels);
     free_data(wine_data);
 
-    return 1;
 }
 
 

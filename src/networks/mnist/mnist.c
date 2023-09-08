@@ -23,60 +23,48 @@ Model* create_mnist_model() {
     return model;
 }
 
-int mnist_preprocess_data(ModelData* modelData) {
+void mnist_preprocess_data(ModelData* model_data) {
     Data* training_data = load_csv("/Users/mevlutarslan/Downloads/datasets/mnistcsv/mnist_train.csv");
     Data* validation_data = load_csv("/Users/mevlutarslan/Downloads/datasets/mnistcsv/mnist_test.csv");
 
-    if(training_data == NULL) {
-        log_error("%s", "Failed to load training_data");
-        return -1;
-    }
-
-    
-    if(validation_data == NULL) {
-        log_error("%s", "Failed to load validation_data");
-        return -1;
-    }
+    assert(training_data != NULL);
+    assert(validation_data != NULL);
 
     // extract training data
     int targetColumn = 0;
     int trainingDataSize = training_data->rows;
 
-    modelData->training_data = get_sub_matrix_except_column(training_data->data, 0, trainingDataSize - 1, 0, training_data->columns - 1, 0);
+    model_data->training_data = get_sub_matrix_except_column(training_data->data, 0, trainingDataSize - 1, 0, training_data->columns - 1, 0);
     
     // extract validation data
-    modelData->validation_data = get_sub_matrix_except_column(validation_data->data, 0, validation_data->rows - 1, 0, validation_data->columns - 1, 0);
+    model_data->validation_data = get_sub_matrix_except_column(validation_data->data, 0, validation_data->rows - 1, 0, validation_data->columns - 1, 0);
 
     // extract yValues
     Vector* yValues_Training = extractYValues(training_data->data, 0);
     Vector* yValues_Testing = extractYValues(validation_data->data, 0);
 
-    modelData->training_labels = oneHotEncode(yValues_Training, 10);
-    modelData->validation_labels = oneHotEncode(yValues_Testing, 10);
+    model_data->training_labels = oneHotEncode(yValues_Training, 10);
+    model_data->validation_labels = oneHotEncode(yValues_Testing, 10);
 
     // normalize training data 
-    for(int col = 0; col < modelData->training_data->columns; col++) {
-        normalize_column(BY_DIVISION, modelData->training_data, col, 255);
+    for(int col = 0; col < model_data->training_data->columns; col++) {
+        normalize_column(BY_DIVISION, model_data->training_data, col, 255);
     }
 
     // normalize validation data
-    for(int col = 0; col < modelData->validation_data->columns; col++) {
-        normalize_column(BY_DIVISION, modelData->validation_data, col, 255);
+    for(int col = 0; col < model_data->validation_data->columns; col++) {
+        normalize_column(BY_DIVISION, model_data->validation_data, col, 255);
     }
     
     free_data(training_data);
     free_data(validation_data);
     free_vector(yValues_Training);
     free_vector(yValues_Testing);
-
-    return 1;
 }
 
 
 NNetwork* mnist_get_network(Model* model) {
-    if(model->preprocess_data(model->data) == -1) {
-        log_error("%s", "Failed to complete preprocessing of MNIST data!");
-    }
+    model->preprocess_data(model->data);
 
     NetworkConfig config;
     config.numLayers = 2;

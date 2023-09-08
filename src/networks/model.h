@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct Model{
     NNetwork* (*get_network)(struct Model* model);
-    int (*preprocess_data)(ModelData* data);
+    void (*preprocess_data)(ModelData* data);
 
     ModelData* data;
 } Model;
@@ -40,14 +40,16 @@ typedef struct Model{
 // Register your models here
 Model* create_wine_categorization_model();
 NNetwork* wine_categorization_get_network(Model* model);
-int wine_categorization_preprocess_data(ModelData* model_data);
+void wine_categorization_preprocess_data(ModelData* model_data);
 
 Model* create_mnist_model();
 NNetwork* mnist_get_network(Model* model);
-int mnist_preprocess_data(ModelData* modelData);
+void mnist_preprocess_data(ModelData* model_data);
 
 // Linear Regression Model
 Model* create_real_estate_model();
+NNetwork* real_estate_get_network(Model* model);
+void real_estate_preprocess_data(ModelData* model_data);
 
 void train_model(Model* model, int should_save);
 void validate_model(Model* model);
