@@ -88,12 +88,12 @@ void free_network_config(NetworkConfig* config);
 
 void train_network(NNetwork* network, Matrix* training_data, Matrix* training_labels, int batch_size, int num_epochs);
 
-void forward_pass_row_by_row(NNetwork* network, Vector* input, Vector* output);
+void forward_pass_sequential(NNetwork* network, Vector* input, Vector* output);
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix);
 
 void calculate_loss(NNetwork* network, Matrix* yValues, Matrix* output);
 
-void backpropagation(NNetwork* network, Vector* input, Vector* output, Vector* yValues);
+void backpropagation_sequential(NNetwork* network, Vector* input, Vector* output, Vector* yValues);
 void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_values);
 
 void calculate_weight_gradients(NNetwork* network, int layer_index, Matrix* loss_wrt_weightedsum, Matrix* wsum_wrt_weight);
