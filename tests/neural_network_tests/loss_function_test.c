@@ -8,7 +8,7 @@ void mean_squared_error_perfect_prediction_test() {
     Matrix* predicted_values = create_matrix(10, 1);
     fill_matrix(predicted_values, 10.0f);
 
-    double loss = mean_squared_error(predicted_values, y_values);
+    double loss = mean_squared_error(y_values, predicted_values);
 
     assert(loss == 0.0f);
 
@@ -22,7 +22,7 @@ void mean_squared_error_prediction_with_some_error_test() {
     Matrix* predicted_values = create_matrix(10, 1);
     fill_matrix(predicted_values, 8.0f);
 
-    double loss = mean_squared_error(predicted_values, y_values);
+    double loss = mean_squared_error(y_values, predicted_values);
 
     // normally it should be 4.0 but because we divide by 2 after each squaring we check against half of the expected.
     assert(loss == 2.0f); 
