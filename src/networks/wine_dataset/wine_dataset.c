@@ -87,6 +87,7 @@ NNetwork* wine_categorization_get_network(Model* model) {
 
     OptimizationConfig* optimization_config = (OptimizationConfig*) calloc(1, sizeof(OptimizationConfig));
     optimization_config->optimizer = ADAM;
+    optimization_config->learning_rate = 0.001;
 
     optimization_config->use_learning_rate_decay = 1;
     optimization_config->use_gradient_clipping = 0;

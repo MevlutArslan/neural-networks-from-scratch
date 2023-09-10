@@ -74,13 +74,12 @@ NNetwork* create_network(const NetworkConfig* config) {
     return network;
 }
 
-void train_network(NNetwork* network, Matrix* training_data, Matrix* training_labels, int batch_size, int num_epochs) {
+void train_network(NNetwork* network, Matrix* training_data, Matrix* training_labels, int batch_size, int num_epochs, double learning_rate) {
     
     int epoch = 1; // We start from 1 because having the epoch be 0 messes up the optimization calculation.
 
     // default rate of keras -> 0.001
     // kaparthy's recommendation for adam: 0.0003
-    double learning_rate = 0.01;
     double current_learning_rate = learning_rate;
 
     double min_loss = __DBL_MAX__;

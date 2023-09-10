@@ -11,7 +11,7 @@ void train_model(Model* model, int should_save) {
 
     log_info("Starting to train model!");
 
-    train_network(network, model_data->training_data, model_data->training_labels, model_data->num_batches, model->data->total_epochs);
+    train_network(network, model_data->training_data, model_data->training_labels, model_data->num_batches, model->data->total_epochs, network->optimization_config->learning_rate);
 
     if(should_save == TRUE) {
         save_network(model_data->save_path, network);
