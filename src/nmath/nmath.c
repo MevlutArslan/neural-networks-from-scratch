@@ -279,7 +279,22 @@ void vector_scalar_subtraction(const Vector* v1, double scalar, Vector* output) 
     }
 }
 
-void dot_product(Matrix* matrix, Vector* vector, Vector* output) {
+Vector* dot_product(Matrix* matrix, Vector* vector) {
+    assert(matrix->columns = vector->size);
+
+    Vector* output = create_vector(matrix->rows);
+    for(int matrix_row = 0; matrix_row < matrix->rows; matrix_row++) {
+        double sum = 0.0;
+        for(int matrix_column = 0; matrix_column < matrix->columns; matrix_column++) {
+            sum += matrix->data[matrix_row]->elements[matrix_column] * vector->elements[matrix_column];
+        }
+        output->elements[matrix_row] = sum;
+    }
+
+    return output;
+}
+
+void dot_product_inplace(Matrix* matrix, Vector* vector, Vector* output) {
     assert(matrix->columns == vector->size);
     
     //each column by each row
@@ -352,7 +367,7 @@ Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size)
     Matrix* result = create_matrix(matrix->rows, matrix_arr[0]->columns);
 
     for(int i = 0; i < matrix->rows; i++) {
-        dot_product(matrix_arr[i], matrix->data[i], result->data[i]);
+        dot_product_inplace(matrix_arr[i], matrix->data[i], result->data[i]);
     }
 
     return result;
