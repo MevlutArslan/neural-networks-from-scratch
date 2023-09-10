@@ -14,8 +14,7 @@ typedef enum LossFunctionType  {
 
 double mean_squared_error(Matrix* targets, Matrix* outputs);
 
-// returns a vector of size 1 to establish a common return type with categorical_cross_entropy_loss_derivative function
-Vector* mean_squared_error_derivative(double target, double predicted);
+double mean_squared_error_derivative(double target, double predicted);
 
 double categorical_cross_entropy_loss(Matrix* targetOutputs, Matrix* outputs);
 double categorical_cross_entropy_loss_per_row(Vector* target, Vector* output);

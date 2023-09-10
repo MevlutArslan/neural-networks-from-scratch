@@ -8,7 +8,7 @@ double mean_squared_error(Matrix* targets, Matrix* outputs) {
         Vector* target = targets->data[i];
 
         // assuming both vectors have size 1 because of the nature of MSE use cases.
-        double difference = target->elements[0] - output->elements[0]; 
+        double difference = target->elements[0] - output->elements[0];
         /* 
             Dividing by 2 in the loss calculation ensures that the derivative simplifies to (predicted - target).
             This simplification aids in gradient computation. 
@@ -44,13 +44,8 @@ double mean_squared_error(Matrix* targets, Matrix* outputs) {
     return mse;
 }
 
-Vector* mean_squared_error_derivative(double target, double predicted) {
-    Vector* derivative_vector = create_vector(1);
-    assert(derivative_vector != NULL);
-    
-    derivative_vector->elements[0] = -1 * (target - predicted);
-
-    return derivative_vector;
+double mean_squared_error_derivative(double target, double predicted) {
+    return -1 * (target - predicted);
 }
 
 /*
