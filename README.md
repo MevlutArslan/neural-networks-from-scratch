@@ -60,7 +60,7 @@ I appreciate any feedback that could help improve my skills. Please don't hesita
 
 1. [X] Add Multithreading for matrix operations.
 2. [X] CUDA support.
-3. [ ] Add an example model for regression.
+3. [X] Add an example model for regression.
 4. [ ] Implement Transformers (I might be over my head here, will see as time progresses)
 5. [ ] Handle edge cases in Matrix operations (Determinant, inverse, mini-matrix ...).
 

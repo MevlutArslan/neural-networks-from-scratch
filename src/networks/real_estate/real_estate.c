@@ -10,7 +10,7 @@ Model* create_real_estate_model() {
     model->data = (ModelData*) malloc(sizeof(ModelData));
     assert(model->data != NULL);
 
-    model->data->total_epochs = 100;
+    model->data->total_epochs = 500;
     model->data->loss_history = calloc(model->data->total_epochs, sizeof(double));
     model->data->epoch_history = calloc(model->data->total_epochs, sizeof(double));
     model->data->learning_rate_history = calloc(model->data->total_epochs, sizeof(double));
@@ -19,7 +19,7 @@ Model* create_real_estate_model() {
     model->data->save_path = "real_estate_network";
 
     // TODO: Implement ability to divide the dataset into multiple batches.
-    model->data->num_batches = 1; // I haven't abstracted out the sequential backward pass so I will use the batched one for now.
+    model->data->num_batches = 0; // I haven't abstracted out the sequential backward pass so I will use the batched one for now.
 
     return model;
 }
@@ -28,7 +28,7 @@ void real_estate_preprocess_data(ModelData* model_data) {
     Data* real_estate_data = load_csv("/Users/mevlutarslan/Downloads/datasets/Real estate.csv");
     assert(real_estate_data != NULL);
 
-    shuffle_rows(real_estate_data->data);
+    // shuffle_rows(real_estate_data->data);
 
     float separation_factor = 0.7;
 
@@ -68,8 +68,9 @@ NNetwork* real_estate_get_network(Model* model) {
     NetworkConfig network_config;
     network_config.num_layers = 2;
     network_config.neurons_per_layer = (int*) calloc(network_config.num_layers, sizeof(int));
-    network_config.neurons_per_layer[0] = 5;
+    network_config.neurons_per_layer[0] = 10;
     network_config.neurons_per_layer[1] = 1;
+
 
     network_config.num_features = model->data->training_data->columns;
     network_config.num_rows = model->data->training_data->rows;
@@ -83,6 +84,7 @@ NNetwork* real_estate_get_network(Model* model) {
     OptimizationConfig* optimization_config = (OptimizationConfig*) calloc(1, sizeof(OptimizationConfig));
     assert(optimization_config != NULL);
     optimization_config->optimizer = ADAM;
+    optimization_config->learning_rate = 0.01;
 
     optimization_config->use_learning_rate_decay = 1;
     optimization_config->use_gradient_clipping = 0;
