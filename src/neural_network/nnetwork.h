@@ -15,6 +15,8 @@
     
 // }
 typedef struct {
+    double learning_rate;
+    
     int use_gradient_clipping;
     double gradient_clip_lower_bound;
     double gradient_clip_upper_bound;
@@ -86,7 +88,7 @@ NNetwork* create_network(const NetworkConfig* config);
 void free_network(NNetwork* network);
 void free_network_config(NetworkConfig* config);
 
-void train_network(NNetwork* network, Matrix* training_data, Matrix* training_labels, int batch_size, int num_epochs);
+void train_network(NNetwork* network, Matrix* training_data, Matrix* training_labels, int batch_size, int num_epochs, double learning_rate);
 
 void forward_pass_sequential(NNetwork* network, Vector* input, Vector* output);
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix);
