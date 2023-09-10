@@ -44,8 +44,13 @@ double mean_squared_error(Matrix* targets, Matrix* outputs) {
     return mse;
 }
 
-double mean_squared_error_derivative(double target, double predicted) {
-    return -1 * (target - predicted);
+Vector* mean_squared_error_derivative(double target, double predicted) {
+    Vector* derivative_vector = create_vector(1);
+    assert(derivative_vector != NULL);
+    
+    derivative_vector->elements[0] = -1 * (target - predicted);
+
+    return derivative_vector;
 }
 
 /*

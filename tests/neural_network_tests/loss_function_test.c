@@ -33,11 +33,13 @@ void mean_squared_error_derivative_perfect_prediction_test() {
     double target = 10.0;
     double predicted = 10.0;
 
-    double derivative = mean_squared_error_derivative(target, predicted);
+    Vector* derivative_vector = mean_squared_error_derivative(target, predicted);
 
     // derivative = predicted - target
-    assert(derivative == predicted - target);
+    assert(derivative_vector->elements[0] == predicted - target);
     log_info("Mean Squared Error Derivative with perfect prediction, test passed successfully.");
+
+    free_vector(derivative_vector);
 }
 
 
@@ -45,9 +47,11 @@ void mean_squared_error_derivative_with_some_error_test() {
     double target = 10.0;
     double predicted = 8.0;
 
-    double derivative = mean_squared_error_derivative(target, predicted);
+    Vector* derivative_vector = mean_squared_error_derivative(target, predicted);
 
     // derivative = predicted - target i.e. 8 - 10
-    assert(derivative == predicted - target);
+    assert(derivative_vector->elements[0] == predicted - target);
     log_info("Mean Squared Error Derivative with some error, test passed successfully.");
+
+    free_vector(derivative_vector);
 }
