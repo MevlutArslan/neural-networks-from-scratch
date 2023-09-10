@@ -6,6 +6,7 @@ void forward_pass_sequential(NNetwork* network, Vector* input, Vector* output) {
     for (int layer_index = 0; layer_index < network->num_layers; layer_index++) {
         Layer* current_layer = network->layers[layer_index];
         Vector* product = dot_product(current_layer->weights, current_layer->input);
+        
         #ifdef DEBUG
             char* weights_str = matrix_to_string(current_layer->weights);
             char* dot_product_str = vector_to_string(dotProduct);
@@ -40,6 +41,9 @@ void forward_pass_sequential(NNetwork* network, Vector* input, Vector* output) {
         current_layer->output = copy_vector(current_layer->weighted_sums);
 
         switch(current_layer->activation_fn) {
+            case RELU:
+                relu(current_layer->output);
+                break;
             case LEAKY_RELU:
                 leakyRelu(current_layer->output);
                 break;
@@ -51,7 +55,6 @@ void forward_pass_sequential(NNetwork* network, Vector* input, Vector* output) {
                 break;
         }
 
-            
         #ifdef DEBUG
             char* output_str = vector_to_string(currentLayer->output);
             log_debug(
@@ -79,11 +82,6 @@ void forward_pass_sequential(NNetwork* network, Vector* input, Vector* output) {
 /**
  * Performs the backpropagation process sequentially in the neural network.
  * 
- * IMPORTANT: If a different activation function is used, the logic for calculating the gradients of 
- * the output layer needs to be modified accordingly. Specifically, the derivative function of the 
- * new activation function should be properly implemented and used in place of the existing derivative 
- * functions (e.g., softmax_derivative).
- *
  * @param network The neural network to perform backpropagation on.
  * @param input The input vector to the forward pass.
  * @param output The output of the forward pass.
@@ -94,15 +92,52 @@ void backpropagation_sequential(NNetwork* network, Vector* input, Vector* output
         log_info("Start of backward pass.");
     #endif
         Vector* prediction = output;
-        
-        Vector* loss_wrt_output = categorical_cross_entropy_loss_derivative(target, prediction);
-        // log_info("dLoss_dOutputs: %s", vector_to_string(dLoss_dOutputs));
+        // pre_declaring to get rid of compiler's errors
+        // ------------------------------------------------------------------------
+        Vector* loss_wrt_output;
+        Matrix* output_wrt_weightedsum;
 
-        Matrix* output_wrt_weightedsum = softmax_derivative(prediction);
-        // log_info("jacobian: %s", matrix_to_string(jacobian));
+        double loss_wrt_output_mse;
+        double output_wrt_wsum = 0.0f;
+        double weighted_sum = 0.0f;
+        // ------------------------------------------------------------------------
 
-        Vector* loss_wrt_weightedsum = dot_product(output_wrt_weightedsum, loss_wrt_output);
-        // log_info("dloss_wrt_weightedsum: %s", vector_to_string(dLoss_dWeightedSums));
+        Vector* loss_wrt_weightedsum = create_vector(network->layers[network->num_layers - 1]->num_neurons);
+        switch(network->loss_fn) {
+            case MEAN_SQUARED_ERROR:
+                loss_wrt_output_mse = mean_squared_error_derivative(target->elements[0], output->elements[0]);
+
+                switch(network->layers[network->num_layers - 1]->activation_fn) {
+                    case RELU:
+                        weighted_sum = network->layers[network->num_layers - 1]->weighted_sums->elements[0];
+                        output_wrt_wsum = relu_derivative(weighted_sum);
+                        break;
+                    case LEAKY_RELU:
+                        weighted_sum = network->layers[network->num_layers - 1]->weighted_sums->elements[0];
+                        output_wrt_wsum = leakyRelu_derivative(weighted_sum);
+                        break;
+                    default:
+                        log_error("Other activations functions haven't been implemented, feel free to add them!");
+                        return;
+                }
+
+                loss_wrt_weightedsum->elements[0] = loss_wrt_output_mse * output_wrt_wsum;
+                break;
+            case CATEGORICAL_CROSS_ENTROPY:
+                loss_wrt_output = categorical_cross_entropy_loss_derivative(target, prediction);
+
+                output_wrt_weightedsum = softmax_derivative(prediction);
+                
+                dot_product_inplace(output_wrt_weightedsum, loss_wrt_output, loss_wrt_weightedsum);
+
+                free_matrix(output_wrt_weightedsum);
+                free_vector(loss_wrt_output);
+                break;
+            
+            default:
+                log_error("Unrecognized Loss Function, Please register your loss function!");
+                return;
+        }
 
         #ifdef DEBUG
             char* output_wrt_weightedsum_str = matrix_to_string(output_wrt_weightedsum);
@@ -176,8 +211,6 @@ void backpropagation_sequential(NNetwork* network, Vector* input, Vector* output
         #endif
         
         // clean up memory used during output layer's backpropagation step.
-        free_matrix(output_wrt_weightedsum);
-        free_vector(loss_wrt_output);
         free_vector(loss_wrt_weightedsum);
 
         #ifdef DEBUG
