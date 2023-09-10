@@ -2,20 +2,20 @@
 
 NNetwork* create_mock_network(OptimizationConfig* optimization_config) {
     NetworkConfig network_config;
-    network_config.numLayers = 2;
+    network_config.num_layers = 2;
     
-    network_config.neurons_per_layer = (int*) calloc(network_config.numLayers, sizeof(int));
+    network_config.neurons_per_layer = (int*) calloc(network_config.num_layers, sizeof(int));
     network_config.neurons_per_layer[0] = 3;
     network_config.neurons_per_layer[1] = 2;
 
-    network_config.activation_fns = calloc(network_config.numLayers, sizeof(enum ActivationFunction));
+    network_config.activation_fns = calloc(network_config.num_layers, sizeof(enum ActivationFunction));
     network_config.optimization_config = optimization_config;
 
-    for(int i = 0; i < network_config.numLayers - 1; i++) {
+    for(int i = 0; i < network_config.num_layers - 1; i++) {
         network_config.activation_fns[i] = LEAKY_RELU;
     }
 
-    network_config.activation_fns[network_config.numLayers - 1] = SOFTMAX;
+    network_config.activation_fns[network_config.num_layers - 1] = SOFTMAX;
 
     network_config.learning_rate = 0.01;
     network_config.num_rows = 1;
@@ -33,6 +33,9 @@ NNetwork* create_mock_network(OptimizationConfig* optimization_config) {
 void test_mock_sgd() {
     OptimizationConfig optimization_config;
     optimization_config.optimizer = SGD;
+
+    optimization_config.use_l1_regularization = FALSE;
+    optimization_config.use_l2_regularization = FALSE;
 
     NNetwork* mock_network = create_mock_network(&optimization_config);
 

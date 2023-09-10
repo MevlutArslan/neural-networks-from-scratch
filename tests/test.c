@@ -2,6 +2,7 @@
 #include "matrix_tests/matrix_test.h"
 #include "neural_network_tests/activation_function_test.h"
 #include "neural_network_tests/optimization_algorithms_test.h"
+#include "neural_network_tests/loss_function_test.h"
 #include "test.h"
 
 void run_tests() {
@@ -26,4 +27,9 @@ void run_tests() {
     test_mock_adagrad();
     test_mock_rms_prop();
     test_mock_adam();
+
+    mean_squared_error_perfect_prediction_test();
+    mean_squared_error_prediction_with_some_error_test();
+    mean_squared_error_derivative_perfect_prediction_test();
+    mean_squared_error_derivative_with_some_error_test();
 }
