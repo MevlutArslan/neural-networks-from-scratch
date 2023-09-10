@@ -170,7 +170,7 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
                 softmax_matrix(network->batched_outputs[layer_index]);
                 break;
             default:
-                log_error("Unknown Activation Function: %s! \n be sure to register it to the workflow.", get_activation_function_name(current_layer->activation_fn));
+                log_error("Unknown Activation Function be sure to register it to the workflow.", get_activation_function_name(current_layer->activation_fn));
                 break;
         }
         free_matrix(transposed_weights);
@@ -188,13 +188,12 @@ void calculate_loss(NNetwork* network, Matrix* target_values, Matrix* output) {
             break;
         case CATEGORICAL_CROSS_ENTROPY:
             network->loss = categorical_cross_entropy_loss(target_values, output);
+            network->accuracy = accuracy(target_values, output);
             break;
         default:
-            log_error("UNRECOGNIZED LOSS FUNCTION, PLEASE REGISTER YOUR LOSS FUNCTION!");
+            log_error("Unrecognized Loss Function, Please register your loss function!");
             return;
     }
-
-    network->accuracy = accuracy(target_values, output);
 }
 
 
