@@ -95,7 +95,7 @@ void backpropagation_sequential(NNetwork* network, Vector* input, Vector* output
     #endif
         Vector* prediction = output;
         
-        Vector* loss_wrt_output = categoricalCrossEntropyLossDerivative(target, prediction);
+        Vector* loss_wrt_output = categorical_cross_entropy_loss_derivative(target, prediction);
         // log_info("dLoss_dOutputs: %s", vector_to_string(dLoss_dOutputs));
 
         Matrix* output_wrt_weightedsum = softmax_derivative(prediction);
@@ -104,7 +104,6 @@ void backpropagation_sequential(NNetwork* network, Vector* input, Vector* output
         Vector* loss_wrt_weightedsum = dot_product(output_wrt_weightedsum, loss_wrt_output);
         // log_info("dloss_wrt_weightedsum: %s", vector_to_string(dLoss_dWeightedSums));
 
-    
         #ifdef DEBUG
             char* output_wrt_weightedsum_str = matrix_to_string(output_wrt_weightedsum);
             char* loss_wrt_weightedsum_str = vector_to_string(dLoss_dWeightedSums);

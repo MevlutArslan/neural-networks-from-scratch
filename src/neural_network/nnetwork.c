@@ -187,7 +187,7 @@ void calculate_loss(NNetwork* network, Matrix* target_values, Matrix* output) {
             network->loss = mean_squared_error(output, target_values);
             break;
         case CATEGORICAL_CROSS_ENTROPY:
-            network->loss = categoricalCrossEntropyLoss(target_values, output);
+            network->loss = categorical_cross_entropy_loss(target_values, output);
             break;
         default:
             log_error("UNRECOGNIZED LOSS FUNCTION, PLEASE REGISTER YOUR LOSS FUNCTION!");
@@ -210,7 +210,7 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     Matrix* output = network->batched_outputs[layer_index];
 
     Matrix* loss_wrt_output = create_matrix(y_values->rows, y_values->columns);
-    computeCategoricalCrossEntropyLossDerivativeMatrix(y_values, output, loss_wrt_output);
+    categorical_cross_entropy_loss_derivative_batched(y_values, output, loss_wrt_output);
     #ifdef DEBUG
         debug_str = matrix_to_string(loss_wrt_output);
         log_info("loss_wrt_output: %s", debug_str);
