@@ -181,10 +181,20 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
 }
 
 
-void calculate_loss(NNetwork* network, Matrix* yValues, Matrix* output) {
-    network->loss = categoricalCrossEntropyLoss(yValues, output);
+void calculate_loss(NNetwork* network, Matrix* target_values, Matrix* output) {
+    switch(network->loss_fn) {
+        case MEAN_SQUARED_ERROR:            
+            network->loss = mean_squared_error(output, target_values);
+            break;
+        case CATEGORICAL_CROSS_ENTROPY:
+            network->loss = categoricalCrossEntropyLoss(target_values, output);
+            break;
+        default:
+            log_error("UNRECOGNIZED LOSS FUNCTION, PLEASE REGISTER YOUR LOSS FUNCTION!");
+            return;
+    }
 
-    network->accuracy = accuracy(yValues, output);
+    network->accuracy = accuracy(target_values, output);
 }
 
 
