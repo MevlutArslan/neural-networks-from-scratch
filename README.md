@@ -23,6 +23,7 @@ While the library's performance and production-readiness are not the main focus,
 The version on the main branch does not come with any performance optimizations, its priority was/is readability and understandability. If you want a more performant version or want to see how neural networks can be optimized take a look at the branch 'optimized-branch'.
 
 * It only supports batch processing.
+* It doesn't have the latest changes I have on the main branch, I will be migrating the changes slowly overtime.
 
 It has the following optimizations:
 1. Optimized Memory access
