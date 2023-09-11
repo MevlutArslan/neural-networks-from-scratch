@@ -3,41 +3,61 @@
 #include <math.h>
 
 // in place modification
-void relu(Vector* vector) {
-    for (int i = 0; i < vector->size; i++) {
-        vector->elements[i] = fmax(0, vector->elements[i]);
+void relu(Vector* weighted_sums) {
+    for (int i = 0; i < weighted_sums->size; i++) {
+        weighted_sums->elements[i] = fmax(0, weighted_sums->elements[i]);
     }
 }
 
-double relu_derivative(double netInput){
-    return netInput > 0 ? 1.0 : 0;
+double relu_derivative(double weighted_sum){
+    return weighted_sum > 0 ? 1.0 : 0;
 }
 
-void leakyReluMatrix(Matrix* matrix) {
-    for (int i = 0; i < matrix->rows; i++) {
-        leakyRelu(matrix->data[i]);
+
+void relu_batched(Matrix* weighted_sums) {
+    for(int i = 0; i < weighted_sums->rows; i++) {
+        relu(weighted_sums->data[i]);
     }
 }
 
-void leakyRelu(Vector* vector) {
-    for (int i = 0; i < vector->size; i++) {
-        if (vector->elements[i] < 0) {
-            vector->elements[i] *= 0.01;
+Matrix* relu_derivative_batched(Matrix* weighted_sums) {
+    Matrix* derivatives = create_matrix(weighted_sums->rows, weighted_sums->columns);
+
+    for(int i = 0; i < weighted_sums->rows; i++) {
+        for(int j = 0; j < weighted_sums->columns; j++) {
+            derivatives->data[i]->elements[j] = relu_derivative(weighted_sums->data[i]->elements[j]);
+        }
+    }
+
+    return derivatives;
+}
+
+void leaky_relu(Vector* weighted_sums) {
+    for (int i = 0; i < weighted_sums->size; i++) {
+        if (weighted_sums->elements[i] < 0) {
+            weighted_sums->elements[i] *= 0.01;
         }
     }
 }
 
-double leakyRelu_derivative(double netInput) {
+void leaky_relu_batched(Matrix* matrix) {
+    for (int i = 0; i < matrix->rows; i++) {
+        leaky_relu(matrix->data[i]);
+    }
+}
+
+
+double leaky_relu_derivative(double netInput) {
     return netInput > 0.0 ? 1.0 : 0.01;
 }
 
 
-Matrix* leakyRelu_derivative_matrix(Matrix* input) {
+Matrix* leaky_relu_derivative_batched(Matrix* input) {
     Matrix* result = create_matrix(input->rows, input->columns);
 
     for(int i = 0; i < result->rows; i++) {
         for(int j = 0; j < result->columns; j++) {
-            result->data[i]->elements[j] = leakyRelu_derivative(input->data[i]->elements[j]);
+            result->data[i]->elements[j] = leaky_relu_derivative(input->data[i]->elements[j]);
         }
     }
 
@@ -81,7 +101,7 @@ void softmax(Vector* inputs) {
     free_vector(exponentialValues);
 }
 
-void softmax_matrix(Matrix* matrix) {
+void softmax_batched(Matrix* matrix) {
     for(int i = 0; i < matrix->rows; i++) {
         softmax(matrix->data[i]);
     }
@@ -115,7 +135,7 @@ Matrix* softmax_derivative(Vector* output) {
 }
 
 
-Matrix** softmax_derivative_parallelized(Matrix* output) {
+Matrix** softmax_derivative_batched(Matrix* output) {
     Matrix** jacobian_matrices = create_matrix_arr(output->rows);
     for(int i = 0; i < output->rows; i++) {
         jacobian_matrices[i] = softmax_derivative(output->data[i]);

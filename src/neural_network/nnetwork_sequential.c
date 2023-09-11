@@ -45,7 +45,7 @@ void forward_pass_sequential(NNetwork* network, Vector* input, Vector* output) {
                 relu(current_layer->output);
                 break;
             case LEAKY_RELU:
-                leakyRelu(current_layer->output);
+                leaky_relu(current_layer->output);
                 break;
             case SOFTMAX:
                 softmax(current_layer->output);
@@ -114,7 +114,7 @@ void backpropagation_sequential(NNetwork* network, Vector* input, Vector* output
                         break;
                     case LEAKY_RELU:
                         weighted_sum = network->layers[network->num_layers - 1]->weighted_sums->elements[0];
-                        output_wrt_wsum = leakyRelu_derivative(weighted_sum);
+                        output_wrt_wsum = leaky_relu_derivative(weighted_sum);
                         break;
                     default:
                         log_error("Other activations functions haven't been implemented, feel free to add them!");
@@ -250,7 +250,7 @@ void backpropagation_sequential(NNetwork* network, Vector* input, Vector* output
                         output_wrt_weightedsum = relu_derivative(current_layer->weighted_sums->elements[neuron_index]);
                         break;
                     case LEAKY_RELU:
-                        output_wrt_weightedsum = leakyRelu_derivative(current_layer->weighted_sums->elements[neuron_index]);
+                        output_wrt_weightedsum = leaky_relu_derivative(current_layer->weighted_sums->elements[neuron_index]);
                         break;
                     default:
                         break;

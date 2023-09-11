@@ -48,8 +48,20 @@ double mean_squared_error_derivative(double target, double predicted) {
     return -1 * (target - predicted);
 }
 
+Matrix* mean_squared_error_derivative_batched(Matrix* target, Matrix* output) {
+    Matrix* derivatives = create_matrix(output->rows, output->columns);
+
+    for(int i = 0; i < output->rows; i++) {
+        for(int j = 0; j < output->columns; j++) {
+            derivatives->data[i]->elements[j] = mean_squared_error_derivative(target->data[i]->elements[j], output->data[i]->elements[j]);
+        }
+    }
+
+    return derivatives;
+}
+
 /*
-    Should be used when both target and prediction are one hot encoded vectors!
+    Should be used only when both target and prediction are one hot encoded vectors!
     The formula for Categorical Cross Entropy simplifies to: 
         -1 * log(prediction_vector[index of the target category in the target vector])
 */

@@ -13,8 +13,8 @@ typedef enum LossFunctionType  {
 } LossFunctionType;
 
 double mean_squared_error(Matrix* targets, Matrix* outputs);
-
 double mean_squared_error_derivative(double target, double predicted);
+Matrix* mean_squared_error_derivative_batched(Matrix* target, Matrix* output);
 
 double categorical_cross_entropy_loss(Matrix* targetOutputs, Matrix* outputs);
 double categorical_cross_entropy_loss_per_row(Vector* target, Vector* output);

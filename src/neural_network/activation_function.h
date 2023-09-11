@@ -12,21 +12,26 @@ typedef enum ActivationFunction {
     RELU, LEAKY_RELU, SOFTMAX, UNRECOGNIZED_AFN
 } ActivationFunction;
 
-void relu(Vector* inputs);
-double relu_derivative(double netInput);
+void relu(Vector* weighted_sums);
+void relu_batched(Matrix* weighted_sums);
 
-void leakyReluMatrix(Matrix* matrix);
-void leakyRelu(Vector* inputs);
-double leakyRelu_derivative(double netInput);
-Matrix* leakyRelu_derivative_matrix(Matrix* input);
+double relu_derivative(double weighted_sum);
+Matrix* relu_derivative_batched(Matrix* weighted_sums);
+
+void leaky_relu(Vector* weighted_sums);
+void leaky_relu_batched(Matrix* weighted_sums);
+
+double leaky_relu_derivative(double netInput);
+Matrix* leaky_relu_derivative_batched(Matrix* input);
 
 void sigmoid(Vector* inputs);
 double sigmoid_derivative(double netInput);
 
 void softmax(Vector* inputs);
-void softmax_matrix(Matrix* matrix);
+void softmax_batched(Matrix* matrix);
+
 Matrix* softmax_derivative(Vector* output);
-Matrix** softmax_derivative_parallelized(Matrix* output);
+Matrix** softmax_derivative_batched(Matrix* output);
 
 char* get_activation_function_name(const ActivationFunction activationFunction);
 ActivationFunction get_activation_function_by_name(char* name);

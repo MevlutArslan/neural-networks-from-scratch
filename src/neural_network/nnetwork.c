@@ -163,10 +163,10 @@ void forward_pass_batched(NNetwork* network, Matrix* input_matrix) {
 
         switch(current_layer->activation_fn) {
             case LEAKY_RELU:
-                leakyReluMatrix(network->batched_outputs[layer_index]);
+                leaky_relu_batched(network->batched_outputs[layer_index]);
                 break;
             case SOFTMAX:
-                softmax_matrix(network->batched_outputs[layer_index]);
+                softmax_batched(network->batched_outputs[layer_index]);
                 break;
             default:
                 log_error("Unknown Activation Function be sure to register it to the workflow.", get_activation_function_name(current_layer->activation_fn));
@@ -207,18 +207,62 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     int layer_index = num_layers - 1;
     Matrix* output = network->batched_outputs[layer_index];
 
-    Matrix* loss_wrt_output = create_matrix(y_values->rows, y_values->columns);
-    categorical_cross_entropy_loss_derivative_batched(y_values, output, loss_wrt_output);
-    #ifdef DEBUG
-        debug_str = matrix_to_string(loss_wrt_output);
-        log_info("loss_wrt_output: %s", debug_str);
-        free(debug_str);
-    #endif
+    // pre_declaring to get rid of compiler's errors
+    // ------------------------------------------------------------------------
+    Matrix* loss_wrt_output;
+    Matrix** output_wrt_weightedsum;
 
-    // Also known as jacobian matrices
-    Matrix** output_wrt_weightedsum = softmax_derivative_parallelized(output);
+    Matrix* loss_wrt_output_mse;
+    Matrix* weighted_sums;
 
-    loss_wrt_weightedsum[layer_index] = matrix_vector_product_arr(output_wrt_weightedsum, loss_wrt_output, output->rows);
+    Matrix* output_wrt_weightedsum_mse;
+    // ------------------------------------------------------------------------
+    switch(network->loss_fn) {
+        case MEAN_SQUARED_ERROR:
+            loss_wrt_output_mse = mean_squared_error_derivative_batched(y_values, output);
+
+            switch(network->layers[network->num_layers - 1]->activation_fn) {
+                case RELU:
+                    weighted_sums = network->weighted_sums[layer_index];
+                    output_wrt_weightedsum_mse = relu_derivative_batched(weighted_sums);
+
+                    break;
+                case LEAKY_RELU:
+                    weighted_sums = network->weighted_sums[layer_index];
+                    output_wrt_weightedsum_mse = leaky_relu_derivative_batched(weighted_sums);
+                    
+                    break;
+                default:
+                    log_error("Other activations functions haven't been implemented, feel free to add them!");
+                    return;
+            }
+            loss_wrt_weightedsum[layer_index] = matrix_multiplication(output_wrt_weightedsum_mse, loss_wrt_output_mse);
+
+            free_matrix(output_wrt_weightedsum_mse);
+            break;
+        case CATEGORICAL_CROSS_ENTROPY:
+            loss_wrt_output = create_matrix(y_values->rows, y_values->columns);
+            categorical_cross_entropy_loss_derivative_batched(y_values, output, loss_wrt_output);
+            #ifdef DEBUG
+                debug_str = matrix_to_string(loss_wrt_output);
+                log_info("loss_wrt_output: %s", debug_str);
+                free(debug_str);
+            #endif
+            // Also known as jacobian matrices
+            output_wrt_weightedsum = softmax_derivative_batched(output);
+            loss_wrt_weightedsum[layer_index] = matrix_vector_product_arr(output_wrt_weightedsum, loss_wrt_output, output->rows);
+
+            // clean up memory
+            free_matrix(loss_wrt_output);
+            for(int i = 0; i < output->rows; i++) {
+                free_matrix(output_wrt_weightedsum[i]);
+            }
+            free(output_wrt_weightedsum);            
+            break;
+        default:
+            log_error("Unrecognized Loss Function, Please register your loss function!");
+            return;
+    }
     #ifdef DEBUG
         debug_str = matrix_to_string(loss_wrt_weightedsum[layer_index]);
         log_info("Loss wrt WeightedSum matrix for layer #%d: %s", layer_index, debug_str);
@@ -256,13 +300,6 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
     #endif
     // if(useGradientClipping) clip_gradients(bias_gradients)
 
-    // clean memory
-    free_matrix(loss_wrt_output);
-
-    for(int i = 0; i < output->rows; i++) {
-        free_matrix(output_wrt_weightedsum[i]);
-    }
-    free(output_wrt_weightedsum);
     
     // ------------- HIDDEN LAYERS -------------
     for (layer_index -= 1; layer_index >= 0; layer_index--) {
@@ -278,15 +315,12 @@ void backpropagation_batched(NNetwork* network, Matrix* input_matrix, Matrix* y_
         Matrix* output_wrt_weightedsums = NULL;
         switch(network->layers[layer_index]->activation_fn) {
             case RELU:
-                log_info("not implemented yet!");
+                output_wrt_weightedsums = relu_derivative_batched(network->weighted_sums[layer_index]);
                 return;
             case LEAKY_RELU:
-                output_wrt_weightedsums = leakyRelu_derivative_matrix(network->weighted_sums[layer_index]);
+                output_wrt_weightedsums = leaky_relu_derivative_batched(network->weighted_sums[layer_index]);
                 break;
-            case SOFTMAX:
-                log_error("cannot/shouldn't be softmax in the hidden layers.");
-                return;
-            case UNRECOGNIZED_AFN:
+            default:
                 log_error("Unrecognized activation function!");
                 return;
         }
