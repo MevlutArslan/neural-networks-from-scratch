@@ -49,7 +49,7 @@ For reference, I've included two example models under 'src/example_networks':
 
 - [MNIST](https://www.kaggle.com/datasets/oddrationale/mnist-in-csv)
 - [Wine Recognition Data](https://archive.ics.uci.edu/dataset/109/wine)
-- [Real Estate Prediction Data] (https://www.kaggle.com/datasets/quantbruce/real-estate-price-prediction)
+- [Real Estate Prediction Data](https://www.kaggle.com/datasets/quantbruce/real-estate-price-prediction)
 
 Please feel free to delve into these models to gain a better understanding of the project's workings.
 
