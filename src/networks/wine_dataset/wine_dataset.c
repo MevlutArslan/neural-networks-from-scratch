@@ -16,7 +16,7 @@ Model* create_wine_categorization_model() {
     model->data->save_path = "wine_dataset_network";
 
     // TODO: Implement ability to divide the dataset into multiple batches.
-    model->data->num_batches = 0;
+    model->data->num_batches = 1;
 
     return model;
 }
@@ -34,29 +34,32 @@ void wine_categorization_preprocess_data(ModelData* model_data) {
     
     int trainingDataSize = wine_data->rows * divisionPercentage;
 
-    Matrix* trainingData = get_sub_matrix(wine_data->data, 0, trainingDataSize - 1, 0, wine_data->data->columns - 1);
-    model_data->training_data = get_sub_matrix_except_column(trainingData, 0, trainingData->rows - 1, 0, trainingData->columns - 1, targetColumn);
-    
-    Vector* yValues_training = extractYValues(trainingData, targetColumn);
-    model_data->training_labels = oneHotEncode(yValues_training, 3);
+    model_data->training_data = get_sub_matrix(wine_data->data, 0, trainingDataSize - 1, 1, wine_data->data->columns - 1);
+    // log_info("training data: %s", matrix_to_string(model_data->training_data));
 
+    Matrix* training_data_with_target = get_sub_matrix(wine_data->data, 0, trainingDataSize - 1, 0, wine_data->data->columns - 1);
+    
+    Vector* training_labels = extractYValues(training_data_with_target, targetColumn);
+    model_data->training_labels = oneHotEncode(training_labels, 3);
+    
+    model_data->validation_data = get_sub_matrix(wine_data->data, model_data->training_data->rows, wine_data->rows - 1, 1, wine_data->data->columns - 1);
+
+    Matrix* validation_data_with_targets = get_sub_matrix(wine_data->data, model_data->training_data->rows, wine_data->rows - 1, 0, wine_data->data->columns - 1);
+    
+    Vector* validation_labels = extractYValues(validation_data_with_targets, targetColumn);
+    model_data->validation_labels = oneHotEncode(validation_labels, 3);
+    
     for(int colIndex = 0; colIndex < model_data->training_data->columns; colIndex++) {
         normalize_column(STANDARD_DEVIATION, model_data->training_data, colIndex, 0);
     }
-    
-    Matrix* validation_data = get_sub_matrix(wine_data->data, model_data->training_data->rows, wine_data->rows - 1, 0, wine_data->data->columns - 1);
-    model_data->validation_data = get_sub_matrix_except_column(validation_data, 0, validation_data->rows -1, 0, validation_data->columns - 1, targetColumn);
 
-    Vector* validation_labels = extractYValues(validation_data, targetColumn);
-    model_data->validation_labels = oneHotEncode(validation_labels, 3);
-    
     for(int colIndex = 0; colIndex < model_data->validation_data->columns; colIndex++) {
         normalize_column(STANDARD_DEVIATION, model_data->validation_data, colIndex, 0);
     }
 
-    free_matrix(trainingData);
-    free_matrix(validation_data);
-    free_vector(yValues_training);
+    free_matrix(training_data_with_target);
+    free_matrix(validation_data_with_targets);
+    free_vector(training_labels);
     free_vector(validation_labels);
     free_data(wine_data);
 }
@@ -67,7 +70,7 @@ NNetwork* wine_categorization_get_network(Model* model) {
 
     NetworkConfig config;
     config.num_layers = 2;
-    config.neurons_per_layer = malloc(sizeof(int) * config.num_layers);
+    config.neurons_per_layer = (int*) calloc(config.num_layers, sizeof(int));
     config.neurons_per_layer[0] = 2;
     config.neurons_per_layer[1] = 3;
 
@@ -87,7 +90,7 @@ NNetwork* wine_categorization_get_network(Model* model) {
 
     OptimizationConfig* optimization_config = (OptimizationConfig*) calloc(1, sizeof(OptimizationConfig));
     optimization_config->optimizer = ADAM;
-    optimization_config->learning_rate = 0.001;
+    optimization_config->learning_rate = 0.01;
 
     optimization_config->use_learning_rate_decay = 1;
     optimization_config->use_gradient_clipping = 0;

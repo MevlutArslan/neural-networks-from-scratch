@@ -19,7 +19,7 @@ Model* create_real_estate_model() {
     model->data->save_path = "real_estate_network";
 
     // TODO: Implement ability to divide the dataset into multiple batches.
-    model->data->num_batches = 0; // I haven't abstracted out the sequential backward pass so I will use the batched one for now.
+    model->data->num_batches = 1;
 
     return model;
 }
@@ -35,7 +35,7 @@ void real_estate_preprocess_data(ModelData* model_data) {
     int training_data_num_rows = real_estate_data->rows * separation_factor;
     // separate training and validation
 
-    // last column is the y value (expected value) so I omit it out of the training values
+    // last column is the y value (expected value) so I omitted it out of the training values
     model_data->training_data = get_sub_matrix(real_estate_data->data, 0, training_data_num_rows, 1, real_estate_data->columns - 2);
     assert(model_data->training_data != NULL);
     // log_info("training data: %s", matrix_to_string(model_data->training_data));
