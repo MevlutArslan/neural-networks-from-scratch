@@ -1,14 +1,12 @@
-#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "../tests/test.h"
 #include <time.h>
+
+#include "../tests/test.h"
 #include "../libraries/logger/log.h"
 #include "helper/thread_pool.h"
 #include "nmath/nmath.h"
-#include "nmath/nmatrix.h"
-#include "nmath/nvector.h"
 #include "networks/model.h"
 
 void runProgram();
@@ -17,8 +15,6 @@ void runProgram();
 
 int main(int argc, char* argv[])
 {
-    srand(306); // seeding with 306
-
     int isTesting = 0;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "test") == 0) {
@@ -37,12 +33,13 @@ int main(int argc, char* argv[])
 }
 
 void runProgram() {
-    Model* model = create_wine_categorization_model();
+    srand(306);
+
+    Model* model = create_real_estate_model();
     clock_t start = clock();
 
-    model->train_network(model);
-
-    model->validate_network(model);
+    train_model(model, TRUE);
+    validate_model(model);
     
     clock_t end = clock();
 
