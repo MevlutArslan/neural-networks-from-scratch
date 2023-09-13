@@ -9,10 +9,10 @@
 #define MAX_TOKENS 256
 #define DELIMITER ","
 
-Data* load_csv(char* fileLocation) {
-    FILE* file = fopen(fileLocation, "r");
+Data* load_csv(char* file_location) {
+    FILE* file = fopen(file_location, "r");
     if (file == NULL) {
-        printf("Failed to open file: %s\n", fileLocation);
+        printf("Failed to open file: %s\n", file_location);
         return NULL;
     }
 
@@ -23,8 +23,8 @@ Data* load_csv(char* fileLocation) {
         return NULL;
     }
 
-    data->rows = getRowCount(fileLocation) - 1;
-    data->columns = getColumnCount(fileLocation);
+    data->rows = getRowCount(file_location) - 1;
+    data->columns = getColumnCount(file_location);
 
     data->data = create_matrix(data->rows, data->columns);
     if (data->data == NULL) {
@@ -77,21 +77,76 @@ Data* load_csv(char* fileLocation) {
     return data;
 }
 
-Vector* extractYValues(Matrix* matrix, int columnIndex) {
+void load_text(char* file_location, map_t char_int_map, map_t int_char_map) {
+    FILE* file = fopen(file_location, "r");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file\n");
+        return;
+    }
+
+    char line[1024];
+    
+    int* index = malloc(1 * sizeof(int));
+    while (fgets(line, sizeof(line), file)) {
+        
+        fill_tokenizer_vocabulary(&line, char_int_map, int_char_map, index);
+    }
+
+    print_hashmap(char_int_map, CHAR_INT);
+    print_hashmap(int_char_map, INT_CHAR);
+
+    fclose(file);
+}
+
+void fill_tokenizer_vocabulary(char* text, map_t char_int_map, map_t int_char_map, int* index) {
+    for (int i = 0; i < strlen(text); i++) {
+        if (text[i] == '\n' || (text[i] == '\r' && text[i] == '\n')) {
+            break;
+        }
+
+        char* key = (char*)malloc(2 * sizeof(char)); // Allocate space for the character and null terminator
+        sprintf(key, "%c", text[i]); // Initialize the key with the character
+       
+        any_t return_value;
+
+        int rc = hashmap_get(char_int_map, key, &return_value);
+        if (rc == MAP_OK) {
+            continue;
+        }
+
+        hashmap_put(char_int_map, key, index[0]);
+
+        // Convert index to a string for int_char_map
+        char* index_str = (char*)malloc(8 * sizeof(char)); // Assuming a maximum of 8 digits for the index
+        assert(index_str != NULL);
+
+        sprintf(index_str, "%d", index[0]);
+
+        char* val = malloc(2 * sizeof(char));
+        sprintf(val, "%c", text[i]);
+
+        hashmap_put(int_char_map, index_str, val);
+
+        index[0]++;
+    }
+}
+
+
+Vector* extractYValues(Matrix* matrix, int column_index) {
     Vector* yValues = create_vector(matrix->rows);
 
     for(int i = 0; i < yValues->size; i++) {
-        yValues->elements[i] = matrix->data[i]->elements[columnIndex];
-        matrix->data[i]->elements[columnIndex] = 0.0f;
+        yValues->elements[i] = matrix->data[i]->elements[column_index];
+        matrix->data[i]->elements[column_index] = 0.0f;
     }
 
     return yValues;
 }
 
-int getColumnCount(char* fileLocation) {
-    FILE* file = fopen(fileLocation, "r");
+int getColumnCount(char* file_location) {
+    FILE* file = fopen(file_location, "r");
     if(file == NULL) {
-        printf("Failed to open file: %s\n", fileLocation);
+        printf("Failed to open file: %s\n", file_location);
         return 0;
     }
 
@@ -110,10 +165,10 @@ int getColumnCount(char* fileLocation) {
     return columnCount;
 }
 
-int getRowCount(char* fileLocation) {
-    FILE* file = fopen(fileLocation, "r");
+int getRowCount(char* file_location) {
+    FILE* file = fopen(file_location, "r");
     if(file == NULL) {
-        printf("Failed to open file: %s\n", fileLocation);
+        printf("Failed to open file: %s\n", file_location);
         return 0;
     }
 
