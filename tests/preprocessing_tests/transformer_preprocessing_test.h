@@ -3,8 +3,9 @@
 
 #include "../../src/helper/data_processing.h"
 
-void test_line_to_embedding();
-void test_word_to_embedding();
-void test_fill_tokenizer_vocabulary();
+void line_to_embedding_test();
+void word_to_embedding_test();
+void empty_word_to_embedding_test();
+void fill_tokenizer_vocabulary_test();
 
 #endif

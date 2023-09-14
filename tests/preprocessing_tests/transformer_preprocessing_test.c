@@ -5,7 +5,7 @@
 
 char* test_file_local = "/Users/mevlutarslan/Documents/neural-networks-from-scratch/tests/preprocessing_tests/test_text.txt";
 
-void test_line_to_embedding() {
+void line_to_embedding_test() {
     // Initialize your map_t and other required data structures
     map_t char_int_map = hashmap_new();
 
@@ -70,36 +70,129 @@ void test_line_to_embedding() {
     log_info("line_to_embedding test passed successfully.");
 }
 
-void test_word_to_embedding() {
+void word_to_embedding_test() {
     // Initialize your map_t and other required data structures
-    map_t char_int_map;
+    map_t char_int_map = hashmap_new();
+
+    hashmap_put(char_int_map, "n", 8);
+    hashmap_put(char_int_map, ".", 10);
+    hashmap_put(char_int_map, "e", 7);
+    hashmap_put(char_int_map, "c", 9);
+    hashmap_put(char_int_map, " ", 4);
+    hashmap_put(char_int_map, "s", 3);
+    hashmap_put(char_int_map, "T", 0);
+    hashmap_put(char_int_map, "h", 1);
+    hashmap_put(char_int_map, "a", 5);
+    hashmap_put(char_int_map, "t", 6);
+    hashmap_put(char_int_map, "i", 2);
+
     // Initialize your vector and other data structures
+    char* token = "This";
 
-    char* token = "word";
+    Vector* word_embedding = create_vector(100); // Replace with the appropriate size
 
-    Vector* vector = create_vector(100); // Replace with the appropriate size
-
-    word_to_embedding(token, char_int_map, vector);
+    word_to_embedding(token, char_int_map, word_embedding);
 
     // Perform assertions to check if the vector is filled correctly
-
+    assert(word_embedding->elements[0] == 0);   // 'T'
+    assert(word_embedding->elements[1] == 1);   // 'h'
+    assert(word_embedding->elements[2] == 2);   // 'i'
+    assert(word_embedding->elements[3] == 3);   // 's'    
+    
     // Clean up allocated memory
+    hashmap_free(char_int_map);
+    free_vector(word_embedding);
 
+    log_info("word_embedding test passed successfully.");
 }
 
-void test_fill_tokenizer_vocabulary() {
+void empty_word_to_embedding_test() {
     // Initialize your map_t and other required data structures
-    map_t char_int_map;
-    map_t int_char_map;
-    int index = 0;
+    map_t char_int_map = hashmap_new();
+
+    hashmap_put(char_int_map, "n", 8);
+    hashmap_put(char_int_map, ".", 10);
+    hashmap_put(char_int_map, "e", 7);
+    hashmap_put(char_int_map, "c", 9);
+    hashmap_put(char_int_map, " ", 4);
+    hashmap_put(char_int_map, "s", 3);
+    hashmap_put(char_int_map, "T", 0);
+    hashmap_put(char_int_map, "h", 1);
+    hashmap_put(char_int_map, "a", 5);
+    hashmap_put(char_int_map, "t", 6);
+    hashmap_put(char_int_map, "i", 2);
+
+    // Initialize your vector and other data structures
+    char* token = " ";
+
+    Vector* word_embedding = create_vector(100); 
+
+    word_to_embedding(token, char_int_map, word_embedding);
+
+    // Perform assertions to check if the vector is filled correctly
+    assert(word_embedding->elements[0] == 4);   // ' '
+    
+    // Clean up allocated memory
+    hashmap_free(char_int_map);
+    free_vector(word_embedding);
+
+    log_info("word_embedding with space character test passed successfully.");
+}
+
+void fill_tokenizer_vocabulary_test() {
+    // Initialize your map_t and other required data structures
+    map_t expected_char_int_map = hashmap_new();
+    map_t result_char_int_map = hashmap_new();
+    int index[1] = {0};
+    
     // Initialize your text and other data structures
+    hashmap_put(expected_char_int_map, "T", 0);
+    hashmap_put(expected_char_int_map, "h", 1);
+    hashmap_put(expected_char_int_map, "i", 2);
+    hashmap_put(expected_char_int_map, "s", 3);
+    hashmap_put(expected_char_int_map, " ", 4);
+    hashmap_put(expected_char_int_map, ".", 5);
 
-    char* text = "This is a test.";
+    char* text = "This .";
 
-    fill_tokenizer_vocabulary(text, char_int_map, int_char_map, &index);
+    fill_tokenizer_vocabulary(text, result_char_int_map, NULL, &index);
 
     // Perform assertions to check if the vocabulary is filled correctly
+    assert(hashmap_length(expected_char_int_map) == hashmap_length(result_char_int_map));
 
+    any_t expected_return;
+    any_t actual_return;
+
+    hashmap_get(expected_char_int_map, "T", &expected_return);
+    hashmap_get(expected_char_int_map, "T", &actual_return);
+    assert((int) expected_return == (int) actual_return);
+
+    hashmap_get(expected_char_int_map, "h", &expected_return);
+    hashmap_get(expected_char_int_map, "h", &actual_return);
+    assert((int) expected_return == (int) actual_return);
+
+
+    hashmap_get(expected_char_int_map, "i", &expected_return);
+    hashmap_get(expected_char_int_map, "i", &actual_return);
+    assert((int) expected_return == (int) actual_return);
+
+
+    hashmap_get(expected_char_int_map, "s", &expected_return);
+    hashmap_get(expected_char_int_map, "s", &actual_return);
+    assert((int) expected_return == (int) actual_return);
+
+
+    hashmap_get(expected_char_int_map, " ", &expected_return);
+    hashmap_get(expected_char_int_map, " ", &actual_return);
+    assert((int) expected_return == (int) actual_return);
+    
+    hashmap_get(expected_char_int_map, ".", &expected_return);
+    hashmap_get(expected_char_int_map, ".", &actual_return);
+    assert((int) expected_return == (int) actual_return);
+    
     // Clean up allocated memory
+    hashmap_free(expected_char_int_map);
+    hashmap_free(result_char_int_map);
 
+    log_info("fill_tokenizer_vocabulary test passed successfully.");
 }

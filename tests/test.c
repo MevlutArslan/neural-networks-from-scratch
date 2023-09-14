@@ -3,6 +3,7 @@
 #include "neural_network_tests/activation_function_test.h"
 #include "neural_network_tests/optimization_algorithms_test.h"
 #include "neural_network_tests/loss_function_test.h"
+#include "preprocessing_tests/transformer_preprocessing_test.h"
 #include "test.h"
 
 void run_tests() {
@@ -32,4 +33,9 @@ void run_tests() {
     mean_squared_error_prediction_with_some_error_test();
     mean_squared_error_derivative_perfect_prediction_test();
     mean_squared_error_derivative_with_some_error_test();
+
+    line_to_embedding_test();
+    word_to_embedding_test();
+    empty_word_to_embedding_test();
+    fill_tokenizer_vocabulary_test();
 }
