@@ -51,11 +51,9 @@ void runProgram() {
     map_t char_int_map = hashmap_new();
     map_t int_char_map = hashmap_new();
 
-    load_text("/Users/mevlutarslan/Downloads/datasets/paul_gram_essays.txt", char_int_map, int_char_map);
-    // const char* text = "w e i ß e m \n";
-    // for (int i = 0; i < strlen(text); i++) {
-    //     printf("%c", text[i]);
-    // }
+    // create matrices for each max length sequence. (from my preprocessing done in python: longest sentence is 400 words, 2200 chars long and vocab size is 80)
+    Matrix** embeddings = load_text_as_embedding("/Users/mevlutarslan/Downloads/datasets/paul_gram_essays.txt", char_int_map, int_char_map, 400, 80);
+
     // Clean up
     hashmap_free(char_int_map);
     hashmap_free(int_char_map);

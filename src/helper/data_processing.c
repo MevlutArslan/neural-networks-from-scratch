@@ -77,25 +77,73 @@ Data* load_csv(char* file_location) {
     return data;
 }
 
-void load_text(char* file_location, map_t char_int_map, map_t int_char_map) {
+Matrix** load_text_as_embedding(char* file_location, map_t char_int_map, map_t int_char_map, int max_sequence_length, int vocab_size) {
     FILE* file = fopen(file_location, "r");
-    if (file == NULL) {
-        fprintf(stderr, "Error opening file\n");
-        return;
-    }
+    assert(file != NULL);
 
-    char line[1024];
-    
+    char line[3000]; // change this value as you see fit
+
+    int num_rows = getRowCount(file_location);
+
+    Matrix** embeddings = create_matrix_arr(num_rows);
     int* index = malloc(1 * sizeof(int));
-    while (fgets(line, sizeof(line), file)) {
-        
+    
+    int sentence_index = 0;
+    while (fgets(line, sizeof(line), file)) {  
+        //check for empty lines or end of file
+        if (line[0] == '\0' || line[0] == '\n' || feof(file)) {
+            // Handle empty lines or end of file, e.g., by skipping them
+            continue;
+        }
+
         fill_tokenizer_vocabulary(&line, char_int_map, int_char_map, index);
+        embeddings[sentence_index] = line_to_embedding(&line, max_sequence_length, vocab_size, char_int_map);
+        sentence_index++;
     }
 
     print_hashmap(char_int_map, CHAR_INT);
     print_hashmap(int_char_map, INT_CHAR);
 
+    free(index);
+
     fclose(file);
+
+    return embeddings;
+}
+
+Matrix* line_to_embedding(char* text, int max_sequence_length, int vocab_size, map_t char_int_map) {
+    Matrix* sentence_embedding = create_matrix(max_sequence_length, vocab_size);
+    
+    char* token = strtok(text, " ");
+    int row_index = 0;
+
+    while (token != NULL && row_index < sentence_embedding->rows) {
+        word_to_embedding(token, char_int_map, sentence_embedding->data[row_index]);
+        row_index++;
+        token = strtok(NULL, " "); // Move to the next token
+    }
+
+    return sentence_embedding;
+}
+
+void word_to_embedding(char* token, map_t char_int_map, Vector* vector) {
+    char* stringified_token = malloc(2 * sizeof(char));
+    for(int i = 0; i < strlen(token); i++) {
+        if (token[i] == '\0' || token[i] == '\n' || token[i] == '\r') {
+            break;
+        }
+
+        sprintf(stringified_token, "%c", token[i]);
+
+        any_t value;
+
+        int rc = hashmap_get(char_int_map, stringified_token, &value);
+        assert(rc == MAP_OK);
+
+        vector->elements[i] = (double) (int) value;
+    }
+    free(stringified_token);
+    // log_info("embedding for word: %s is vector: %s", token, vector_to_string(vector));
 }
 
 void fill_tokenizer_vocabulary(char* text, map_t char_int_map, map_t int_char_map, int* index) {
