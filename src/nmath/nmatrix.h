@@ -13,8 +13,14 @@ typedef struct {
     Vector** data;
 } Matrix;
 
+typedef struct {
+    int length;
+    Matrix** array;
+} MatrixArray;
+
 Matrix* create_matrix(const int rows, const int cols);
-Matrix** create_matrix_arr(int size);
+MatrixArray* create_matrix_arr(int length);
+
 void fill_matrix_random(Matrix* matrix, double min, double max);
 void fill_matrix(Matrix* matrix, double value);
 

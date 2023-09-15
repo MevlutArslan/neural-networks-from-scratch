@@ -83,8 +83,8 @@ Vector* dot_product(Matrix* matrix, Vector* vector);
 void dot_product_inplace(Matrix* matrix, Vector* vector, Vector* output);
 Matrix* matrix_vector_addition(Matrix* matrix, Vector* vector);
 
-Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size);
-Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size);
+MatrixArray* matrix_product_arr(MatrixArray* matrix_arr, Matrix* matrix, int size);
+Matrix* matrix_vector_product_arr(MatrixArray* matrix_arr, Matrix* matrix, int size);
 
 // Conversion
 Matrix* vector_to_matrix(const Vector* vector);

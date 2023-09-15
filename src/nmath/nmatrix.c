@@ -16,12 +16,18 @@ Matrix* create_matrix(const int rows, const int cols) {
     return matrix;
 }
 
-Matrix** create_matrix_arr(int size) {
-    Matrix** arr_matrix = (Matrix**) malloc(size * sizeof(Matrix*));
-    for(int i = 0; i < size; i++) {
-        arr_matrix[i] = NULL;
+MatrixArray* create_matrix_arr(int length) {
+    MatrixArray* matrix_arr = (MatrixArray*) malloc(sizeof(MatrixArray));
+    assert(matrix_arr != NULL);
+
+    matrix_arr->length = length;
+
+    matrix_arr->array = (MatrixArray*) malloc(length * sizeof(Matrix*));
+    for(int i = 0; i < length; i++) {
+        matrix_arr->array[i] = NULL;
     }
-    return arr_matrix;
+
+    return matrix_arr;
 }
 
 

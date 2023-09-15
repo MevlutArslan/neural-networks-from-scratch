@@ -353,21 +353,21 @@ double column_standard_deviation(Matrix* matrix, int columnIndex) {
     return sqrt(sum_squared_diff / matrix->rows);
 }
 
-Matrix** matrix_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
-    Matrix** result_arr = create_matrix_arr(size);
+MatrixArray* matrix_product_arr(MatrixArray* matrix_arr, Matrix* matrix, int size) {
+    MatrixArray* result_arr = create_matrix_arr(size);
 
     for(int i = 0; i < size; i++) {
-        result_arr[i] = matrix_product(matrix_arr[i], matrix);
+        result_arr->array[i] = matrix_product(matrix_arr->array[i], matrix);
     }
 
     return result_arr;
 }
 
-Matrix* matrix_vector_product_arr(Matrix** matrix_arr, Matrix* matrix, int size) {
-    Matrix* result = create_matrix(matrix->rows, matrix_arr[0]->columns);
+Matrix* matrix_vector_product_arr(MatrixArray* matrix_arr, Matrix* matrix, int size) {
+    Matrix* result = create_matrix(matrix->rows, matrix_arr->array[0]->columns);
 
     for(int i = 0; i < matrix->rows; i++) {
-        dot_product_inplace(matrix_arr[i], matrix->data[i], result->data[i]);
+        dot_product_inplace(matrix_arr->array[i], matrix->data[i], result->data[i]);
     }
 
     return result;

@@ -26,7 +26,7 @@ void validate_model(Model* model) {
     NNetwork* network = load_network(model->data->save_path);
 
     forward_pass_batched(network, model->data->validation_data);
-    calculate_loss(network, model->data->validation_labels, network->batched_outputs[network->num_layers - 1]);
+    calculate_loss(network, model->data->validation_labels, network->batched_outputs->array[network->num_layers - 1]);
 
     log_info("Validation Loss: %f", network->loss);
     log_info("Validation Accuracy: %f", network->accuracy);

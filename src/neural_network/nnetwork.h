@@ -59,12 +59,12 @@ typedef struct NNetwork{
     OptimizationConfig* optimization_config;
     int training_epoch;
 
-    Matrix** weighted_sums;
+    MatrixArray* weighted_sums;
 
-    Matrix** batched_outputs; // Stores the output matrices for each layer. It's a 2D array where each row represents a layer, and each column represents the output of that layer.
+    MatrixArray* batched_outputs; // Stores the output matrices for each layer. It's a 2D array where each row represents a layer, and each column represents the output of that layer.
     Matrix* output; // output to store sequential logic
 
-    Matrix** weight_gradients;
+    MatrixArray* weight_gradients;
     Vector** bias_gradients;
 } NNetwork;
 

@@ -135,10 +135,10 @@ Matrix* softmax_derivative(Vector* output) {
 }
 
 
-Matrix** softmax_derivative_batched(Matrix* output) {
-    Matrix** jacobian_matrices = create_matrix_arr(output->rows);
+MatrixArray* softmax_derivative_batched(Matrix* output) {
+    MatrixArray* jacobian_matrices = create_matrix_arr(output->rows);
     for(int i = 0; i < output->rows; i++) {
-        jacobian_matrices[i] = softmax_derivative(output->data[i]);
+        jacobian_matrices->array[i] = softmax_derivative(output->data[i]);
 
         #ifdef DEBUG
             log_info("Jacobian matrix #%d: %s", i, matrix_to_string(jacobian_matrices[i]));

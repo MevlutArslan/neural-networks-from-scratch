@@ -31,7 +31,7 @@ void softmax(Vector* inputs);
 void softmax_batched(Matrix* matrix);
 
 Matrix* softmax_derivative(Vector* output);
-Matrix** softmax_derivative_batched(Matrix* output);
+MatrixArray* softmax_derivative_batched(Matrix* output);
 
 char* get_activation_function_name(const ActivationFunction activationFunction);
 ActivationFunction get_activation_function_by_name(char* name);

@@ -19,7 +19,7 @@ void sgd(NNetwork* network, double learningRate, int batch_size) {
 
                 double weight_gradient = 0.0f;
                 if(batch_size == 1) {
-                    weight_gradient = network->weight_gradients[layer_index]->data[neuron_index]->elements[weight_index];
+                    weight_gradient = network->weight_gradients->array[layer_index]->data[neuron_index]->elements[weight_index];
                 }else if(batch_size == 0) {
                     weight_gradient = current_layer->weight_gradients->data[neuron_index]->elements[weight_index];
                 }else {
@@ -80,7 +80,7 @@ void adagrad(NNetwork* network, double learningRate, int batch_size) {
             for(int weight_index = 0; weight_index < current_layer->weights->columns; weight_index++) {
                 double weight_gradient = 0.0f;
                 if(batch_size == 1) {
-                    weight_gradient = network->weight_gradients[layer_index]->data[neuron_index]->elements[weight_index];
+                    weight_gradient = network->weight_gradients->array[layer_index]->data[neuron_index]->elements[weight_index];
                 }else if(batch_size == 0) {
                     weight_gradient = current_layer->weight_gradients->data[neuron_index]->elements[weight_index];
                 }else {
@@ -139,7 +139,7 @@ void rms_prop(NNetwork* network, double learningRate, int batch_size) {
             for(int weight_index = 0; weight_index < current_layer->weights->columns; weight_index++) {
                 double weight_gradient = 0.0f;
                 if(batch_size == 1) {
-                    weight_gradient = network->weight_gradients[layer_index]->data[neuron_index]->elements[weight_index];
+                    weight_gradient = network->weight_gradients->array[layer_index]->data[neuron_index]->elements[weight_index];
                 }else if(batch_size == 0) {
                     weight_gradient = current_layer->weight_gradients->data[neuron_index]->elements[weight_index];
                 }else {
@@ -214,7 +214,7 @@ void adam(NNetwork* network, double learningRate, int batch_size) {
             for(int weight_index = 0; weight_index < current_layer->weights->columns; weight_index++) {
                 double weight_gradient = 0.0;
                 if(batch_size == 1) {
-                    weight_gradient = network->weight_gradients[layer_index]->data[neuron_index]->elements[weight_index];
+                    weight_gradient = network->weight_gradients->array[layer_index]->data[neuron_index]->elements[weight_index];
                 }else if(batch_size == 0) {
                     weight_gradient = network->layers[layer_index]->weight_gradients->data[neuron_index]->elements[weight_index];
                 }else {
