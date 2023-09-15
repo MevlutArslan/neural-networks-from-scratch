@@ -77,7 +77,7 @@ Data* load_csv(char* file_location) {
     return data;
 }
 
-Matrix** load_text_as_embedding(char* file_location, map_t char_int_map, map_t int_char_map, int max_sequence_length, int vocab_size) {
+MatrixArray* load_text_as_embedding(char* file_location, map_t char_int_map, map_t int_char_map, int max_sequence_length, int vocab_size) {
     FILE* file = fopen(file_location, "r");
     assert(file != NULL);
 
@@ -85,7 +85,7 @@ Matrix** load_text_as_embedding(char* file_location, map_t char_int_map, map_t i
 
     int num_rows = getRowCount(file_location);
 
-    Matrix** embeddings = create_matrix_arr(num_rows);
+    MatrixArray* embeddings = create_matrix_arr(num_rows);
     int* index = malloc(1 * sizeof(int));
     
     int sentence_index = 0;
@@ -97,11 +97,9 @@ Matrix** load_text_as_embedding(char* file_location, map_t char_int_map, map_t i
         }
         // log_info("text:%s", line);
         fill_tokenizer_vocabulary(&line, char_int_map, int_char_map, index);
-        embeddings[sentence_index] = line_to_embedding(&line, max_sequence_length, vocab_size, char_int_map);
+        embeddings->array[sentence_index] = line_to_embedding(&line, max_sequence_length, vocab_size, char_int_map);
         sentence_index++;
     }
-    print_hashmap(char_int_map, CHAR_INT);
-    // print_hashmap(int_char_map, INT_CHAR);
 
     free(index);
 
@@ -126,8 +124,6 @@ Matrix* line_to_embedding(char* text, int max_sequence_length, int vocab_size, m
         
         row_index++;
     }
-
-    log_info("row index: %d", row_index);
 
     return sentence_embedding;
 }
@@ -179,6 +175,11 @@ void fill_tokenizer_vocabulary(char* text, map_t char_int_map, map_t int_char_ma
 
         hashmap_put(char_int_map, key, index[0]);
 
+        if(int_char_map == NULL) {
+            index[0]++;
+            continue;
+        }
+
         // Convert index to a string for int_char_map
         char* index_str = (char*)malloc(8 * sizeof(char)); // Assuming a maximum of 8 digits for the index
         assert(index_str != NULL);
@@ -194,6 +195,45 @@ void fill_tokenizer_vocabulary(char* text, map_t char_int_map, map_t int_char_ma
     }
 }
 
+void add_positional_embeddings(MatrixArray* embeddings) {
+    for(int i = 0; i < embeddings->length; i++) {
+        int d_model = embeddings->array[i]->columns;
+
+        Matrix* embedding = embeddings->array[i];
+
+        Matrix* positional_embedding = get_positional_embeddings(embeddings->array[i], embeddings->array[i]->rows, d_model);
+        embedding->add(embedding, positional_embedding);
+    }
+}
+
+Matrix* get_positional_embeddings(Matrix* embedding, int num_rows, int d_model) {
+    /*
+        PE(pos,2i) =sin(pos/10000^2i/dmodel)
+        PE(pos,2i+1) =cos(pos/10000^2i/dmodel)
+    */
+    Matrix* positional_embeddings = create_matrix(num_rows, d_model);
+    for(int i = 0; i < num_rows; i++) {
+        int token_index = i;
+        
+        Vector* positional_embedding = positional_embeddings->data[i];
+
+        for(int position_index = 0; position_index < d_model; position_index ++) {
+            if(embedding != NULL && embedding->data[i]->elements[position_index] == 0.0) {
+                continue;
+            }
+            double result = 0.0f;
+            double power = (2.0 * position_index) / d_model;
+            if(position_index % 2 == 0) {
+                result = sin(token_index / pow(10000, power));
+            }else {
+                result = cos(token_index / pow(10000, power));
+            }
+            positional_embedding->elements[position_index] = result;
+        }
+    }
+
+    return positional_embeddings;
+}
 
 Vector* extractYValues(Matrix* matrix, int column_index) {
     Vector* yValues = create_vector(matrix->rows);

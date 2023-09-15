@@ -18,10 +18,13 @@ typedef enum NormalizationMethod {
 
 Data* load_csv(char* file_location);
 
-Matrix** load_text_as_embedding(char* file_location, map_t char_int_map, map_t int_char_map, int max_sequence_length, int vocab_size);
+MatrixArray* load_text_as_embedding(char* file_location, map_t char_int_map, map_t int_char_map, int max_sequence_length, int vocab_size);
 void fill_tokenizer_vocabulary(char* text, map_t char_int_map, map_t int_char_map, int* index);
 Matrix* line_to_embedding(char* text, int max_sequence_length, int vocab_size, map_t char_int_map);
 void word_to_embedding(char* token, map_t char_int_map, Vector* vector);
+
+void add_positional_embeddings(MatrixArray* embeddings);
+Matrix* get_positional_embeddings(Matrix* embedding, int num_rows, int d_model);
 
 void removeResultsFromEvaluationSet(Matrix* eval_matrix, int column_index);
 Vector* extractYValues(Matrix* training_matrix, int column_index);

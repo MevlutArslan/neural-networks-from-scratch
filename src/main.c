@@ -40,8 +40,8 @@ void runProgram() {
     // Model* model = create_wine_categorization_model();
     // clock_t start = clock();
 
-    // train_model(model, TRUE);
-    // validate_model(model);
+    // train_model(model, FALSE);
+    // // validate_model(model);
     
     // clock_t end = clock();
 
@@ -52,11 +52,16 @@ void runProgram() {
     map_t int_char_map = hashmap_new();
 
     // create matrices for each max length sequence. (from my preprocessing done in python: longest sentence is 400 words, 2200 chars long and vocab size is 80)
-    Matrix** embeddings = load_text_as_embedding("/Users/mevlutarslan/Downloads/datasets/paul_gram_essays.txt", char_int_map, int_char_map, 400, 80);
+    MatrixArray* embeddings = load_text_as_embedding("/Users/mevlutarslan/Downloads/datasets/paul_gram_essays.txt", char_int_map, int_char_map, 400, 80);
+    
+    log_info("embedding #1: %s", matrix_to_string(embeddings->array[0]));
+    log_info("-------------------------------------------------------------");
+    add_positional_embeddings(embeddings);
+    log_info("embedding #1: %s", matrix_to_string(embeddings->array[0]));
 
     // Clean up
     hashmap_free(char_int_map);
     hashmap_free(int_char_map);
 
-    printf("All tests passed\n");
+    // printf("All tests passed\n");
 }   

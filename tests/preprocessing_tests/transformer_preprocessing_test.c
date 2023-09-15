@@ -3,7 +3,7 @@
 #define MAX_SEQ_LEN 10
 #define VOCABULARY_SIZE 50
 
-char* test_file_local = "/Users/mevlutarslan/Documents/neural-networks-from-scratch/tests/preprocessing_tests/test_text.txt";
+char* test_file_loc = "/Users/mevlutarslan/Documents/neural-networks-from-scratch/tests/preprocessing_tests/test_text.txt";
 
 void line_to_embedding_test() {
     // Initialize your map_t and other required data structures
@@ -195,4 +195,48 @@ void fill_tokenizer_vocabulary_test() {
     hashmap_free(result_char_int_map);
 
     log_info("fill_tokenizer_vocabulary test passed successfully.");
+}
+
+void add_positional_embeddings_test() {
+    map_t char_int_map = hashmap_new();
+    map_t int_char_map = hashmap_new();
+
+    MatrixArray* embeddings = load_text_as_embedding(test_file_loc, char_int_map, int_char_map, 20, 20);
+    MatrixArray* embeddings_copy = create_matrix_arr(embeddings->length);
+
+    for(int i = 0; i < embeddings->length; i++) {
+        embeddings_copy->array[i] = copy_matrix(embeddings->array[i]);
+    }
+
+    add_positional_embeddings(embeddings);
+
+    // assertions to check if it has been updated correctly
+    for(int i = 0; i < embeddings->length; i++) {
+        assert(is_equal_matrix(embeddings->array[i], embeddings_copy->array[i]) == FALSE);
+    }
+
+    log_info("add_positional_embeddings test passed successfully.");
+}
+
+void get_positional_embeddings_test() {
+    int d_model = 3;
+    Matrix* positional_embeddings = get_positional_embeddings(NULL, 2, d_model);
+
+    // according to the results of a library i used to calculate positional encoding for a 2x3 embedding
+    Matrix* expected_embeddings = create_matrix(2, 3);
+    expected_embeddings->data[0]->elements[0] = 0.0;
+    expected_embeddings->data[0]->elements[1] = 1.0;
+    expected_embeddings->data[0]->elements[2] = 0.0;
+    expected_embeddings->data[1]->elements[0] = 0.841470985;
+    expected_embeddings->data[1]->elements[1] = 0.999997679;
+    expected_embeddings->data[1]->elements[2] = 0.00000464158883;
+
+    // Perform assertions to check if the calculated positional embeddings match the expected values
+    assert(is_equal_matrix(positional_embeddings, expected_embeddings) == TRUE);
+    
+    // Clean up allocated memory
+    free_matrix(positional_embeddings);
+    free_matrix(expected_embeddings);
+
+    log_info("get_positional_embeddings test passed successfully.");
 }
