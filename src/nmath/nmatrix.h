@@ -7,10 +7,13 @@
 #include <math.h>
 #include "nvector.h"
 
-typedef struct {
+typedef struct Matrix{
     int rows;
     int columns;
     Vector** data;
+
+    void (*add) (struct Matrix*, struct  Matrix*);
+    void (*copy) (struct Matrix*, struct Matrix*);
 } Matrix;
 
 typedef struct {
@@ -25,6 +28,7 @@ void fill_matrix_random(Matrix* matrix, double min, double max);
 void fill_matrix(Matrix* matrix, double value);
 
 void free_matrix(Matrix* matrix);
+void free_matrix_arr(MatrixArray* matrix_arr);
 
 char* matrix_to_string(const Matrix* matrix);
 int is_equal_matrix(const Matrix* m1, const Matrix* m2);
@@ -53,5 +57,10 @@ Matrix* get_sub_matrix_except_column(Matrix* source, int startRow, int endRow, i
 
 char* serialize_matrix(const Matrix* matrix);
 Matrix* deserialize_matrix(cJSON* json);
+
+Matrix* he_initialize_matrix(int numRows, int numCols);
+
+void add_matrix_to_existing_matrix(Matrix* original_matrix, Matrix* to_add);
+void copy_matrix_into_matrix(Matrix* original_matrix, Matrix* to_copy_from);
 
 #endif

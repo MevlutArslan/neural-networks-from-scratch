@@ -52,16 +52,47 @@ void runProgram() {
     map_t int_char_map = hashmap_new();
 
     // create matrices for each max length sequence. (from my preprocessing done in python: longest sentence is 400 words, 2200 chars long and vocab size is 80)
-    MatrixArray* embeddings = load_text_as_embedding("/Users/mevlutarslan/Downloads/datasets/paul_gram_essays.txt", char_int_map, int_char_map, 400, 80);
+    int d_model = 80;
+    int max_seq_len = 400;
+    MatrixArray* embeddings = load_text_as_embedding("/Users/mevlutarslan/Downloads/datasets/paul_gram_essays.txt", char_int_map, int_char_map, 400, d_model);
     
-    log_info("embedding #1: %s", matrix_to_string(embeddings->array[0]));
-    log_info("-------------------------------------------------------------");
     add_positional_embeddings(embeddings);
-    log_info("embedding #1: %s", matrix_to_string(embeddings->array[0]));
+
+    // create query, key and value vectors per word
+    MatrixArray* query_weights = create_matrix_arr(embeddings->length);
+    MatrixArray* key_weights = create_matrix_arr(embeddings->length);
+    MatrixArray* value_weights = create_matrix_arr(embeddings->length);
+
+    for(int i = 0; i < embeddings->length; i++) {
+        query_weights->array[i] = he_initialize_matrix(max_seq_len, d_model);
+        key_weights->array[i] = he_initialize_matrix(max_seq_len, d_model);
+        value_weights->array[i] = he_initialize_matrix(max_seq_len, d_model);
+    }
+
+    MatrixArray* queries = create_matrix_arr(embeddings->length);
+    MatrixArray* keys = create_matrix_arr(embeddings->length);
+    MatrixArray* values = create_matrix_arr(embeddings->length);
+
+    for(int i = 0; i < embeddings->length; i++) {
+        queries->array[i] = matrix_multiplication(embeddings->array[i], query_weights->array[i]);
+        keys->array[i] = matrix_multiplication(embeddings->array[i], key_weights->array[i]);
+        values->array[i] = matrix_multiplication(embeddings->array[i], value_weights->array[i]);
+    }
+
 
     // Clean up
     hashmap_free(char_int_map);
     hashmap_free(int_char_map);
+
+    free_matrix_arr(embeddings);
+
+    free_matrix_arr(query_weights);
+    free_matrix_arr(key_weights);
+    free_matrix_arr(value_weights);
+
+    free_matrix_arr(queries);
+    free_matrix_arr(keys);
+    free_matrix_arr(values);
 
     // printf("All tests passed\n");
 }   

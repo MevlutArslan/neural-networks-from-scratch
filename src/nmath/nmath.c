@@ -372,3 +372,27 @@ Matrix* matrix_vector_product_arr(MatrixArray* matrix_arr, Matrix* matrix, int s
 
     return result;
 }
+
+void add_matrix_to_existing_matrix(Matrix* original_matrix, Matrix* to_add_matrix) {
+    assert(original_matrix != NULL && to_add_matrix != NULL);
+    assert(original_matrix->rows == to_add_matrix->rows);
+    assert(original_matrix->columns == to_add_matrix->columns);
+
+    for(int i = 0; i < original_matrix->rows; i++) {
+        for(int j = 0; j < original_matrix->columns; j++) {
+            original_matrix->data[i]->elements[j] += to_add_matrix->data[i]->elements[j];
+        }
+    }
+}
+
+void copy_matrix_into_matrix(Matrix* original_matrix, Matrix* to_copy_from) {
+    assert(original_matrix != NULL && to_copy_from != NULL);
+    assert(original_matrix->rows == to_copy_from->rows);
+    assert(original_matrix->columns == to_copy_from->columns);
+
+    for(int i = 0; i < original_matrix->rows; i++) {
+        for(int j = 0; j < original_matrix->columns; j++) {
+            original_matrix->data[i]->elements[j] = to_copy_from->data[i]->elements[j];
+        }
+    }
+}

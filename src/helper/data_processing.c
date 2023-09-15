@@ -203,6 +203,8 @@ void add_positional_embeddings(MatrixArray* embeddings) {
 
         Matrix* positional_embedding = get_positional_embeddings(embeddings->array[i], embeddings->array[i]->rows, d_model);
         embedding->add(embedding, positional_embedding);
+
+        free_matrix(positional_embedding);
     }
 }
 

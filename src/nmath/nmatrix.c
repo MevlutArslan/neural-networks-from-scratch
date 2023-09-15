@@ -1,5 +1,6 @@
 #include "nmatrix.h"
 #include "../../libraries/logger/log.h"
+#include "../helper/constants.h"
 
 Matrix* create_matrix(const int rows, const int cols) {
     Matrix* matrix = malloc(sizeof(Matrix));
@@ -13,6 +14,9 @@ Matrix* create_matrix(const int rows, const int cols) {
         matrix->data[i] = create_vector(cols);
     }
 
+    matrix->add = add_matrix_to_existing_matrix;
+    matrix->copy = copy_matrix_into_matrix;
+    
     return matrix;
 }
 
@@ -22,7 +26,7 @@ MatrixArray* create_matrix_arr(int length) {
 
     matrix_arr->length = length;
 
-    matrix_arr->array = (MatrixArray*) malloc(length * sizeof(Matrix*));
+    matrix_arr->array = (Matrix**) malloc(length * sizeof(Matrix*));
     for(int i = 0; i < length; i++) {
         matrix_arr->array[i] = NULL;
     }
@@ -57,6 +61,18 @@ void free_matrix(Matrix* matrix){
     }
 
     free(matrix->data);
+}
+
+void free_matrix_arr(MatrixArray* matrix_arr) {
+    if(matrix_arr == NULL) {
+        return;
+    }
+
+    for(int i = 0; i < matrix_arr->length; i++) {
+        free_matrix(matrix_arr->array[i]);
+    }
+
+    free(matrix_arr);
 }
 
 
@@ -110,13 +126,13 @@ int is_equal_matrix(const Matrix* m1, const Matrix* m2) {
         for (int j = 0; j < m1->columns; j++) {
             double diff = fabs(m1->data[i]->elements[j] - m2->data[i]->elements[j]);
             if (diff > epsilon) {
-                log_error("values: %f, %f don't match!", m1->data[i]->elements[j], m2->data[i]->elements[j]);
-                return 0; // Element mismatch
+                log_error("%f and %f don't match", m1->data[i]->elements[j], m2->data[i]->elements[j]);
+                return FALSE; // Element mismatch
             }
         }
     }
 
-    return 1; // Matrices are equal
+    return TRUE; // Matrices are equal
 }
 
 
@@ -299,4 +315,24 @@ Matrix* deserialize_matrix(cJSON* json) {
     }
 
     return matrix;
+}
+
+Matrix* he_initialize_matrix(int numRows, int numCols) {
+    // Create a new matrix
+    Matrix* weights = create_matrix(numRows, numCols);
+
+    // Calculate limit for He initialization
+    double limit = sqrt(2.0 / (double)numCols);
+
+    // Initialize weights
+    for (int i = 0; i < numRows; i++) {
+        for (int j = 0; j < numCols; j++) {
+            // Generate a random number between -limit and limit
+            double rand_num = (double)rand() / RAND_MAX; // This generates a random number between 0 and 1
+            rand_num = rand_num * 2 * limit - limit; // This shifts the range to [-limit, limit]
+            weights->data[i]->elements[j] = rand_num;
+        }
+    }
+
+    return weights;
 }
