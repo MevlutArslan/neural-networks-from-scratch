@@ -8,12 +8,29 @@ Vector* create_vector(int size) {
     return vector;
 }
 
-Vector** create_vector_arr(int size) {
-    Vector** vector = (Vector**) malloc(size * sizeof(Vector*));
-    for(int i = 0; i < size; i++) {
-        vector[i] = NULL;
+VectorArray* create_vector_arr(int length) {
+    VectorArray* vector_arr = (VectorArray*) malloc(sizeof(VectorArray));
+    assert(vector_arr != NULL);
+
+    vector_arr->length = length;
+
+    vector_arr->vectors = (Vector**) calloc(length, sizeof(Vector*));
+
+    return vector_arr;
+}
+
+VectorArray* create_vector_array_with_fixed_length(int array_length, int vector_length) {
+    VectorArray* vector_arr = (VectorArray*) malloc(sizeof(VectorArray));
+    assert(vector_arr != NULL);
+
+    vector_arr->length = array_length;
+    vector_arr->vectors = (Vector**) calloc(array_length, sizeof(Vector*));
+
+    for(int i = 0; i < array_length; i++) {
+        vector_arr->vectors[i] = create_vector(vector_length);
     }
-    return vector;
+    
+    return vector_arr;
 }
 
 int is_equal_vector(Vector* v1, Vector* v2) { 
@@ -35,6 +52,18 @@ void free_vector(Vector* vector) {
         return;
     }
     free(vector->elements);
+}
+
+void free_vector_arr(VectorArray* array) {
+    if(array == NULL) {
+        return;
+    }
+
+    for(int i = 0; i < array->length; i++) {
+        free_vector(array->vectors[i]);
+    }
+
+    free(array);
 }
 
 void fill_vector_random(Vector* vector, double min, double max) {

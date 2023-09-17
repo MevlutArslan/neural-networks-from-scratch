@@ -14,10 +14,17 @@ typedef struct {
     int size;
 } Vector;
 
+typedef struct VectorArray{
+    Vector** vectors;
+    int length;
+} VectorArray;
+
 Vector* create_vector(int size);
-Vector** create_vector_arr(int size);
+VectorArray* create_vector_arr(int length);
+VectorArray* create_vector_array_with_fixed_length(int array_length, int vector_length);
 
 void free_vector(Vector* vector);
+void free_vector_arr(VectorArray* array);
 
 void fill_vector_random(Vector* vector, double min, double max);
 void fill_vector(Vector* vector, double value);
@@ -32,5 +39,7 @@ Vector* array_to_vector(double* array, int length);
 
 char* serialize_vector(const Vector* vector);
 Vector* deserialize_vector(cJSON* json);
+
+
 
 #endif
