@@ -12,6 +12,9 @@ void mean_squared_error_perfect_prediction_test() {
 
     assert(loss == 0.0f);
 
+    free_matrix(y_values);
+    free_matrix(predicted_values);
+    
     log_info("Mean Squared Error with perfect prediction, test passed successfully.");
 }
 
@@ -26,6 +29,10 @@ void mean_squared_error_prediction_with_some_error_test() {
 
     // normally it should be 4.0 but because we divide by 2 after each squaring we check against half of the expected.
     assert(loss == 2.0f); 
+
+    free_matrix(y_values);
+    free_matrix(predicted_values);
+
     log_info("Mean Squared Error with some error, test passed successfully.");
 }
 

@@ -215,6 +215,12 @@ void add_positional_embeddings_test() {
         assert(is_equal_matrix(embeddings->array[i], embeddings_copy->array[i]) == FALSE);
     }
 
+    hashmap_free(char_int_map);
+    hashmap_free(int_char_map);
+
+    free_matrix_arr(embeddings);
+    free_matrix_arr(embeddings_copy);
+
     log_info("add_positional_embeddings test passed successfully.");
 }
 
