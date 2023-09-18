@@ -57,7 +57,7 @@ void test_get_sub_matrix() {
     Matrix* submatrix = get_sub_matrix(source, 1, 3, 1, 3);
     
     // Check if the submatrix is equal to the expected submatrix
-    if(is_equal(submatrix, expected_submatrix)) {
+    if(is_equal_matrix(submatrix, expected_submatrix)) {
         log_info("%s", "test_get_sub_matrix passed!\n");
     } else {
         log_error("%s", "test_get_sub_matrix failed!\n");
@@ -89,7 +89,7 @@ void test_get_sub_matrix_except_column() {
     Matrix* submatrix = get_sub_matrix_except_column(source, 1, 3, 1, 3, 2);
     
     // Check if the submatrix is equal to the expected submatrix
-    if(is_equal(submatrix, expected_submatrix)) {
+    if(is_equal_matrix(submatrix, expected_submatrix)) {
         log_info("%s", "test_get_sub_matrix_except_column passed!\n");
     } else {
         log_error("%s", "test_get_sub_matrix_except_column failed!\n");
@@ -120,4 +120,37 @@ void test_serialize_matrix() {
     // Clean up
     free_matrix(matrix);
     free(matrixJson);
+}
+
+void split_matrix_test() {
+    Matrix* input_matrix = create_matrix(4, 8); 
+
+    // Initialize the input matrix with some sample values
+    for (int i = 0; i < input_matrix->rows; i++) {
+        for (int j = 0; j < input_matrix->columns; j++) {
+            input_matrix->data[i]->elements[j] = i * input_matrix->columns + j + 1;
+        }
+    }
+
+    int num_matrices = 2;
+
+    MatrixArray* result = split_matrix(input_matrix, num_matrices);
+
+    assert(result->length == num_matrices);
+
+    for (int i = 0; i < num_matrices; i++) {
+        assert(result->array[i]->rows == input_matrix->rows);
+        assert(result->array[i]->columns == input_matrix->columns / num_matrices);
+
+        for(int row = 0; row < input_matrix->rows; row ++) {
+            for(int col = 0; col < result->array[i]->columns; col++) {
+                assert(result->array[i]->data[row]->elements[col] == input_matrix->data[row]->elements[col + (i * result->array[i]->columns)]);
+            }
+        }
+    }
+
+    free_matrix(input_matrix);
+    free_matrix_arr(result);
+
+    log_info("split_matrix test passed successfully.");
 }

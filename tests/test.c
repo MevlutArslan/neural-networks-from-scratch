@@ -4,7 +4,10 @@
 #include "neural_network_tests/optimization_algorithms_test.h"
 #include "neural_network_tests/loss_function_test.h"
 #include "preprocessing_tests/transformer_preprocessing_test.h"
+#include "vector_tests/vector_test.h"
+
 #include "test.h"
+
 
 void run_tests() {
     srand(306);
@@ -38,4 +41,11 @@ void run_tests() {
     word_to_embedding_test();
     empty_word_to_embedding_test();
     fill_tokenizer_vocabulary_test();
+
+    add_positional_embeddings_test();
+    get_positional_embeddings_test();
+
+    split_matrix_test();
+
+    split_vector_test();
 }

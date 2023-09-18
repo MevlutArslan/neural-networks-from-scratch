@@ -336,3 +336,29 @@ Matrix* he_initialize_matrix(int numRows, int numCols) {
 
     return weights;
 }
+
+MatrixArray* split_matrix(const Matrix* input, int num_matrices) {
+    assert(input != NULL);
+    assert(input->rows != 0 || input->columns != 0);
+    // we need to be able to divide in to equal parts for multi-head_attention
+    assert(input->columns % num_matrices == 0);
+
+    MatrixArray* matrix_array = create_matrix_arr(num_matrices);
+    assert(matrix_array != NULL);
+
+    for(int i = 0; i < matrix_array->length; i++) {
+        matrix_array->array[i] = create_matrix(input->rows, input->columns / num_matrices);
+    }
+
+    for(int row = 0; row < input->rows; row++) {
+        VectorArray* vectors = split_vector(input->data[row], num_matrices);            
+        for(int col = 0; col < matrix_array->length; col ++) {
+            matrix_array->array[col]->data[row] = vectors->vectors[col];
+        }
+    }
+
+    return matrix_array;
+}
+
+
+Matrix* concatenate_matrices(MatrixArray* matrices);

@@ -63,4 +63,7 @@ Matrix* he_initialize_matrix(int numRows, int numCols);
 void add_matrix_to_existing_matrix(Matrix* original_matrix, Matrix* to_add);
 void copy_matrix_into_matrix(Matrix* original_matrix, Matrix* to_copy_from);
 
+MatrixArray* split_matrix(const Matrix* input, int num_matrices);
+Matrix* concatenate_matrices(MatrixArray* matrices);
+
 #endif

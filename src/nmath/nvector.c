@@ -163,3 +163,23 @@ Vector* deserialize_vector(cJSON* json) {
     }
     return vector;
 }
+
+VectorArray* split_vector(Vector* vector, int num_vectors) {
+    assert(vector != NULL);
+    assert(vector->size != 0);
+    
+    assert(vector->size % num_vectors == 0);
+    
+    int vector_len = vector->size / num_vectors;
+    VectorArray* array = create_vector_array_with_fixed_length(num_vectors, vector_len);
+
+    for(int i = 0; i < num_vectors; i++) {
+        memcpy(array->vectors[i]->elements, vector->elements + (vector_len * i), vector_len * sizeof(double));
+    }
+
+    return array;
+}
+
+Vector* concatenate_vectors(VectorArray* array) {
+
+}

@@ -41,5 +41,7 @@ char* serialize_vector(const Vector* vector);
 Vector* deserialize_vector(cJSON* json);
 
 
+VectorArray* split_vector(Vector* vector, int num_vectors);
+Vector* concatenate_vectors(VectorArray* array);
 
 #endif
