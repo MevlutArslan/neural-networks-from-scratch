@@ -181,5 +181,21 @@ VectorArray* split_vector(Vector* vector, int num_vectors) {
 }
 
 Vector* concatenate_vectors(VectorArray* array) {
+    int new_length = 0;
 
+    for(int i = 0; i < array->length; i++) {
+        new_length += array->vectors[i]->size;
+    }
+
+    Vector* concatenated_vector = create_vector(new_length);
+    
+    int offset = 0;  // Offset to keep track of the current position in the concatenated vector
+
+    for(int i = 0; i < array->length; i++) {
+        int current_vector_len = array->vectors[i]->size;
+        memcpy(concatenated_vector->elements + offset, array->vectors[i]->elements, current_vector_len * sizeof(double));
+        offset += current_vector_len;  // Update the offset for the next vector
+    }
+
+    return concatenated_vector;
 }

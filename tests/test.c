@@ -46,6 +46,8 @@ void run_tests() {
     get_positional_embeddings_test();
 
     split_matrix_test();
+    concatenate_matrices_test();
 
     split_vector_test();
+    concatenate_vectors_test();
 }

@@ -126,7 +126,6 @@ int is_equal_matrix(const Matrix* m1, const Matrix* m2) {
         for (int j = 0; j < m1->columns; j++) {
             double diff = fabs(m1->data[i]->elements[j] - m2->data[i]->elements[j]);
             if (diff > epsilon) {
-                log_error("%f and %f don't match", m1->data[i]->elements[j], m2->data[i]->elements[j]);
                 return FALSE; // Element mismatch
             }
         }
@@ -360,5 +359,28 @@ MatrixArray* split_matrix(const Matrix* input, int num_matrices) {
     return matrix_array;
 }
 
+/*
+    Only works with matrices of equal rows and columns for the time being.
+*/
+Matrix* concatenate_matrices(MatrixArray* matrices) {
+    int total_num_columns = matrices->array[0]->columns * matrices->length;
+    int num_rows = matrices->array[0]->rows;
 
-Matrix* concatenate_matrices(MatrixArray* matrices);
+    Matrix* concatenated_matrix = create_matrix(num_rows, total_num_columns);
+
+    // pick all vectors for each row for all matrices 1 by 1 and put them in a VectorArray
+    // send the VectorArray to concatenate_vectors and assign the resulting vector to the row of the concatenated_matrix
+    for(int row = 0; row < num_rows; row++) {
+        VectorArray* columns = create_vector_array_with_fixed_length(matrices->length, matrices->array[0]->columns);
+
+        for(int i = 0; i < matrices->length; i++) {
+            memcpy(columns->vectors[i]->elements, matrices->array[i]->data[row]->elements, matrices->array[i]->columns * sizeof(double));
+        }
+        
+        concatenated_matrix->data[row] = concatenate_vectors(columns);
+
+        free_vector_arr(columns);
+    }
+
+    return concatenated_matrix;
+}

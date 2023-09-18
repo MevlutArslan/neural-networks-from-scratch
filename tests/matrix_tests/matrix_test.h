@@ -10,4 +10,5 @@ void test_get_sub_matrix();
 void test_serialize_matrix();
 
 void split_matrix_test();
+void concatenate_matrices_test();
 #endif

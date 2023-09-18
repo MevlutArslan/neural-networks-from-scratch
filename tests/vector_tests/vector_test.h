@@ -4,5 +4,5 @@
 #include "../../src/nmath/nvector.h"
 
 void split_vector_test();
-
+void concatenate_vectors_test();
 #endif

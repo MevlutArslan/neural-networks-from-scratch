@@ -154,3 +154,43 @@ void split_matrix_test() {
 
     log_info("split_matrix test passed successfully.");
 }
+
+void concatenate_matrices_test() {
+    // Create sample matrices to concatenate
+    int num_rows = 3;
+    int num_columns = 2;
+    int num_matrices = 3;
+
+    MatrixArray* matrices = create_matrix_arr(num_matrices);
+
+    for (int i = 0; i < num_matrices; i++) {
+        matrices->array[i] = create_matrix(num_rows, num_columns);
+        
+        // fill each matrix
+        for (int row = 0; row < num_rows; row++) {
+            for (int col = 0; col < num_columns; col++) {
+                matrices->array[i]->data[row]->elements[col] = i * num_columns + col + row;
+            }
+        }
+    }
+
+    
+    Matrix* concatenated_matrix = concatenate_matrices(matrices);
+    
+    // Check the correctness of the concatenated matrix
+    assert(concatenated_matrix->rows == num_rows);
+    assert(concatenated_matrix->columns == num_columns * num_matrices);
+
+    for (int row = 0; row < num_rows; row++) {
+        for (int col = 0; col < concatenated_matrix->columns; col++) {
+            double expected_value = row + col;
+            assert(concatenated_matrix->data[row]->elements[col] == expected_value);
+        }
+    }
+
+    // Clean up
+    free_matrix_arr(matrices);
+    free_matrix(concatenated_matrix);
+
+    log_info("concatenate_matrices_test passed successfully.");
+}
