@@ -2,6 +2,8 @@
 
 This project is my educational journey into the world of neural networks and machine learning. Developed from scratch in C, the project is a fundamental implementation of a neural network library. It provides the essential components required to construct and train neural network models.
 
+![](example_use.gif)
+
 ## Features
 
 - **Common layer types**: The library supports dense layers, with plans to add more as my understanding expands.
@@ -63,8 +65,7 @@ I appreciate any feedback that could help improve my skills. Please don't hesita
 1. [X] Add Multithreading for matrix operations.
 2. [X] CUDA support.
 3. [X] Add an example model for regression.
-4. [ ] Implement Transformers (I might be over my head here, will see as time progresses)
-5. [ ] Handle edge cases in Matrix operations (Determinant, inverse, mini-matrix ...).
+4. [ ] Implement Transformers 
 
 ## Prerequisites
 
@@ -78,22 +79,25 @@ Before you begin, ensure you have met the following requirements:
 
 To install, follow these steps:
 
-1. Install `gnuplot` on your system. The method for this varies depending on your operating system:
+1. Install `libcsv`:
+   * `brew install libcsv`
+
+2. Install `gnuplot` on your system. The method for this varies depending on your operating system:
 
    * On Ubuntu, you can use `sudo apt-get install gnuplot`.
    * On macOS, you can use `brew install gnuplot`.
 
-2. Clone the repository:
+3. Clone the repository:
 ```bash
 git clone <repository_link>
 ```
 
-3. Navigate to the project directory:
+4. Navigate to the project directory:
 ```bash
 cd <repository_directory>
 ```
 
-4. Compile the project:
+5. Compile the project:
 ```bash
 make
 ```

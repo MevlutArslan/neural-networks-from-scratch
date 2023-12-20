@@ -28,7 +28,7 @@ void real_estate_preprocess_data(ModelData* model_data) {
     Data* real_estate_data = load_csv("/Users/mevlutarslan/Downloads/datasets/Real estate.csv");
     assert(real_estate_data != NULL);
 
-    // shuffle_rows(real_estate_data->data);
+    shuffle_rows(real_estate_data->data);
 
     float separation_factor = 0.7;
 
@@ -39,7 +39,7 @@ void real_estate_preprocess_data(ModelData* model_data) {
     model_data->training_data = get_sub_matrix(real_estate_data->data, 0, training_data_num_rows, 1, real_estate_data->columns - 2);
     assert(model_data->training_data != NULL);
     // log_info("training data: %s", matrix_to_string(model_data->training_data));
-    
+
     // get the last column and store it in a matrix of dimensions (training_data_num_rows x 1)
     model_data->training_labels = get_sub_matrix(real_estate_data->data, 0, training_data_num_rows, real_estate_data->columns - 1, real_estate_data->columns - 1);
     assert(model_data->training_labels != NULL);
@@ -104,6 +104,8 @@ NNetwork* real_estate_get_network(Model* model) {
 
     log_info("%s", "Created Network:");
     dump_network_config(network);
+
+    sleep(1);
 
     return network;
 }

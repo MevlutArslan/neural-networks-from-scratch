@@ -118,7 +118,11 @@ void train_network(NNetwork* network, Matrix* training_data, Matrix* training_la
         network->optimization_algorithm(network, current_learning_rate, batch_size);
         
         if(epoch == 1 || epoch % 10 == 0){
-            log_debug("Epoch: %d, Accuracy: %f, Loss: %f \n", epoch, network->accuracy, network->loss);  
+            if(network->loss_fn == CATEGORICAL_CROSS_ENTROPY) {
+                log_debug("Epoch: %d, Accuracy: %f, Loss: %f \n", epoch, network->accuracy, network->loss);  
+            } else {
+                log_debug("Epoch: %d, Loss: %f \n", epoch, network->loss);  
+            }
         }
 
         min_loss = fmin(min_loss, network->loss);
@@ -137,9 +141,11 @@ void train_network(NNetwork* network, Matrix* training_data, Matrix* training_la
             }
         }
     }
-
     log_info("Minimum loss during training: %f \n", min_loss);
-    log_info("Maximum accuracy during training: %f \n", max_accuracy);    
+
+    if(network->loss_fn == CATEGORICAL_CROSS_ENTROPY) {
+        log_info("Maximum accuracy during training: %f \n", max_accuracy);    
+    } 
 }
 
 void forward_pass_batched(NNetwork* network, Matrix* input_matrix) { 
@@ -452,7 +458,7 @@ void dump_network_config(NNetwork* network) {
         "\t\"Network Config\": {\n"
         "\t\t\"Loss Function\": %s \n"
         "\t\t\"Layers\": [\n",
-        "cross_entropy" // TODO: Turn into const values
+        loss_fn_to_string(network->loss_fn)
     );
 
     for(int i = 0; i< network->num_layers; i++) {

@@ -29,7 +29,10 @@ void validate_model(Model* model) {
     calculate_loss(network, model->data->validation_labels, network->batched_outputs->array[network->num_layers - 1]);
 
     log_info("Validation Loss: %f", network->loss);
-    log_info("Validation Accuracy: %f", network->accuracy);
+
+    if(network->loss_fn == CATEGORICAL_CROSS_ENTROPY) {
+        log_info("Validation Accuracy: %f", network->accuracy);
+    } 
 
     free_network(network);
 }
